@@ -10,21 +10,27 @@ echo "===============================================================\n";
 echo "  LAMS Database Migration Runner (Aiven Cloud MySQL)           \n";
 echo "===============================================================\n\n";
 
+$isStatusOnly = in_array('--status', $argv ?? []) || in_array('-s', $argv ?? []) || in_array('--show', $argv ?? []);
+
 try {
     $db = Database::getConnection();
     echo "✓ Connected to Aiven MySQL successfully.\n";
 
-    $sqlFile = __DIR__ . '/schema.sql';
-    if (!file_exists($sqlFile)) {
-        throw new Exception("schema.sql file not found at: {$sqlFile}");
+    if (!$isStatusOnly) {
+        $sqlFile = __DIR__ . '/schema.sql';
+        if (!file_exists($sqlFile)) {
+            throw new Exception("schema.sql file not found at: {$sqlFile}");
+        }
+
+        echo "✓ Reading schema.sql...\n";
+        $sql = file_get_contents($sqlFile);
+
+        echo "✓ Executing schema migration...\n";
+        $db->exec($sql);
+        echo "✓ Schema execution finished successfully!\n\n";
+    } else {
+        echo "ℹ Running in status-only mode (viewing tables)...\n\n";
     }
-
-    echo "✓ Reading schema.sql...\n";
-    $sql = file_get_contents($sqlFile);
-
-    echo "✓ Executing schema migration...\n";
-    $db->exec($sql);
-    echo "✓ Schema execution finished successfully!\n\n";
 
     // Verify tables created
     $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
