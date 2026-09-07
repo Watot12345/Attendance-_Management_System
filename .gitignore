@@ -1,0 +1,42 @@
+# Environment variables
+.env
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Generated assets
+/assets/css/output.css
+
+# Uploads (user-generated content)
+/uploads/excuse-slips/*
+!/uploads/excuse-slips/.gitkeep
+/uploads/avatars/*
+!/uploads/avatars/.gitkeep
+/uploads/exports/*
+!/uploads/exports/.gitkeep
+/uploads/awards/*
+!/uploads/awards/.gitkeep
+
+# Logs
+/logs/errors/*
+!/logs/errors/.gitkeep
+/logs/audit/*
+!/logs/audit/.gitkeep
+/logs/cron_*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+/cache/
