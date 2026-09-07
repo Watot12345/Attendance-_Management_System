@@ -55,7 +55,10 @@
 
           <!-- ML Insight Card -->
           <div class="ml-insight-card">
-            <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--color-teal-500)">🔍 Pattern Detected</p>
+            <p class="text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style="color:var(--color-teal-500)">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              Pattern Detected
+            </p>
             <h4 class="text-lg font-semibold mb-2" style="color:var(--color-text-primary)">Absences spike on Mondays</h4>
             <p class="text-sm mb-3" style="color:var(--color-text-secondary)">
               Students in Grade 7 Section A have 3× more absences on Mondays vs other days. Based on 90 days of attendance data.

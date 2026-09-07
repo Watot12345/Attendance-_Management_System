@@ -22,7 +22,7 @@
           <!-- RFID Panel -->
           <div class="bg-white rounded-lg p-8 shadow-card text-center">
             <div class="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style="background:var(--color-teal-100)">
-              <span class="text-3xl">📡</span>
+              <svg class="w-10 h-10" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.343 9.343c5.858-5.857 15.355-5.857 21.214 0"/></svg>
             </div>
             <h3 class="text-lg font-semibold mb-2" style="color:var(--color-text-primary)">RFID Tap</h3>
             <p class="text-sm mb-4" style="color:var(--color-text-secondary)">Tap your ID card on the RFID reader</p>
@@ -34,7 +34,7 @@
           <!-- QR Panel -->
           <div class="bg-white rounded-lg p-8 shadow-card text-center">
             <div class="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style="background:var(--color-teal-100)">
-              <span class="text-3xl">📷</span>
+              <svg class="w-10 h-10" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
             </div>
             <h3 class="text-lg font-semibold mb-2" style="color:var(--color-text-primary)">QR Code Camera</h3>
             <p class="text-sm mb-4" style="color:var(--color-text-secondary)">Show your QR code to the camera</p>

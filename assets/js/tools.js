@@ -92,7 +92,9 @@ function previewCertificate(studentName, grade, period) {
 
   const bodyHTML = `
     <div class="text-center p-6 border-4 border-amber-300 rounded-xl bg-amber-50/50 space-y-4">
-      <div class="text-4xl">🏆</div>
+      <div class="w-16 h-16 mx-auto rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shadow-sm">
+        <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+      </div>
       <h3 class="text-xs tracking-widest uppercase font-bold text-amber-700">Bestlink College of the Philippines</h3>
       <h2 class="text-2xl font-serif font-bold text-slate-800">Certificate of Perfect Attendance</h2>
       <p class="text-xs text-slate-500">This certificate is proudly presented to</p>
@@ -108,7 +110,10 @@ function previewCertificate(studentName, grade, period) {
 
   const footerHTML = `
     <button type="button" class="btn btn-secondary btn-sm" onclick="APP.closeModal()">Close</button>
-    <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">🖨 Print Certificate</button>
+    <button type="button" class="btn btn-primary btn-sm inline-flex items-center gap-1.5" onclick="window.print()">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      Print Certificate
+    </button>
   `;
 
   APP.openModal('Certificate Preview', bodyHTML, footerHTML);

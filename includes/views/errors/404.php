@@ -10,7 +10,7 @@
 <body class="min-h-screen flex items-center justify-center" style="background:var(--color-surface)">
   <div class="text-center px-4">
     <div class="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style="background:var(--color-teal-100)">
-      <span class="text-4xl">🔍</span>
+      <svg class="w-10 h-10" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     </div>
     <h1 class="text-5xl font-bold mb-2" style="color:var(--color-teal-500)">404</h1>
     <h2 class="text-xl font-semibold mb-2" style="color:var(--color-text-primary)">Page Not Found</h2>

@@ -86,7 +86,10 @@
                 </select>
               </div>
 
-              <button type="submit" class="btn btn-primary btn-lg w-full justify-center">🏆 Calculate Eligible Students</button>
+              <button type="submit" class="btn btn-primary btn-lg w-full justify-center inline-flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+                Calculate Eligible Students
+              </button>
             </form>
           </div>
 
@@ -99,7 +102,10 @@
                 <p class="text-sm mt-0.5" style="color:var(--color-present)">✓ 14 students qualified with 100% attendance</p>
               </div>
               <div class="flex gap-2">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="APP.showToast('Batch notifications dispatched to all 14 parents.', 'success')">📧 Notify All Parents</button>
+                <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Batch notifications dispatched to all 14 parents.', 'success')">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  Notify All Parents
+                </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="APP.showToast('Recipients list exported to CSV.', 'info')">Export List CSV</button>
               </div>
             </div>
@@ -108,49 +114,73 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Student Card 1 -->
               <div class="award-card">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-2xl">🏆</span>
-                  <span class="text-xs font-semibold uppercase" style="color:#b45309">Perfect Attendance</span>
+                <div class="flex items-center gap-2.5 mb-2">
+                  <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+                  </div>
+                  <span class="text-xs font-semibold uppercase tracking-wider" style="color:#b45309">Perfect Attendance</span>
                 </div>
                 <h4 class="text-lg font-semibold" style="color:var(--color-text-primary)">Dela Cruz, Juan</h4>
                 <p class="text-sm" style="color:var(--color-text-secondary)">Grade 7 — Section A</p>
                 <p class="text-sm mt-2" style="color:var(--color-text-secondary)">September 2026</p>
                 <p class="text-xs" style="color:var(--color-text-muted)">22 days · 0 absences · 0 tardies</p>
                 <div class="flex gap-2 mt-3 pt-3 border-t border-amber-200/60">
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification sent to Juan Dela Cruz parent.', 'success')">📧 Notify</button>
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="previewCertificate('Dela Cruz, Juan', 'Grade 7 — Section A', 'September 2026')">🖨 Certificate</button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Notification sent to Juan Dela Cruz parent.', 'success')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Notify
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="previewCertificate('Dela Cruz, Juan', 'Grade 7 — Section A', 'September 2026')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Certificate
+                  </button>
                 </div>
               </div>
 
               <!-- Student Card 2 -->
               <div class="award-card">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-2xl">🏆</span>
-                  <span class="text-xs font-semibold uppercase" style="color:#b45309">Perfect Attendance</span>
+                <div class="flex items-center gap-2.5 mb-2">
+                  <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+                  </div>
+                  <span class="text-xs font-semibold uppercase tracking-wider" style="color:#b45309">Perfect Attendance</span>
                 </div>
                 <h4 class="text-lg font-semibold" style="color:var(--color-text-primary)">Garcia, Ana</h4>
                 <p class="text-sm" style="color:var(--color-text-secondary)">Grade 7 — Section B</p>
                 <p class="text-sm mt-2" style="color:var(--color-text-secondary)">September 2026</p>
                 <p class="text-xs" style="color:var(--color-text-muted)">22 days · 0 absences · 0 tardies</p>
                 <div class="flex gap-2 mt-3 pt-3 border-t border-amber-200/60">
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification sent to Ana Garcia parent.', 'success')">📧 Notify</button>
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="previewCertificate('Garcia, Ana', 'Grade 7 — Section B', 'September 2026')">🖨 Certificate</button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Notification sent to Ana Garcia parent.', 'success')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Notify
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="previewCertificate('Garcia, Ana', 'Grade 7 — Section B', 'September 2026')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Certificate
+                  </button>
                 </div>
               </div>
 
               <!-- Student Card 3 -->
               <div class="award-card">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-2xl">🏆</span>
-                  <span class="text-xs font-semibold uppercase" style="color:#b45309">Perfect Attendance</span>
+                <div class="flex items-center gap-2.5 mb-2">
+                  <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+                  </div>
+                  <span class="text-xs font-semibold uppercase tracking-wider" style="color:#b45309">Perfect Attendance</span>
                 </div>
                 <h4 class="text-lg font-semibold" style="color:var(--color-text-primary)">Villanueva, Carlo</h4>
                 <p class="text-sm" style="color:var(--color-text-secondary)">Grade 8 — Section A</p>
                 <p class="text-sm mt-2" style="color:var(--color-text-secondary)">September 2026</p>
                 <p class="text-xs" style="color:var(--color-text-muted)">22 days · 0 absences · 0 tardies</p>
                 <div class="flex gap-2 mt-3 pt-3 border-t border-amber-200/60">
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification sent to Carlo Villanueva parent.', 'success')">📧 Notify</button>
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="previewCertificate('Villanueva, Carlo', 'Grade 8 — Section A', 'September 2026')">🖨 Certificate</button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Notification sent to Carlo Villanueva parent.', 'success')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Notify
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1.5" onclick="previewCertificate('Villanueva, Carlo', 'Grade 8 — Section A', 'September 2026')">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Certificate
+                  </button>
                 </div>
               </div>
             </div>

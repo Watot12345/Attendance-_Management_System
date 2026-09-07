@@ -152,14 +152,18 @@ const APP = {
                 <svg class="w-5 h-5" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span class="text-xs font-semibold" style="color:var(--color-text-primary)">📎 Attach or Import Document / Photo</span>
+                <span class="text-xs font-semibold" style="color:var(--color-text-primary)">Attach or Import Document / Photo</span>
               </div>
               <p class="text-[11px]" style="color:var(--color-text-muted)">Click to browse or drag and drop (PDF, JPG, PNG · max 5MB)</p>
               <input type="file" class="hidden" id="modal-manual-file" accept=".pdf,.jpg,.jpeg,.png" onchange="APP._handleManualFileSelect(event)">
             </div>
             <div id="modal-manual-file-preview" class="hidden mt-2 p-2 rounded-lg flex items-center gap-2 border" style="background:var(--color-teal-100); border-color:var(--color-teal-300)">
+              <svg class="w-4 h-4 shrink-0" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               <span class="text-xs font-medium truncate flex-1" style="color:var(--color-teal-500)" id="modal-manual-file-name"></span>
-              <button type="button" class="text-xs font-semibold px-2 py-0.5 rounded text-red-600 hover:bg-red-50" onclick="APP._removeManualFile()">✕ Remove</button>
+              <button type="button" class="text-xs font-semibold px-2 py-0.5 rounded text-red-600 hover:bg-red-50 inline-flex items-center gap-1" onclick="APP._removeManualFile()">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                Remove
+              </button>
             </div>
           </div>
 
@@ -201,7 +205,7 @@ const APP = {
     const dropZone = document.getElementById('modal-manual-drop-zone');
     if (preview && fileName) {
       const sizeKB = Math.round(file.size / 1024);
-      fileName.textContent = `📄 ${file.name} (${sizeKB} KB)`;
+      fileName.textContent = `${file.name} (${sizeKB} KB)`;
       preview.classList.remove('hidden');
     }
     if (dropZone) {

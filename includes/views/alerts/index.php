@@ -175,7 +175,9 @@
                 </div>
 
                 <div class="p-4 rounded-lg mb-6 flex items-start gap-3" style="background:var(--color-surface); border:1px solid var(--color-border)">
-                  <span class="text-xl">✉️</span>
+                  <div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center shrink-0 mt-0.5" style="color:var(--color-teal-500)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  </div>
                   <div>
                     <h4 class="text-sm font-semibold" style="color:var(--color-text-primary)">Mail Server Configuration</h4>
                     <p class="text-xs mt-0.5" style="color:var(--color-text-secondary)">

@@ -137,14 +137,20 @@
           <!-- Quick Insight Teasers (Click to switch tabs) -->
           <div>
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold" style="color:var(--color-text-primary)">🔍 Key Insights</h3>
+              <h3 class="text-lg font-semibold flex items-center gap-2" style="color:var(--color-text-primary)">
+                <svg class="w-5 h-5" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Key Insights
+              </h3>
               <span class="text-xs" style="color:var(--color-text-muted)">Click any card to inspect full details</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Pattern Card -->
               <div class="ml-insight-card cursor-pointer hover:shadow-md transition-shadow" onclick="switchAnalyticsTab('patterns')">
                 <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--color-teal-500)">🔍 Pattern Detected</p>
+                  <p class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style="color:var(--color-teal-500)">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    Pattern Detected
+                  </p>
                   <span class="text-xs px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Monday Spike</span>
                 </div>
                 <h4 class="text-base font-semibold mb-1" style="color:var(--color-text-primary)">3× Monday Absence Rate in Grade 7</h4>
@@ -158,7 +164,10 @@
               <!-- At-Risk Card -->
               <div class="ml-insight-card cursor-pointer hover:shadow-md transition-shadow" onclick="switchAnalyticsTab('at-risk')">
                 <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--color-alert-high)">⚠️ High Risk Warning</p>
+                  <p class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style="color:var(--color-alert-high)">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    High Risk Warning
+                  </p>
                   <span class="badge badge-high">8 Students Flagged</span>
                 </div>
                 <h4 class="text-base font-semibold mb-1" style="color:var(--color-text-primary)">Chronic Absence Risk Detected</h4>
@@ -226,13 +235,19 @@
               <h3 class="text-lg font-bold" style="color:var(--color-text-primary)">Detected Behavioral Patterns</h3>
               <p class="text-sm mt-0.5" style="color:var(--color-text-secondary)">Patterns isolated by cross-referencing timestamps, student profiles, and historical trends</p>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="APP.showToast('Pattern re-scan scheduled.', 'info')">🔄 Refresh Pattern Engine</button>
+            <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Pattern re-scan scheduled.', 'info')">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Refresh Pattern Engine
+            </button>
           </div>
 
           <!-- Pattern Card 1 -->
           <div class="ml-insight-card bg-white p-6 rounded-lg shadow-card">
             <div class="flex items-center justify-between mb-3">
-              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider" style="background:var(--color-teal-100); color:var(--color-teal-500)">🔍 Pattern #1 · Day of Week</span>
+              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5" style="background:var(--color-teal-100); color:var(--color-teal-500)">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Pattern #1 · Day of Week
+              </span>
               <span class="badge badge-high">High Impact</span>
             </div>
             <h4 class="text-xl font-bold mb-2" style="color:var(--color-text-primary)">Absences spike on Mondays (Grade 7 Section A)</h4>
@@ -255,7 +270,10 @@
           <!-- Pattern Card 2 -->
           <div class="ml-insight-card bg-white p-6 rounded-lg shadow-card">
             <div class="flex items-center justify-between mb-3">
-              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider" style="background:var(--color-teal-100); color:var(--color-teal-500)">🔍 Pattern #2 · Timing Correlation</span>
+              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5" style="background:var(--color-teal-100); color:var(--color-teal-500)">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Pattern #2 · Timing Correlation
+              </span>
               <span class="badge badge-medium">Medium Impact</span>
             </div>
             <h4 class="text-xl font-bold mb-2" style="color:var(--color-text-primary)">Friday morning tardiness increases across Grades 9–10</h4>
@@ -278,7 +296,10 @@
           <!-- Pattern Card 3 -->
           <div class="ml-insight-card bg-white p-6 rounded-lg shadow-card">
             <div class="flex items-center justify-between mb-3">
-              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider" style="background:var(--color-teal-100); color:var(--color-teal-500)">🔍 Pattern #3 · Section Variance</span>
+              <span class="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wider inline-flex items-center gap-1.5" style="background:var(--color-teal-100); color:var(--color-teal-500)">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Pattern #3 · Section Variance
+              </span>
               <span class="badge badge-high">High Impact</span>
             </div>
             <h4 class="text-xl font-bold mb-2" style="color:var(--color-text-primary)">Section B exhibits 40% higher absence concentration</h4>
@@ -305,7 +326,9 @@
         <div id="analytics-panel-at-risk" class="hidden space-y-4">
           <!-- Warning Banner -->
           <div class="rounded-lg p-4 flex items-start gap-3 shadow-sm" style="background:#fffbeb; border:1px solid #fde68a">
-            <span class="text-2xl">⚠️</span>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style="background:#fde68a">
+              <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
             <div class="flex-1">
               <div class="flex items-center justify-between">
                 <h4 class="font-bold text-sm" style="color:#b45309">8 Students Flagged for Chronic Absence Risk</h4>
@@ -339,7 +362,7 @@
                   <td><span class="badge badge-high">● HIGH RISK</span></td>
                   <td class="text-right space-x-1">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="showStudentRiskModal('Santos, Maria', 'Grade 7 · Sec A', '8 absences (27%)', 'HIGH', 'Rapid escalation in past 2 weeks. Parent contact advised.')">Review</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification queued for Santos, Maria parent.', 'info')">📧 Alert Parent</button>
+                    <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1" onclick="APP.showToast('Notification queued for Santos, Maria parent.', 'info')"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Alert Parent</button>
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50 transition-colors">
@@ -350,7 +373,7 @@
                   <td><span class="badge badge-medium">● MED RISK</span></td>
                   <td class="text-right space-x-1">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="showStudentRiskModal('Cruz, Robert', 'Grade 8 · Sec B', '6 absences (20%)', 'MEDIUM', 'Unexcused Friday pattern. Needs attendance agreement.')">Review</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification queued for Cruz, Robert parent.', 'info')">📧 Alert Parent</button>
+                    <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1" onclick="APP.showToast('Notification queued for Cruz, Robert parent.', 'info')"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Alert Parent</button>
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50 transition-colors">
@@ -361,7 +384,7 @@
                   <td><span class="badge badge-medium">● MED RISK</span></td>
                   <td class="text-right space-x-1">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="showStudentRiskModal('Lim, Jenny', 'Grade 8 · Sec B', '5 absences (17%)', 'MEDIUM', 'Tardy rate 40% before missed days.')">Review</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification queued for Lim, Jenny parent.', 'info')">📧 Alert Parent</button>
+                    <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1" onclick="APP.showToast('Notification queued for Lim, Jenny parent.', 'info')"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Alert Parent</button>
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50 transition-colors">
@@ -372,7 +395,7 @@
                   <td><span class="badge badge-medium">● MED RISK</span></td>
                   <td class="text-right space-x-1">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="showStudentRiskModal('Moreno, Alex', 'Grade 9 · Sec A', '5 absences (17%)', 'MEDIUM', 'Wednesday absence clustering.')">Review</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification queued for Moreno, Alex parent.', 'info')">📧 Alert Parent</button>
+                    <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1" onclick="APP.showToast('Notification queued for Moreno, Alex parent.', 'info')"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Alert Parent</button>
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50 transition-colors">
@@ -383,7 +406,7 @@
                   <td><span class="badge badge-medium">● MED RISK</span></td>
                   <td class="text-right space-x-1">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="showStudentRiskModal('Villanueva, Eric', 'Grade 8 · Sec B', '5 absences (17%)', 'MEDIUM', 'Multiple unverified excuse slips.')">Review</button>
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Notification queued for Villanueva, Eric parent.', 'info')">📧 Alert Parent</button>
+                    <button type="button" class="btn btn-ghost btn-sm inline-flex items-center gap-1" onclick="APP.showToast('Notification queued for Villanueva, Eric parent.', 'info')"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Alert Parent</button>
                   </td>
                 </tr>
               </tbody>
