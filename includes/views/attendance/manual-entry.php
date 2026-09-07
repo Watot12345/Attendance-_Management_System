@@ -86,8 +86,12 @@
                   <input type="file" class="hidden" id="page-manual-file" accept=".pdf,.jpg,.jpeg,.png" onchange="handlePageFileSelect(event)">
                 </div>
                 <div id="page-file-preview" class="hidden mt-2 p-3 rounded-lg flex items-center gap-3 border" style="background:var(--color-teal-100); border-color:var(--color-teal-300)">
+                  <svg class="w-4 h-4 shrink-0" style="color:var(--color-teal-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   <span class="text-sm font-medium truncate flex-1" style="color:var(--color-teal-500)" id="page-file-name"></span>
-                  <button type="button" class="text-xs font-semibold px-2.5 py-1 rounded text-red-600 hover:bg-red-50" onclick="removePageFile()">✕ Remove</button>
+                  <button type="button" class="text-xs font-semibold px-2.5 py-1 rounded text-red-600 hover:bg-red-50 inline-flex items-center gap-1" onclick="removePageFile()">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Remove
+                  </button>
                 </div>
               </div>
 
@@ -135,7 +139,7 @@
       const dropZone = document.getElementById('page-drop-zone');
       if (preview && fileName) {
         const sizeKB = Math.round(file.size / 1024);
-        fileName.textContent = `📄 ${file.name} (${sizeKB} KB)`;
+        fileName.textContent = `${file.name} (${sizeKB} KB)`;
         preview.classList.remove('hidden');
       }
       if (dropZone) {
