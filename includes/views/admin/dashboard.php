@@ -88,7 +88,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <!-- Quick Management Shortcuts -->
           <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <h2 class="font-bold text-slate-800 text-base mb-4">Official Master Records Governance</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <a href="<?php echo url('admin/students'); ?>" class="p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 transition group">
                 <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-3 group-hover:scale-105 transition">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -103,14 +103,6 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 </div>
                 <h3 class="font-bold text-slate-800 text-sm mb-1">Teacher Master</h3>
                 <p class="text-xs text-slate-500">Faculty directory, employee codes, and department assignments.</p>
-              </a>
-
-              <a href="<?php echo url('admin/courses-sections'); ?>" class="p-4 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/40 transition group">
-                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3 group-hover:scale-105 transition">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                </div>
-                <h3 class="font-bold text-slate-800 text-sm mb-1">Courses &amp; Sections</h3>
-                <p class="text-xs text-slate-500">Academic structure, year levels, course codes, and class sections.</p>
               </a>
             </div>
           </div>

@@ -16,6 +16,7 @@
   <!-- Project Theme (custom tokens, components) -->
   <link rel="stylesheet" href="<?php echo url('Project_theme.css'); ?>">
   <link rel="stylesheet" href="<?php echo url('assets/css/output.css'); ?>">
+  <link rel="stylesheet" href="<?php echo url('assets/dist/vanilla-sonner.min.css'); ?>">
 
   <!-- Page-specific CSS slot -->
   <?php if (isset($page_css)) echo $page_css; ?>

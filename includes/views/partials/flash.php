@@ -2,7 +2,9 @@
 <?php if (isset($flash_message)): ?>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    APP.toast('<?php echo htmlspecialchars($flash_message); ?>', '<?php echo isset($flash_type) ? $flash_type : 'info'; ?>');
+    if (typeof APP !== 'undefined' && APP.showToast) {
+      APP.showToast(<?php echo json_encode($flash_message); ?>, <?php echo json_encode(isset($flash_type) ? $flash_type : 'info'); ?>);
+    }
   });
 </script>
 <?php endif; ?>

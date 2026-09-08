@@ -63,7 +63,6 @@ class Router {
         '/admin/students'        => 'admin/students.php',
         '/admin/import-students' => 'admin/import-students.php',
         '/admin/teachers'        => 'admin/teachers.php',
-        '/admin/courses-sections'=> 'admin/courses-sections.php',
         '/admin/reports'         => 'admin/reports.php',
 
         // Attendance (Legacy / Core)

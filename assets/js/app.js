@@ -20,37 +20,24 @@ const APP = {
     if (overlay) overlay.classList.remove('open');
   },
 
-  /* ── Toast Notifications ──────────────────────────────────── */
+  /* ── Toast Notifications (Powered by Sonner) ──────────────── */
   toast(message, type = 'info', duration = 4000) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const icons = {
-      success: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
-      error: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
-      warning: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
-      info: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-    };
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type} flex items-center gap-2.5`;
-    toast.innerHTML = `
-      <span class="inline-flex items-center justify-center shrink-0">${icons[type] || icons.info}</span>
-      <span class="flex-1 text-sm font-medium leading-snug">${message}</span>
-      <button onclick="this.parentElement.remove()" class="ml-2 text-current opacity-60 hover:opacity-100 p-0.5 rounded" aria-label="Close toast">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    `;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(8px)';
-        toast.style.transition = 'opacity 0.3s, transform 0.3s';
-        setTimeout(() => toast.remove(), 300);
+    const opts = typeof duration === 'object' ? duration : { duration: typeof duration === 'number' ? duration : 4000 };
+    if (typeof window.toast !== 'undefined') {
+      switch (type) {
+        case 'success':
+          return window.toast.success(message, opts);
+        case 'error':
+          return window.toast.error(message, opts);
+        case 'warning':
+          return window.toast.warning(message, opts);
+        case 'info':
+        default:
+          return window.toast.info(message, opts);
       }
-    }, duration);
+    } else {
+      console.warn('Toast library not yet initialized:', message);
+    }
   },
   showToast(message, type = 'info', duration = 4000) {
     return this.toast(message, type, duration);
@@ -298,6 +285,28 @@ document.addEventListener('click', function(e) {
   }
 });
 
+/* ── Sonner Toast API Proxy Methods ──────────────────────────── */
+if (typeof APP !== 'undefined' && APP.toast) {
+  APP.toast.success = function(msg, opts) {
+    return window.toast ? window.toast.success(msg, opts) : APP.toast(msg, 'success', opts);
+  };
+  APP.toast.error = function(msg, opts) {
+    return window.toast ? window.toast.error(msg, opts) : APP.toast(msg, 'error', opts);
+  };
+  APP.toast.warning = function(msg, opts) {
+    return window.toast ? window.toast.warning(msg, opts) : APP.toast(msg, 'warning', opts);
+  };
+  APP.toast.info = function(msg, opts) {
+    return window.toast ? window.toast.info(msg, opts) : APP.toast(msg, 'info', opts);
+  };
+  APP.toast.message = function(title, desc, opts) {
+    return window.toast && window.toast.message ? window.toast.message(title, desc, opts) : APP.toast(title, 'info', opts);
+  };
+  APP.toast.promise = function(promise, data, opts) {
+    return window.toast && window.toast.promise ? window.toast.promise(promise, data, opts) : null;
+  };
+}
+
 /* ── Auto-open manual entry modal if ?action=manual-entry ───── */
 document.addEventListener('DOMContentLoaded', function() {
   if (new URLSearchParams(window.location.search).get('action') === 'manual-entry') {
@@ -308,4 +317,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
   }
 });
+
 
