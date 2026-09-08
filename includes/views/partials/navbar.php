@@ -26,28 +26,10 @@ $userAvatarBg = $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 
       </div>
       <div>
         <div class="text-xs font-bold text-slate-900 leading-tight tracking-tight">Bestlink College of the Philippines</div>
-        <div class="text-[10.5px] text-slate-400 font-medium leading-tight">AI Attendance Intelligence System</div>
       </div>
     </div>
 
-    <!-- Quick Global Search -->
-    <div class="hidden md:flex items-center flex-1 max-w-xs ml-3">
-      <div class="relative w-full">
-        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" placeholder="Quick search student, class, code..." class="w-full pl-9 pr-12 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 focus:bg-white border border-slate-200/70 focus:border-teal-500 rounded-xl outline-none text-slate-700 placeholder:text-slate-400 transition" onkeydown="if(event.key==='Enter') APP.toast('Searching system records for: ' + this.value, 'info')">
-        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400 px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-2xs pointer-events-none">⌘K</span>
-      </div>
-    </div>
   </div>
-
-  <!-- Center: Live Academic Term Pill -->
-  <div class="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100/90 border border-slate-200/80 text-xs text-slate-600 shadow-2xs">
-    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span class="font-bold text-slate-800">1st Semester AY 2025–2026</span>
-    <span class="text-slate-300">•</span>
-    <span class="text-slate-500 font-medium">Live Campus Mode</span>
-  </div>
-
   <!-- Right: Quick Role Switcher, Notification & Profile -->
   <div class="flex items-center gap-2.5">
     <!-- Quick Role Switch Pill -->

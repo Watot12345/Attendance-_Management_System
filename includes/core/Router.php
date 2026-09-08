@@ -24,6 +24,7 @@ class Router {
      */
     private static array $routes = [
         '/'                      => 'auth/login.php',
+        'auth'                   => 'auth/login.php',
         '/auth'                  => 'auth/login.php',
         '/login'                 => 'auth/login.php',
         '/logout'                => 'auth/login.php',
@@ -33,13 +34,13 @@ class Router {
         '/dashboard/excuse-slips'=> 'dashboard/excuse-slips.php',
         '/dashboard/analytics'   => 'dashboard/analytics.php',
         '/dashboard/tools'       => 'dashboard/tools.php',
-        '/dashboard/ml-analytics'=> 'dashboard/ml-analytics.php',
+        '/dashboard/ml-analytics'=> 'dashboard/analytics.php',
 
         // Teacher Portal
         '/teacher/dashboard'     => 'teacher/dashboard.php',
         '/teacher/classes'       => 'teacher/classes.php',
         '/teacher/import-roster' => 'teacher/import-roster.php',
-        '/teacher/roster'        => 'teacher/roster.php',
+        '/teacher/roster'        => 'teacher/classes.php',
         '/teacher/live-session'  => 'teacher/live-session.php',
         '/teacher/attendance-history' => 'teacher/attendance-history.php',
         '/teacher/daily-attendance' => 'attendance/daily.php',
@@ -49,8 +50,8 @@ class Router {
         '/teacher/awards'        => 'awards/index.php',
 
         // Student Portal
-        '/student/dashboard'     => 'student/dashboard.php',
-        '/student/classes'       => 'student/classes.php',
+        '/student/dashboard'     => 'calendar/index.php',
+        '/student/classes'       => 'calendar/index.php',
         '/student/scanner'       => 'student/scanner.php',
         '/student/scan-result'   => 'student/scan-result.php',
         '/student/calendar'      => 'calendar/index.php',
@@ -68,18 +69,18 @@ class Router {
         // Attendance (Legacy / Core)
         '/attendance'            => 'attendance/daily.php',
         '/attendance/daily'      => 'attendance/daily.php',
-        '/attendance/scan'       => 'attendance/scan.php',
+        '/attendance/scan'       => 'teacher/live-session.php',
         '/attendance/manual-entry'=> 'attendance/manual-entry.php',
-        '/attendance/teachers'   => 'attendance/teachers.php',
+        '/attendance/teachers'   => 'admin/teachers.php',
 
         // Calendar
         '/calendar'              => 'calendar/index.php',
 
         // Analytics
-        '/analytics'             => 'analytics/dashboard.php',
-        '/analytics/dashboard'   => 'analytics/dashboard.php',
-        '/analytics/patterns'    => 'analytics/patterns.php',
-        '/analytics/at-risk'     => 'analytics/at-risk.php',
+        '/analytics'             => 'dashboard/analytics.php',
+        '/analytics/dashboard'   => 'dashboard/analytics.php',
+        '/analytics/patterns'    => 'dashboard/analytics.php',
+        '/analytics/at-risk'     => 'dashboard/analytics.php',
 
         // Users
         '/users'                 => 'users/list.php',
@@ -91,20 +92,20 @@ class Router {
         // Alerts
         '/alerts'                => 'alerts/index.php',
         '/alerts/history'        => 'alerts/history.php',
-        '/alerts/settings'       => 'alerts/settings.php',
+        '/alerts/settings'       => 'settings/index.php',
 
         // Settings
         '/settings'              => 'settings/index.php',
 
         // Awards & Exports
         '/awards'                => 'awards/index.php',
-        '/exports'               => 'exports/index.php',
+        '/exports'               => 'admin/reports.php',
 
         // Excuses
-        '/excuses'               => 'excuses/index.php',
-        '/excuses/submit'        => 'excuses/submit.php',
-        '/excuses/review'        => 'excuses/review.php',
-        '/excuses/detail'        => 'excuses/detail.php',
+        '/excuses'               => 'dashboard/excuse-slips.php',
+        '/excuses/submit'        => 'student/excuse-slips.php',
+        '/excuses/review'        => 'dashboard/excuse-slips.php',
+        '/excuses/detail'        => 'dashboard/excuse-slips.php',
 
         // Parent View
         '/parent'                => 'parent/attendance.php',
@@ -113,7 +114,7 @@ class Router {
         '/scan'                  => 'student/scanner.php',
         '/manual-entry'          => 'attendance/manual-entry.php',
         '/teachers'              => 'admin/teachers.php',
-        '/excuse-slips'          => 'excuses/index.php',
+        '/excuse-slips'          => 'dashboard/excuse-slips.php',
         '/profile'               => 'users/profile.php',
         '/history'               => 'alerts/history.php',
     ];
