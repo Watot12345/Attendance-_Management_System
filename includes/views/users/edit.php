@@ -10,7 +10,7 @@
       <main class="flex-1 p-6 flex items-start justify-center" style="background:var(--color-surface)">
         <div class="w-full max-w-lg">
           <div class="mb-6">
-            <a href="/Attendance _Management_System/includes/views/users/list.php" class="text-sm" style="color:var(--color-teal-500)">← Back to Users</a>
+            <a href="<?php echo url('users'); ?>" class="text-sm" style="color:var(--color-teal-500)">← Back to Users</a>
             <h1 class="text-2xl font-bold mt-2" style="color:var(--color-text-primary)">Edit User</h1>
           </div>
 
@@ -81,7 +81,7 @@
               </div>
 
               <div class="flex justify-end gap-3">
-                <a href="/Attendance _Management_System/includes/views/users/list.php" class="btn btn-secondary">Cancel</a>
+                <a href="<?php echo url('users'); ?>" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">Update User</button>
               </div>
             </form>

@@ -10,7 +10,7 @@
       <main class="flex-1 p-6" style="background:var(--color-surface)">
         <!-- Back Navigation & Title -->
         <div class="mb-6">
-          <a href="/Attendance _Management_System/includes/views/attendance/daily.php" class="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700 mb-2 transition-colors">
+          <a href="<?php echo url('attendance/daily'); ?>" class="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700 mb-2 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Back to Daily Attendance Log
           </a>
@@ -20,7 +20,7 @@
 
         <!-- Manual Entry Form Card -->
         <div class="max-w-2xl bg-white rounded-xl shadow-card p-6 md:p-8 border border-gray-100">
-          <form id="standalone-manual-form" onsubmit="event.preventDefault(); APP.showToast('Manual attendance record saved successfully.', 'success'); setTimeout(() => window.location.href='/Attendance _Management_System/includes/views/attendance/daily.php', 1200);">
+          <form id="standalone-manual-form" onsubmit="event.preventDefault(); APP.showToast('Manual attendance record saved successfully.', 'success'); setTimeout(() => window.location.href='<?php echo url('attendance/daily'); ?>', 1200);">
             <div class="space-y-5">
               <!-- Student Selection with Avatar Preview -->
               <div>
@@ -103,7 +103,7 @@
 
               <!-- Actions -->
               <div class="flex items-center justify-end gap-3 pt-3 border-t" style="border-color:var(--color-border)">
-                <a href="/Attendance _Management_System/includes/views/attendance/daily.php" class="btn btn-secondary">Cancel</a>
+                <a href="<?php echo url('attendance/daily'); ?>" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">Save Attendance Record</button>
               </div>
             </div>

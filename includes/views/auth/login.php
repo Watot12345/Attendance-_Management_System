@@ -1,3 +1,4 @@
+<?php require_once dirname(__DIR__, 2) . '/core/Router.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In — Attendance Management System</title>
   <meta name="description" content="Login to the AI-Supported Attendance Management System — Bestlink College of the Philippines">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/Attendance _Management_System/Project_theme.css">
+  <link rel="stylesheet" href="<?php echo url('Project_theme.css'); ?>">
+  <link rel="stylesheet" href="<?php echo url('assets/css/output.css'); ?>">
 </head>
 <body class="min-h-screen flex items-center justify-center" style="background-color:var(--color-navy-950)">
 
@@ -74,7 +75,7 @@
 
     function handleLogin() {
       // Static demo — redirect to dashboard
-      window.location.href = '/Attendance _Management_System/includes/views/dashboard/index.php';
+      window.location.href = '<?php echo url("dashboard"); ?>';
     }
   </script>
 </body>

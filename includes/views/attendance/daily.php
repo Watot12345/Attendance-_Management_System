@@ -240,7 +240,7 @@
                     <td>BCP-003</td>
                     <td>Sep 7, 2026</td>
                     <td><span class="badge badge-sent">✓ Sent</span></td>
-                    <td><a href="/Attendance _Management_System/includes/views/dashboard/excuse-slips.php?tab=submit" class="text-sm font-medium" style="color:var(--color-teal-500)">Submit →</a></td>
+                    <td><a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="text-sm font-medium" style="color:var(--color-teal-500)">Submit →</a></td>
                   </tr>
                   <tr>
                     <td class="font-medium">Moreno, Alex</td>

@@ -182,7 +182,7 @@
                     <h4 class="text-sm font-semibold" style="color:var(--color-text-primary)">Mail Server Configuration</h4>
                     <p class="text-xs mt-0.5" style="color:var(--color-text-secondary)">
                       SMTP host, port, authentication credentials, and sender headers are configured in
-                      <a href="/Attendance _Management_System/includes/views/settings/index.php" class="font-medium underline" style="color:var(--color-teal-500)">System Settings</a>.
+                      <a href="<?php echo url('settings'); ?>" class="font-medium underline" style="color:var(--color-teal-500)">System Settings</a>.
                     </p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/alerts.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/alerts.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('alerts');</script>

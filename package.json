@@ -1,0 +1,15 @@
+{
+  "name": "attendance-management-system",
+  "version": "1.0.0",
+  "description": "Library Attendance Monitoring System (LAMS) with Tailwind CSS",
+  "scripts": {
+    "dev": "php -S localhost:8000 index.php",
+    "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css",
+    "watch:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css --watch",
+    "minify:css": "tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}

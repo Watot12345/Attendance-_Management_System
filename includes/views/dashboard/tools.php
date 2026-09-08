@@ -316,7 +316,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/tools.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/tools.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('tools');</script>

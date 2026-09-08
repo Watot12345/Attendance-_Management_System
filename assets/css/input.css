@@ -1,0 +1,46 @@
+@import "../../Project_theme.css";
+@import "tailwindcss";
+
+@source "../../**/*.php";
+@source "../js/**/*.js";
+@source "../../*.php";
+
+@theme {
+  --color-navy-950: #0B1929;
+  --color-navy-800: #152D4A;
+  --color-navy-600: #1E4270;
+  --color-teal-500: #0D9488;
+  --color-teal-300: #5EEAD4;
+  --color-teal-100: #CCFBF1;
+
+  --color-surface: #F0F4F8;
+  --color-card: #FFFFFF;
+  --color-border: #CBD5E1;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  --color-present: #16A34A;
+  --color-tardy: #D97706;
+  --color-absent: #DC2626;
+  --color-excused: #2563EB;
+  --color-no-data: #E2E8F0;
+
+  --color-alert-high: #DC2626;
+  --color-alert-medium: #D97706;
+  --color-alert-low: #2563EB;
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

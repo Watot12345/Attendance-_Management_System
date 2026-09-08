@@ -57,7 +57,7 @@ function showDayDetail(day, status) {
   `;
 
   const footerHTML = status !== 'excused' ? `
-    <a href="/Attendance _Management_System/includes/views/dashboard/excuse-slips.php?tab=submit" class="btn btn-primary btn-sm">Submit Excuse Slip</a>
+    <a href="dashboard/excuse-slips?tab=submit" class="btn btn-primary btn-sm">Submit Excuse Slip</a>
   ` : '';
 
   APP.openModal(`Attendance Detail — Sep ${day}`, bodyHTML, footerHTML);

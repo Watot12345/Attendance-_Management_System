@@ -10,7 +10,7 @@
       <main class="flex-1 p-6 flex items-start justify-center" style="background:var(--color-surface)">
         <div class="w-full max-w-lg">
           <div class="mb-6">
-            <a href="/Attendance _Management_System/includes/views/users/list.php" class="text-sm" style="color:var(--color-teal-500)">← Back to Users</a>
+            <a href="<?php echo url('users'); ?>" class="text-sm" style="color:var(--color-teal-500)">← Back to Users</a>
             <h1 class="text-2xl font-bold mt-2" style="color:var(--color-text-primary)">Create User</h1>
           </div>
 
@@ -127,7 +127,7 @@
 
               <!-- Actions -->
               <div class="flex justify-end gap-3 mt-6">
-                <a href="/Attendance _Management_System/includes/views/users/list.php" class="btn btn-secondary">Cancel</a>
+                <a href="<?php echo url('users'); ?>" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">Create User</button>
               </div>
             </form>
@@ -139,7 +139,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/users.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/users.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('users');</script>

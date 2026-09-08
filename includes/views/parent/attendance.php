@@ -19,7 +19,7 @@
         <a href="#" class="nav-item">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Alert History
         </a>
-        <a href="/Attendance _Management_System/includes/views/dashboard/excuse-slips.php?tab=submit" class="nav-item">
+        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="nav-item">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Submit Excuse
         </a>
       </nav>
@@ -31,7 +31,7 @@
             <div class="text-xs text-slate-400">Parent</div>
           </div>
         </div>
-        <a href="/Attendance _Management_System/includes/views/auth/login.php" class="nav-item mt-2 text-red-400 hover:text-red-300">
+        <a href="<?php echo url('auth'); ?>" class="nav-item mt-2 text-red-400 hover:text-red-300">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Logout
         </a>
       </div>
@@ -96,7 +96,7 @@
         </div>
 
         <!-- Submit Excuse CTA -->
-        <a href="/Attendance _Management_System/includes/views/dashboard/excuse-slips.php?tab=submit" class="btn btn-primary inline-flex items-center gap-2">
+        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="btn btn-primary inline-flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           Submit Excuse Slip
         </a>

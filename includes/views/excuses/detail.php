@@ -10,7 +10,7 @@
       <main class="flex-1 p-6 flex items-start justify-center" style="background:var(--color-surface)">
         <div class="w-full max-w-xl">
           <div class="flex items-center gap-2 mb-6">
-            <a href="/Attendance _Management_System/includes/views/dashboard/excuse-slips.php" class="text-sm" style="color:var(--color-teal-500)">← Back to Excuse Slips</a>
+            <a href="<?php echo url('dashboard/excuse-slips'); ?>" class="text-sm" style="color:var(--color-teal-500)">← Back to Excuse Slips</a>
           </div>
 
           <div class="bg-white rounded-lg shadow-card">

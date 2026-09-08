@@ -10,7 +10,7 @@
       <main class="flex-1 p-6" style="background:var(--color-surface)">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <h1 class="text-2xl font-bold" style="color:var(--color-text-primary)">User Management</h1>
-          <a href="/Attendance _Management_System/includes/views/users/create.php" class="btn btn-primary">+ Create User</a>
+          <a href="<?php echo url('users/create'); ?>" class="btn btn-primary">+ Create User</a>
         </div>
 
         <!-- Filters -->
@@ -57,7 +57,7 @@
                 <td class="text-sm" style="color:var(--color-text-muted)">Sep 7, 2026</td>
                 <td>
                   <div class="flex gap-1">
-                    <a href="/Attendance _Management_System/includes/views/users/edit.php" class="btn btn-ghost btn-sm">Edit</a>
+                    <a href="<?php echo url('users/edit'); ?>" class="btn btn-ghost btn-sm">Edit</a>
                   </div>
                 </td>
               </tr>
@@ -69,7 +69,7 @@
                 <td class="text-sm" style="color:var(--color-text-muted)">Sep 6, 2026</td>
                 <td>
                   <div class="flex gap-1">
-                    <a href="/Attendance _Management_System/includes/views/users/edit.php" class="btn btn-ghost btn-sm">Edit</a>
+                    <a href="<?php echo url('users/edit'); ?>" class="btn btn-ghost btn-sm">Edit</a>
                     <button class="btn btn-ghost btn-sm" style="color:var(--color-absent)" onclick="APP.confirm('Delete this user?', function(){})">Delete</button>
                   </div>
                 </td>
@@ -82,7 +82,7 @@
                 <td class="text-sm" style="color:var(--color-text-muted)">Sep 7, 2026</td>
                 <td>
                   <div class="flex gap-1">
-                    <a href="/Attendance _Management_System/includes/views/users/edit.php" class="btn btn-ghost btn-sm">Edit</a>
+                    <a href="<?php echo url('users/edit'); ?>" class="btn btn-ghost btn-sm">Edit</a>
                     <button class="btn btn-ghost btn-sm" style="color:var(--color-absent)" onclick="APP.confirm('Delete this user?', function(){})">Delete</button>
                   </div>
                 </td>
@@ -95,7 +95,7 @@
                 <td class="text-sm" style="color:var(--color-text-muted)">Sep 5, 2026</td>
                 <td>
                   <div class="flex gap-1">
-                    <a href="/Attendance _Management_System/includes/views/users/edit.php" class="btn btn-ghost btn-sm">Edit</a>
+                    <a href="<?php echo url('users/edit'); ?>" class="btn btn-ghost btn-sm">Edit</a>
                     <button class="btn btn-ghost btn-sm" style="color:var(--color-absent)" onclick="APP.confirm('Delete this user?', function(){})">Delete</button>
                   </div>
                 </td>
@@ -113,7 +113,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/users.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/users.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('users');</script>

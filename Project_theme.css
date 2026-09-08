@@ -42,10 +42,24 @@
   --topbar-height: 56px;
 }
 
-/* ── Base Typography ──────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+/* ── Base Typography & Scrollbar Removal ─────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
-html { font-size: 16px; }
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html {
+  font-size: 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
@@ -54,6 +68,8 @@ body {
   background-color: var(--color-surface);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 h1, h2, h3, h4, h5, h6,
@@ -78,10 +94,16 @@ h1, h2, h3, h4, h5, h6,
 /* ── Sidebar ──────────────────────────────────────────────── */
 #sidebar {
   width: var(--sidebar-width);
-  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   background-color: var(--color-navy-950);
   transition: transform 0.25s ease;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 40;
 }
 
 #sidebar .nav-item {

@@ -11,7 +11,7 @@
         <!-- Page Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <div class="flex items-center gap-3">
-            <a href="/Attendance _Management_System/includes/views/attendance/daily.php" class="text-sm" style="color:var(--color-teal-500)">← Back</a>
+            <a href="<?php echo url('attendance/daily'); ?>" class="text-sm" style="color:var(--color-teal-500)">← Back</a>
             <h1 class="text-2xl font-bold" style="color:var(--color-text-primary)">RFID / QR Scanner</h1>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="APP.openManualEntryModal()">Manual Entry</button>
@@ -100,7 +100,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/scanner.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/scanner.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('scan');</script>

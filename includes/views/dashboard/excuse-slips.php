@@ -97,7 +97,7 @@
                   <td>Sep 1, 2026</td>
                   <td><span class="badge badge-approved">✓ Approved</span></td>
                   <td class="text-right">
-                    <a href="/Attendance _Management_System/includes/views/excuses/detail.php" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View</a>
+                    <a href="<?php echo url('excuses/detail'); ?>" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">View</a>
                   </td>
                 </tr>
               </tbody>
@@ -242,7 +242,7 @@
 
   <?php include __DIR__ . '/../partials/modal.php'; ?>
   <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="/Attendance _Management_System/assets/js/excuses.js"></script>'; ?>
+<?php $page_js = '<script src="../../../assets/js/excuses.js"></script>'; ?>
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 <script>APP.highlightNav('excuse-slips');</script>

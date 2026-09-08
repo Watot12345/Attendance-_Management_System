@@ -51,7 +51,7 @@
         </div>
       </div>
       <div class="px-4 py-2 border-t border-gray-100">
-        <a href="/Attendance _Management_System/includes/views/alerts/index.php" class="text-sm font-medium" style="color:var(--color-teal-500)">View all alerts →</a>
+        <a href="<?php echo url('alerts'); ?>" class="text-sm font-medium" style="color:var(--color-teal-500)">View all alerts →</a>
       </div>
     </div>
   </div>
@@ -65,10 +65,10 @@
     </button>
 
     <div id="user-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-modal border border-gray-100 z-50 py-1">
-      <a href="/Attendance _Management_System/includes/views/users/profile.php" class="block px-4 py-2 text-sm hover:bg-gray-50">My Profile</a>
-      <a href="/Attendance _Management_System/includes/views/settings/index.php" class="block px-4 py-2 text-sm hover:bg-gray-50">Settings</a>
+      <a href="<?php echo url('users/profile'); ?>" class="block px-4 py-2 text-sm hover:bg-gray-50">My Profile</a>
+      <a href="<?php echo url('settings'); ?>" class="block px-4 py-2 text-sm hover:bg-gray-50">Settings</a>
       <hr class="my-1 border-gray-100">
-      <a href="/Attendance _Management_System/includes/views/auth/login.php" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</a>
+      <a href="<?php echo url('auth'); ?>" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</a>
     </div>
   </div>
 </header>
