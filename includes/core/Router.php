@@ -28,14 +28,44 @@ class Router {
         '/login'                 => 'auth/login.php',
         '/logout'                => 'auth/login.php',
 
-        // Dashboard
+        // Dashboard & Portals
         '/dashboard'             => 'dashboard/index.php',
         '/dashboard/excuse-slips'=> 'dashboard/excuse-slips.php',
         '/dashboard/analytics'   => 'dashboard/analytics.php',
         '/dashboard/tools'       => 'dashboard/tools.php',
         '/dashboard/ml-analytics'=> 'dashboard/ml-analytics.php',
 
-        // Attendance
+        // Teacher Portal
+        '/teacher/dashboard'     => 'teacher/dashboard.php',
+        '/teacher/classes'       => 'teacher/classes.php',
+        '/teacher/import-roster' => 'teacher/import-roster.php',
+        '/teacher/roster'        => 'teacher/roster.php',
+        '/teacher/live-session'  => 'teacher/live-session.php',
+        '/teacher/attendance-history' => 'teacher/attendance-history.php',
+        '/teacher/daily-attendance' => 'attendance/daily.php',
+        '/teacher/attendance'    => 'attendance/daily.php',
+        '/teacher/tardy-logs'    => 'alerts/history.php',
+        '/teacher/excuse-slips'  => 'dashboard/excuse-slips.php',
+        '/teacher/awards'        => 'awards/index.php',
+
+        // Student Portal
+        '/student/dashboard'     => 'student/dashboard.php',
+        '/student/classes'       => 'student/classes.php',
+        '/student/scanner'       => 'student/scanner.php',
+        '/student/scan-result'   => 'student/scan-result.php',
+        '/student/calendar'      => 'calendar/index.php',
+        '/student/history'       => 'student/history.php',
+        '/student/excuse-slips'  => 'student/excuse-slips.php',
+
+        // Admin Portal
+        '/admin/dashboard'       => 'admin/dashboard.php',
+        '/admin/students'        => 'admin/students.php',
+        '/admin/import-students' => 'admin/import-students.php',
+        '/admin/teachers'        => 'admin/teachers.php',
+        '/admin/courses-sections'=> 'admin/courses-sections.php',
+        '/admin/reports'         => 'admin/reports.php',
+
+        // Attendance (Legacy / Core)
         '/attendance'            => 'attendance/daily.php',
         '/attendance/daily'      => 'attendance/daily.php',
         '/attendance/scan'       => 'attendance/scan.php',
@@ -78,13 +108,12 @@ class Router {
 
         // Parent View
         '/parent'                => 'parent/attendance.php',
-        '/parent/attendance'     => 'parent/attendance.php',
 
         // Convenience Aliases
-        '/scan'                  => 'attendance/scan.php',
+        '/scan'                  => 'student/scanner.php',
         '/manual-entry'          => 'attendance/manual-entry.php',
-        '/teachers'              => 'attendance/teachers.php',
-        '/excuse-slips'          => 'dashboard/excuse-slips.php',
+        '/teachers'              => 'admin/teachers.php',
+        '/excuse-slips'          => 'excuses/index.php',
         '/profile'               => 'users/profile.php',
         '/history'               => 'alerts/history.php',
     ];

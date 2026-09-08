@@ -52,6 +52,9 @@ const APP = {
       }
     }, duration);
   },
+  showToast(message, type = 'info', duration = 4000) {
+    return this.toast(message, type, duration);
+  },
 
   /* ── Modal ────────────────────────────────────────────────── */
   openModal(title, bodyHTML, footerHTML) {
