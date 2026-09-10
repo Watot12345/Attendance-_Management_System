@@ -85,8 +85,12 @@ class Router {
         '/users'                 => 'users/list.php',
         '/users/list'            => 'users/list.php',
         '/users/create'          => 'users/create.php',
+        '/users/store'           => 'UserController@store',
         '/users/edit'            => 'users/edit.php',
         '/users/profile'         => 'users/profile.php',
+
+        // API Endpoints
+        '/api/users/delete'      => 'UserController@apiDelete',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',
@@ -108,6 +112,11 @@ class Router {
 
         // Parent View
         '/parent'                => 'parent/attendance.php',
+
+        // Error Pages
+        '/403'                   => 'errors/403.php',
+        '/404'                   => 'errors/404.php',
+        '/500'                   => 'errors/500.php',
 
         // Convenience Aliases
         '/scan'                  => 'student/scanner.php',
@@ -134,8 +143,8 @@ class Router {
         }
 
         // 2. On Apache/Nginx, determine subdirectory relative to DOCUMENT_ROOT
-        $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']) ?: $_SERVER['DOCUMENT_ROOT']) : '';
-        $appRoot = str_replace('\\', '/', realpath(dirname(__DIR__, 2)) ?: dirname(__DIR__, 2));
+        $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']) ?: $_SERVER['DOCUMENT_ROOT']), '/') : '';
+        $appRoot = rtrim(str_replace('\\', '/', realpath(dirname(__DIR__, 2)) ?: dirname(__DIR__, 2)), '/');
 
         if ($docRoot !== '' && stripos($appRoot, $docRoot) === 0) {
             $sub = substr($appRoot, strlen($docRoot));
@@ -165,13 +174,22 @@ class Router {
 
         $baseDir = self::getBasePath();
 
+        // Decode URL encoding (%20, spaces, etc.) for both path and base directory
+        $decodedPath = rawurldecode($path);
+        $decodedBase = rawurldecode($baseDir);
+
         // Strip project subdirectory if running in XAMPP or subfolder
-        if ($baseDir !== '' && stripos($path, $baseDir) === 0) {
-            $path = substr($path, strlen($baseDir));
+        if ($decodedBase !== '' && stripos($decodedPath, $decodedBase) === 0) {
+            $decodedPath = substr($decodedPath, strlen($decodedBase));
+        }
+
+        // Strip front controller /index.php if present at start (e.g. /index.php/dashboard or /index.php)
+        if (stripos($decodedPath, '/index.php') === 0) {
+            $decodedPath = substr($decodedPath, strlen('/index.php'));
         }
 
         // Clean up slashes
-        $path = '/' . ltrim($path, '/');
+        $path = '/' . ltrim($decodedPath, '/');
         if (strlen($path) > 1) {
             $path = rtrim($path, '/');
         }
@@ -198,16 +216,19 @@ class Router {
             return;
         }
 
-        // 2. Strip /index.php, /index, or .php
-        $noIndex = preg_replace('#(/index)?(\.php)?$#i', '', $path);
-        if ($noIndex !== '' && isset(self::$routes[$noIndex])) {
-            self::render(self::$routes[$noIndex]);
+        // 2. Strip /index, .php extension, or trailing /index (e.g. /dashboard.php -> /dashboard)
+        $cleanCandidate = preg_replace('#(/index)?(\.php)?$#i', '', $path);
+        if ($cleanCandidate === '') {
+            $cleanCandidate = '/';
+        }
+        if (isset(self::$routes[$cleanCandidate])) {
+            self::render(self::$routes[$cleanCandidate]);
             return;
         }
 
         // 3. Dynamic match against includes/views/ directory
         $viewsBase = dirname(__DIR__) . '/views/';
-        $cleanRelative = ltrim($noIndex, '/');
+        $cleanRelative = ltrim($cleanCandidate, '/');
 
         $candidates = [
             $cleanRelative,
