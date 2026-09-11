@@ -61,9 +61,12 @@ class Router {
         '/student/excuse-slips'  => 'student/excuse-slips.php',
 
         // Admin Portal
-        '/admin/dashboard'       => 'admin/dashboard.php',
-        '/admin/students'        => 'admin/students.php',
-        '/admin/import-students' => 'admin/import-students.php',
+        '/admin/dashboard'         => 'admin/dashboard.php',
+        '/admin/students'          => 'StudentController@index',
+        '/admin/students/store'    => 'StudentController@store',
+        '/admin/students/import'   => 'StudentController@import',
+        '/admin/students/template' => 'StudentController@downloadTemplate',
+        '/admin/import-students'   => 'admin/import-students.php',
         '/admin/teachers'        => 'admin/teachers.php',
         '/admin/reports'         => 'admin/reports.php',
 
