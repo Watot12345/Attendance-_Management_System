@@ -52,7 +52,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           </div>
           <div>
-            <div id="stat-total-students" class="text-xl font-black text-slate-900">1,248</div>
+            <div id="stat-total-students" class="text-xl font-black text-slate-900"><?= number_format($totalStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Total Enrolled</div>
           </div>
         </div>
@@ -62,7 +62,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-emerald-600">1,232</div>
+            <div class="text-xl font-black text-emerald-600"><?= number_format($activeStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Active Portal Users</div>
           </div>
         </div>
@@ -72,7 +72,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-indigo-600">1,195</div>
+            <div class="text-xl font-black text-indigo-600"><?= number_format($qrPairedStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">RFID / QR Paired</div>
           </div>
         </div>
@@ -144,129 +144,71 @@ require_once dirname(__DIR__) . '/partials/header.php';
               </tr>
             </thead>
             <tbody id="students-table-body" class="divide-y divide-slate-100 text-slate-700">
-              <!-- Student Row 1 -->
-              <tr class="student-row hover:bg-slate-50/80 transition" data-program="BSIT" data-year="3rd Year" data-status="Active" data-text="2026-00123 Juan Dela Cruz juan.delacruz@bestlink.edu.ph BSIT 3-A">
-                <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>2026-00123</span>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">JD</div>
-                    <div>
-                      <div class="font-bold text-slate-900">Juan Dela Cruz</div>
-                      <div class="text-[10px] text-slate-400">Created: Manual Entry</div>
+              <?php if (empty($students)): ?>
+                <tr>
+                  <td colspan="7" class="py-12 text-center text-slate-400">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                      <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                      <span class="font-semibold text-sm text-slate-600">No Student Accounts Found</span>
+                      <span class="text-xs">Click "+ Create Account Manually" or "Import Excel / CSV" to add students.</span>
                     </div>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4 text-slate-600 font-medium">juan.delacruz@bestlink.edu.ph</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-800">BSIT • 3rd Year</td>
-                <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">BSIT 3-A</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active Account</span></td>
-                <td class="py-3.5 px-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition" onclick="APP.toast('Editing student record 2026-00123', 'info')">Edit</button>
-                    <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition" onclick="APP.toast('Reset password link sent to student email', 'success')" title="Reset Password">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($students as $st): ?>
+                  <?php 
+                    $fullName = htmlspecialchars($st['first_name'] . ' ' . $st['last_name']);
+                    $initials = strtoupper(substr($st['first_name'], 0, 1) . substr($st['last_name'], 0, 1));
+                  ?>
+                  <tr class="student-row hover:bg-slate-50/80 transition" 
+                      data-program="<?= htmlspecialchars($st['grade_level']) ?>" 
+                      data-status="<?= htmlspecialchars($st['status']) ?>" 
+                      data-text="<?= strtolower($st['student_code'] . ' ' . $fullName . ' ' . $st['email'] . ' ' . $st['grade_level'] . ' ' . $st['section']) ?>">
+                    
+                    <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full <?= $st['status'] === 'active' ? 'bg-emerald-500' : 'bg-slate-400' ?>"></span>
+                        <span><?= htmlspecialchars($st['student_code']) ?></span>
+                      </div>
+                    </td>
 
-              <!-- Student Row 2 -->
-              <tr class="student-row hover:bg-slate-50/80 transition" data-program="BSIT" data-year="3rd Year" data-status="Active" data-text="2026-00124 Maria Santos maria.santos@bestlink.edu.ph BSIT 3-A">
-                <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>2026-00124</span>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">MS</div>
-                    <div>
-                      <div class="font-bold text-slate-900">Maria Santos</div>
-                      <div class="text-[10px] text-slate-400">Imported via Excel Batch</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4 text-slate-600 font-medium">maria.santos@bestlink.edu.ph</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-800">BSIT • 3rd Year</td>
-                <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">BSIT 3-A</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active Account</span></td>
-                <td class="py-3.5 px-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition" onclick="APP.toast('Editing student record 2026-00124', 'info')">Edit</button>
-                    <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition" onclick="APP.toast('Reset password link sent to student email', 'success')" title="Reset Password">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                          <?= $initials ?>
+                        </div>
+                        <div>
+                          <div class="font-bold text-slate-900"><?= $fullName ?></div>
+                          <div class="text-[10px] text-slate-400">ID: #<?= $st['student_id'] ?></div>
+                        </div>
+                      </div>
+                    </td>
 
-              <!-- Student Row 3 -->
-              <tr class="student-row hover:bg-slate-50/80 transition" data-program="BSIT" data-year="3rd Year" data-status="Active" data-text="2026-00125 Pedro Reyes pedro.reyes@bestlink.edu.ph BSIT 3-C">
-                <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>2026-00125</span>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-amber-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">PR</div>
-                    <div>
-                      <div class="font-bold text-slate-900">Pedro Reyes</div>
-                      <div class="text-[10px] text-slate-400">Imported via Excel Batch</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4 text-slate-600 font-medium">pedro.reyes@bestlink.edu.ph</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-800">BSIT • 3rd Year</td>
-                <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-[10.5px]">BSIT 3-C</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active Account</span></td>
-                <td class="py-3.5 px-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition" onclick="APP.toast('Editing student record 2026-00125', 'info')">Edit</button>
-                    <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition" onclick="APP.toast('Reset password link sent to student email', 'success')" title="Reset Password">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                    <td class="py-3.5 px-4 text-slate-600 font-medium"><?= htmlspecialchars($st['email']) ?></td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($st['grade_level']) ?></td>
+                    
+                    <td class="py-3.5 px-4">
+                      <span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">
+                        <?= htmlspecialchars($st['section']) ?>
+                      </span>
+                    </td>
 
-              <!-- Student Row 4 -->
-              <tr class="student-row hover:bg-slate-50/80 transition" data-program="BSCS" data-year="4th Year" data-status="Active" data-text="2026-00126 Ana Lim ana.lim@bestlink.edu.ph BSCS 4-A">
-                <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-                  <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>2026-00126</span>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">AL</div>
-                    <div>
-                      <div class="font-bold text-slate-900">Ana Lim</div>
-                      <div class="text-[10px] text-slate-400">Created: Manual Entry</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="py-3.5 px-4 text-slate-600 font-medium">ana.lim@bestlink.edu.ph</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-800">BSCS • 4th Year</td>
-                <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[10.5px]">BSCS 4-A</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active Account</span></td>
-                <td class="py-3.5 px-4 text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition" onclick="APP.toast('Editing student record 2026-00126', 'info')">Edit</button>
-                    <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition" onclick="APP.toast('Reset password link sent to student email', 'success')" title="Reset Password">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                    <td class="py-3.5 px-4">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $st['status'] === 'active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600' ?>">
+                        <?= ucfirst(htmlspecialchars($st['status'])) ?> Account
+                      </span>
+                    </td>
+
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
+                          QR: <?= !empty($st['qr_code']) ? 'Linked' : 'None' ?>
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </tbody>
           </table>
         </div>

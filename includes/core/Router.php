@@ -60,7 +60,7 @@ class Router {
 
         // Admin Portal
         '/admin/dashboard'       => 'admin/dashboard.php',
-        '/admin/students'        => 'admin/students.php',
+        '/admin/students'        => 'StudentController@index',
         '/admin/import-students' => 'admin/import-students.php',
         '/admin/teachers'        => 'admin/teachers.php',
         '/admin/reports'         => 'admin/reports.php',
