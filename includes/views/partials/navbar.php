@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
+
 $currentUri = $_SERVER['REQUEST_URI'] ?? '';
 $pathOnly = trim(parse_url($currentUri, PHP_URL_PATH) ?? '', '/');
 
@@ -6,10 +10,35 @@ $isTeacher = (str_starts_with($pathOnly, 'teacher/') || $pathOnly === 'teacher')
 $isStudent = (str_starts_with($pathOnly, 'student/') || $pathOnly === 'student');
 $isAdmin = !$isTeacher && !$isStudent;
 
-$userName = $isTeacher ? 'Prof. M. Ramirez' : ($isStudent ? 'Juan Dela Cruz' : 'Admin Santos');
-$userRole = $isTeacher ? 'Faculty / Instructor' : ($isStudent ? 'Student (BSIT 3-A)' : 'Administrator');
-$userInitials = $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'AS');
-$userAvatarBg = $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 'bg-blue-600');
+$sessionUser = $_SESSION['user'] ?? null;
+
+if ($sessionUser) {
+    $userName = htmlspecialchars($sessionUser['full_name'] ?? ($sessionUser['first_name'] . ' ' . $sessionUser['last_name']));
+    $role = $sessionUser['role'] ?? ($isTeacher ? 'teacher' : ($isStudent ? 'student' : 'admin'));
+    
+    if ($role === 'teacher') {
+        $userRole = 'Faculty / Instructor';
+        $userAvatarBg = 'bg-emerald-600';
+    } elseif ($role === 'student') {
+        $userRole = 'Student' . (!empty($sessionUser['student_id']) ? ' (' . $sessionUser['student_id'] . ')' : '');
+        $userAvatarBg = 'bg-indigo-600';
+    } else {
+        $userRole = 'Administrator';
+        $userAvatarBg = 'bg-blue-600';
+    }
+
+    $firstInitial = mb_substr($sessionUser['first_name'] ?? '', 0, 1);
+    $lastInitial  = mb_substr($sessionUser['last_name'] ?? '', 0, 1);
+    $userInitials = strtoupper($firstInitial . $lastInitial);
+    if (empty($userInitials)) {
+        $userInitials = 'US';
+    }
+} else {
+    $userName = $isTeacher ? 'Prof. M. Ramirez' : ($isStudent ? 'Juan Dela Cruz' : 'Admin Santos');
+    $userRole = $isTeacher ? 'Faculty / Instructor' : ($isStudent ? 'Student (BSIT 3-A)' : 'Administrator');
+    $userInitials = $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'AS');
+    $userAvatarBg = $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 'bg-blue-600');
+}
 ?>
 <!-- Topbar -->
 <header id="topbar" class="h-16 px-4 lg:px-7 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between gap-4">
@@ -101,7 +130,7 @@ $userAvatarBg = $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 
           <span>Preferences &amp; Settings</span>
         </a>
         <div class="border-t border-slate-100 my-1"></div>
-        <a href="<?php echo url('auth'); ?>" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">
+        <a href="<?php echo url('logout'); ?>" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">
           <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           <span>Sign Out</span>
         </a>

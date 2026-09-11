@@ -40,7 +40,11 @@ class Router {
         'auth'                   => 'auth/login.php',
         '/auth'                  => 'auth/login.php',
         '/login'                 => 'auth/login.php',
-        '/logout'                => 'auth/login.php',
+        '/logout'                => 'AuthController@logout',
+        '/auth/login'            => 'AuthController@login',
+        '/api/auth/login'        => 'AuthController@login',
+        '/api/auth/logout'       => 'AuthController@logout',
+        '/api/auth/me'           => 'AuthController@me',
 
         // Dashboard & Portals
         '/dashboard'             => 'dashboard/index.php',
@@ -114,10 +118,16 @@ class Router {
         '/api/excuses/submit'    => 'ExcuseController@submit',
         '/api/excuses/update'    => 'ExcuseController@update',
         '/api/excuses/delete'    => 'ExcuseController@delete',
+        '/api/excuses/bulk-delete' => 'ExcuseController@bulkDelete',
         '/api/excuses/list'      => 'ExcuseController@listStudent',
         '/api/excuses/review'    => 'ExcuseController@review',
         '/api/teacher/roster/validate' => 'StudentController@validateRoster',
         '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
+        '/api/teacher/qr-session/generate' => 'AttendanceController@generateQrSession',
+        '/api/teacher/qr-session/active'   => 'AttendanceController@getActiveQrSession',
+        '/api/teacher/qr-session/close'    => 'AttendanceController@closeQrSession',
+        '/api/teacher/attendance/live-feed'=> 'AttendanceController@getLiveAttendanceFeed',
+        '/api/attendance/check-in'         => 'AttendanceController@recordCheckIn',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',

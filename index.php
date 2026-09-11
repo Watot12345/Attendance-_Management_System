@@ -13,6 +13,10 @@ if (php_sapi_name() === 'cli-server') {
     }
 }
 
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
+
 require_once __DIR__ . '/includes/core/Router.php';
 
 Router::dispatch();

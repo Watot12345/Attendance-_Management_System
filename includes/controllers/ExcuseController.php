@@ -40,6 +40,12 @@ class ExcuseController {
             }
 
             // Query student's enrolled subjects & faculty exclusively from class_roster
+            $uStmt = $db->prepare("SELECT user_id, student_id FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
+            $uStmt->execute([$studentId, $studentId]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+            $studentUid = $uRow ? (int)$uRow['user_id'] : $studentId;
+            $studentNum = $uRow && !empty($uRow['student_id']) ? (int)$uRow['student_id'] : $studentUid;
+
             $rosterStmt = $db->prepare("
                 SELECT 
                     cr.course_code,
@@ -51,11 +57,14 @@ class ExcuseController {
                     CONCAT(t.first_name, ' ', t.last_name) AS teacher_full_name
                 FROM class_roster cr
                 LEFT JOIN users t ON cr.teacher_id = t.user_id
-                WHERE cr.student_id = ?
-                GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id
+                WHERE cr.student_id = :uid OR cr.student_id = :student_num
+                GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id, t.first_name, t.last_name
                 ORDER BY cr.course_code ASC
             ");
-            $rosterStmt->execute([$studentId]);
+            $rosterStmt->execute([
+                ':uid'         => $studentUid,
+                ':student_num' => $studentNum,
+            ]);
             $rosterRows = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
 
             $availableCourses = [];
@@ -468,12 +477,18 @@ class ExcuseController {
 
             // Teacher mapping based on class_roster
             $teacherId = $existing['teacher_id'];
+            $uStmt = $db->prepare("SELECT user_id, student_id FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
+            $uStmt->execute([$studentId, $studentId]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+            $studentUid = $uRow ? (int)$uRow['user_id'] : $studentId;
+            $studentNum = $uRow && !empty($uRow['student_id']) ? (int)$uRow['student_id'] : $studentUid;
+
             $rMatchStmt = $db->prepare("
                 SELECT teacher_id FROM class_roster 
-                WHERE student_id = ? AND (course_code = ? OR ? LIKE CONCAT('%', course_code, '%'))
+                WHERE (student_id = ? OR student_id = ?) AND (course_code = ? OR ? LIKE CONCAT('%', course_code, '%'))
                 LIMIT 1
             ");
-            $rMatchStmt->execute([$studentId, $subject, $subject]);
+            $rMatchStmt->execute([$studentUid, $studentNum, $subject, $subject]);
             $matchedTeacherId = $rMatchStmt->fetchColumn();
             if ($matchedTeacherId) {
                 $teacherId = (int)$matchedTeacherId;
@@ -612,6 +627,125 @@ class ExcuseController {
                 'status'  => 'success',
                 'message' => "Excuse slip #{$slipId} deleted successfully.",
                 'slip_id' => $slipId,
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * POST /api/excuses/bulk-delete — Delete multiple excuse slips simultaneously
+     */
+    public function bulkDelete(): void {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
+            exit;
+        }
+
+        try {
+            $db = Database::getConnection();
+
+            $rawInput = json_decode(file_get_contents('php://input'), true) ?? [];
+            $slipIds = !empty($_POST['excuse_slip_ids']) 
+                ? (is_array($_POST['excuse_slip_ids']) ? $_POST['excuse_slip_ids'] : explode(',', (string)$_POST['excuse_slip_ids']))
+                : (!empty($rawInput['excuse_slip_ids']) ? $rawInput['excuse_slip_ids'] : []);
+            
+            // Clean integer IDs
+            $cleanIds = [];
+            foreach ($slipIds as $id) {
+                $num = (int)$id;
+                if ($num > 0) {
+                    $cleanIds[] = $num;
+                }
+            }
+            $cleanIds = array_values(array_unique($cleanIds));
+
+            if (empty($cleanIds)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Please select at least one valid excuse slip to delete.']);
+                exit;
+            }
+
+            // Resolve student ID
+            $studentId = !empty($_SESSION['user']['user_id']) 
+                ? (int)$_SESSION['user']['user_id'] 
+                : (!empty($_POST['student_id']) ? (int)$_POST['student_id'] : (!empty($rawInput['student_id']) ? (int)$rawInput['student_id'] : 1));
+
+            $uStmt = $db->prepare("SELECT user_id, student_id FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
+            $uStmt->execute([$studentId, $studentId]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+            $studentUid = $uRow ? (int)$uRow['user_id'] : $studentId;
+            $studentNum = $uRow && !empty($uRow['student_id']) ? (int)$uRow['student_id'] : $studentUid;
+
+            // Find all matching slips owned by this student
+            $inPlaceholders = implode(',', array_fill(0, count($cleanIds), '?'));
+            $params = array_merge($cleanIds, [$studentUid, $studentNum]);
+
+            $stmt = $db->prepare("
+                SELECT excuse_slip_id, supporting_document 
+                FROM excuse_slips 
+                WHERE excuse_slip_id IN ($inPlaceholders) AND (student_id = ? OR student_id = ?)
+            ");
+            $stmt->execute($params);
+            $slipsToDelete = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($slipsToDelete)) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'No matching excuse slips found for your account.']);
+                exit;
+            }
+
+            $matchedIds = array_map('intval', array_column($slipsToDelete, 'excuse_slip_id'));
+            $matchedPlaceholders = implode(',', array_fill(0, count($matchedIds), '?'));
+
+            // Delete storage documents from Supabase if not shared
+            foreach ($slipsToDelete as $slip) {
+                if (!empty($slip['supporting_document'])) {
+                    $doc = $slip['supporting_document'];
+                    $otherCheck = $db->prepare("
+                        SELECT COUNT(*) FROM excuse_slips 
+                        WHERE supporting_document = ? AND excuse_slip_id NOT IN ($matchedPlaceholders)
+                    ");
+                    $otherCheck->execute(array_merge([$doc], $matchedIds));
+                    $otherCount = (int)$otherCheck->fetchColumn();
+                    if ($otherCount === 0) {
+                        try {
+                            SupabaseStorage::delete($doc);
+                        } catch (Exception $se) {}
+                    }
+                }
+            }
+
+            // Remove notifications
+            try {
+                $delNotifs = $db->prepare("
+                    DELETE FROM notifications 
+                    WHERE reference_type = 'excuse_slips' AND reference_id IN ($matchedPlaceholders)
+                ");
+                $delNotifs->execute($matchedIds);
+            } catch (Exception $ne) {}
+
+            // Delete excuse slips
+            $deleteParams = array_merge($matchedIds, [$studentUid, $studentNum]);
+            $delStmt = $db->prepare("
+                DELETE FROM excuse_slips 
+                WHERE excuse_slip_id IN ($matchedPlaceholders) AND (student_id = ? OR student_id = ?)
+            ");
+            $delStmt->execute($deleteParams);
+            $deletedCount = count($matchedIds);
+
+            echo json_encode([
+                'status'        => 'success',
+                'message'       => "Successfully deleted {$deletedCount} excuse slip" . ($deletedCount === 1 ? '' : 's') . ".",
+                'deleted_count' => $deletedCount,
+                'deleted_ids'   => $matchedIds,
             ]);
             exit;
 

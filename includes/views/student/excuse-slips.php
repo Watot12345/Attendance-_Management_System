@@ -3,8 +3,16 @@ $page_title = 'Excuse Slips';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
 require_once dirname(__DIR__, 2) . '/core/Database.php';
 
-// Fetch current student ID from session or default to Juan Dela Cruz (user_id = 1)
-$studentId = !empty($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 1);
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
+
+// Fetch current student ID from session or query param or default to Juan Dela Cruz (user_id = 1)
+$sessionUser = $_SESSION['user'] ?? null;
+$rawStudentId = !empty($sessionUser['user_id']) ? (int)$sessionUser['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (!empty($_GET['student_id']) ? (int)$_GET['student_id'] : 1));
+
+$studentId = $rawStudentId;
+$studentNumericId = $rawStudentId;
 $slips = [];
 $enrolledClasses = [];
 $enrolledTeachers = [];
@@ -15,36 +23,41 @@ try {
     $db = Database::getConnection();
 
     // 1. Fetch student's profile info
-    $uStmt = $db->prepare("SELECT user_id, first_name, last_name, email FROM users WHERE user_id = ?");
-    $uStmt->execute([$studentId]);
+    $uStmt = $db->prepare("SELECT user_id, student_id, first_name, last_name, email FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
+    $uStmt->execute([$rawStudentId, $rawStudentId]);
     $userRow = $uStmt->fetch(PDO::FETCH_ASSOC);
     if ($userRow) {
+        $studentId = (int)$userRow['user_id'];
+        $studentNumericId = !empty($userRow['student_id']) ? (int)$userRow['student_id'] : $studentId;
         $studentName = trim("{$userRow['first_name']} {$userRow['last_name']}");
     }
 
-    // 2. Fetch student's enrolled subjects & professors from class_roster
+    // 2. Fetch student's enrolled subjects & professors from class_roster (fully compatible with sql_mode=only_full_group_by)
     $rosterStmt = $db->prepare("
         SELECT 
-            cr.roster_id,
+            MIN(cr.roster_id) AS roster_id,
             cr.course_code,
             cr.course_title,
             cr.section,
             cr.teacher_id,
-            cr.schedule_day,
-            cr.scheduled_time,
-            cr.room_number,
-            cr.course,
-            cr.year_level,
+            MIN(cr.schedule_day) AS schedule_day,
+            MIN(cr.scheduled_time) AS scheduled_time,
+            MIN(cr.room_number) AS room_number,
+            MIN(cr.course) AS course,
+            MIN(cr.year_level) AS year_level,
             t.first_name AS teacher_first_name,
             t.last_name AS teacher_last_name,
             CONCAT(t.first_name, ' ', t.last_name) AS teacher_full_name
         FROM class_roster cr
         LEFT JOIN users t ON cr.teacher_id = t.user_id
-        WHERE cr.student_id = ?
-        GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id
+        WHERE cr.student_id = :uid OR cr.student_id = :student_num
+        GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id, t.first_name, t.last_name
         ORDER BY cr.course_code ASC
     ");
-    $rosterStmt->execute([$studentId]);
+    $rosterStmt->execute([
+        ':uid'         => $studentId,
+        ':student_num' => $studentNumericId,
+    ]);
     $rawClasses = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($rawClasses as $rc) {
@@ -95,12 +108,16 @@ try {
             CONCAT(t.first_name, ' ', t.last_name) AS teacher_name
         FROM excuse_slips es
         LEFT JOIN users t ON es.teacher_id = t.user_id
-        WHERE es.student_id = ?
+        WHERE es.student_id = :uid OR es.student_id = :student_num
         ORDER BY es.created_at DESC, es.excuse_slip_id DESC
     ");
-    $stmt->execute([$studentId]);
+    $stmt->execute([
+        ':uid'         => $studentId,
+        ':student_num' => $studentNumericId,
+    ]);
     $slips = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
+    error_log("Excuse slip error: " . $e->getMessage());
     $slips = [];
     $enrolledClasses = [];
     $enrolledTeachers = [];
@@ -329,6 +346,28 @@ require_once dirname(__DIR__) . '/partials/header.php';
             </div>
           </div>
 
+          <!-- Bulk Action Bar -->
+          <div id="bulk-action-bar" class="hidden mb-4 p-3 rounded-xl bg-gradient-to-r from-rose-50/90 to-red-50/80 border border-rose-200/90 flex flex-wrap items-center justify-between gap-3 shadow-2xs transition-all duration-200">
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-rose-950 select-none">
+                <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-rose-300 accent-rose-600 cursor-pointer">
+                <span>Select All (<span id="select-all-count">0</span>)</span>
+              </label>
+              <span id="selected-counter-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-200/80 text-rose-900 border border-rose-300/60">
+                0 selected
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="deselectAllSlips()" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white/80 transition cursor-pointer">
+                Deselect All
+              </button>
+              <button type="button" id="btn-bulk-delete" onclick="openBulkDeleteModal()" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-xs shadow-2xs hover:shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span id="bulk-delete-btn-text">Bulk Delete</span>
+              </button>
+            </div>
+          </div>
+
           <!-- 2-COLUMN CARDS GRID -->
           <div id="slips-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[200px]">
             <!-- JavaScript Populates 2-Column Cards Here -->
@@ -543,6 +582,85 @@ let filteredSlips = [...allSlips];
 let currentPage = 1;
 const PAGE_SIZE = 4;
 let deletingSlipId = null;
+let selectedSlipIds = new Set();
+
+function updateBulkActionBar() {
+  const bar = document.getElementById('bulk-action-bar');
+  const badge = document.getElementById('selected-counter-badge');
+  const countSpan = document.getElementById('select-all-count');
+  const selectAllCb = document.getElementById('select-all-checkbox');
+  const deleteBtn = document.getElementById('btn-bulk-delete');
+  const deleteText = document.getElementById('bulk-delete-btn-text');
+
+  if (!bar) return;
+
+  const count = selectedSlipIds.size;
+  const totalFiltered = filteredSlips.length;
+
+  if (countSpan) countSpan.textContent = totalFiltered;
+
+  if (count > 0) {
+    bar.classList.remove('hidden');
+    if (badge) badge.textContent = `${count} selected`;
+    if (deleteText) deleteText.textContent = `Bulk Delete (${count})`;
+    if (selectAllCb) {
+      selectAllCb.checked = (count === totalFiltered && totalFiltered > 0);
+      selectAllCb.indeterminate = (count > 0 && count < totalFiltered);
+    }
+  } else {
+    bar.classList.add('hidden');
+    if (selectAllCb) {
+      selectAllCb.checked = false;
+      selectAllCb.indeterminate = false;
+    }
+  }
+}
+
+function handleSlipCheckboxChange(slipId, isChecked) {
+  slipId = Number(slipId);
+  const card = document.getElementById(`slip-card-${slipId}`);
+
+  if (isChecked) {
+    selectedSlipIds.add(slipId);
+    if (card) {
+      card.classList.add('ring-2', 'ring-rose-500', 'bg-rose-50/20');
+    }
+  } else {
+    selectedSlipIds.delete(slipId);
+    if (card) {
+      card.classList.remove('ring-2', 'ring-rose-500', 'bg-rose-50/20');
+    }
+  }
+  updateBulkActionBar();
+}
+
+function toggleSelectAll(isChecked) {
+  if (isChecked) {
+    filteredSlips.forEach(s => {
+      const id = Number(s.excuse_slip_id);
+      selectedSlipIds.add(id);
+      const card = document.getElementById(`slip-card-${id}`);
+      if (card) {
+        card.classList.add('ring-2', 'ring-rose-500', 'bg-rose-50/20');
+        const cb = card.querySelector('.slip-select-checkbox');
+        if (cb) cb.checked = true;
+      }
+    });
+  } else {
+    deselectAllSlips();
+    return;
+  }
+  updateBulkActionBar();
+}
+
+function deselectAllSlips() {
+  selectedSlipIds.clear();
+  document.querySelectorAll('.slip-select-checkbox').forEach(cb => cb.checked = false);
+  document.querySelectorAll('[id^="slip-card-"]').forEach(card => {
+    card.classList.remove('ring-2', 'ring-rose-500', 'bg-rose-50/20');
+  });
+  updateBulkActionBar();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
@@ -623,6 +741,7 @@ function applyFilters() {
   }
 
   currentPage = 1;
+  updateBulkActionBar();
   renderCurrentPage();
 }
 
@@ -630,6 +749,8 @@ function renderCurrentPage() {
   const container = document.getElementById('slips-container');
   const emptyState = document.getElementById('empty-state');
   const paginationWrapper = document.getElementById('pagination-wrapper');
+
+  updateBulkActionBar();
 
   container.innerHTML = '';
 
@@ -690,10 +811,13 @@ function changePage(delta) {
 }
 
 function createSlipCardElement(slip) {
+  const isSelected = selectedSlipIds.has(Number(slip.excuse_slip_id));
   const card = document.createElement('div');
   card.id = `slip-card-${slip.excuse_slip_id}`;
   card.setAttribute('data-slip-id', slip.excuse_slip_id);
-  card.className = 'bg-white rounded-xl border p-4 shadow-2xs transition-all duration-300 hover:shadow-md flex flex-col justify-between relative overflow-hidden';
+  card.className = `bg-white rounded-xl border p-4 shadow-2xs transition-all duration-300 hover:shadow-md flex flex-col justify-between relative overflow-hidden ${
+    isSelected ? 'ring-2 ring-rose-500 bg-rose-50/20' : ''
+  }`;
 
   const status = (slip.status || 'pending').toLowerCase();
   const isDeclined = (status === 'declined' || status === 'rejected');
@@ -772,9 +896,16 @@ function createSlipCardElement(slip) {
   card.innerHTML = `
     <div>
       <div class="flex items-center justify-between gap-1 mb-2">
-        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
-          ${statusText}
-        </span>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" 
+                 class="slip-select-checkbox w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 accent-rose-600 cursor-pointer" 
+                 data-slip-id="${slip.excuse_slip_id}" 
+                 ${isSelected ? 'checked' : ''} 
+                 onchange="handleSlipCheckboxChange(${slip.excuse_slip_id}, this.checked)">
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
+            ${statusText}
+          </span>
+        </div>
         <div class="flex items-center gap-1">
           <span class="text-[10px] font-mono text-slate-400 mr-0.5">#${slip.excuse_slip_id}</span>
           ${editBtn}
@@ -1021,6 +1152,118 @@ async function openDeleteModal(slipId) {
         // Error toaster notification
         if (window.APP?.toast) {
           APP.toast(err.message || 'Failed to delete excuse slip.', 'error', 5000);
+        }
+        throw err;
+      }
+    }
+  });
+}
+
+// --- BULK DELETE ACTION (POWERED BY REUSABLE CONFIRMATION MODAL & MULTI-CARD LOADING EFFECT) ---
+function openBulkDeleteModal() {
+  const count = selectedSlipIds.size;
+  if (count === 0) {
+    if (window.APP?.toast) {
+      APP.toast('Please select at least one excuse slip to delete.', 'warning');
+    }
+    return;
+  }
+
+  const ids = Array.from(selectedSlipIds);
+  const sampleSlips = allSlips.filter(s => ids.includes(Number(s.excuse_slip_id)));
+  const sampleList = sampleSlips.slice(0, 4).map(s => `• <strong>Slip #${s.excuse_slip_id}</strong>: ${escapeHtml(s.subject || 'Excuse Slip')} (${escapeHtml(s.reason || 'Absence')})`).join('<br>');
+  const moreText = count > 4 ? `<br><span class="text-[11px] text-slate-500 italic">...and ${count - 4} more selected</span>` : '';
+
+  APP.confirm({
+    title: `Delete ${count} Selected Excuse Slip${count === 1 ? '' : 's'}?`,
+    message: `Are you sure you want to permanently delete these <strong>${count} excuse slip${count === 1 ? '' : 's'}</strong>?<br><div class="mt-2.5 p-2.5 bg-slate-50 rounded-lg text-xs text-slate-700 leading-relaxed border border-slate-200/80">${sampleList}${moreText}</div><span class="text-xs text-rose-600 mt-2 block font-medium">⚠️ This action cannot be undone and will permanently remove records and any documents in Supabase Storage.</span>`,
+    type: 'danger',
+    confirmText: `Yes, Delete (${count})`,
+    confirmLoadingText: 'Deleting selected slips...',
+    cancelText: 'Cancel',
+    async onConfirm() {
+      // 1. Loading overlay on each selected card
+      const overlays = [];
+      ids.forEach(id => {
+        const card = document.getElementById(`slip-card-${id}`);
+        if (card) {
+          card.classList.add('pointer-events-none', 'ring-2', 'ring-rose-400');
+          const overlay = document.createElement('div');
+          overlay.id = `bulk-overlay-${id}`;
+          overlay.className = 'absolute inset-0 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 z-20 transition-opacity duration-200';
+          overlay.innerHTML = `
+            <svg class="w-5 h-5 animate-spin text-rose-600" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-[10px] font-bold text-rose-700 animate-pulse">Deleting...</span>
+          `;
+          card.appendChild(overlay);
+          overlays.push(overlay);
+        }
+      });
+
+      if (window.APP?.toast) {
+        APP.toast(`Deleting ${count} selected excuse slip${count === 1 ? '' : 's'}...`, 'info', 2500);
+      }
+
+      try {
+        const endpoint = window.url ? window.url('api/excuses/bulk-delete') : '/api/excuses/bulk-delete';
+        const studentId = document.getElementById('excuse-student-id')?.value || '1';
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            excuse_slip_ids: ids,
+            student_id: studentId
+          })
+        });
+
+        const json = await res.json();
+        if (!res.ok || json.status !== 'success') {
+          throw new Error(json.message || 'Failed to complete bulk delete.');
+        }
+
+        // 2. Animate out cards
+        ids.forEach(id => {
+          const card = document.getElementById(`slip-card-${id}`);
+          if (card) {
+            card.style.transform = 'scale(0.9) translateY(10px)';
+            card.style.opacity = '0';
+          }
+        });
+        await new Promise(r => setTimeout(r, 260));
+
+        // 3. Update data state & cache
+        const deletedSet = new Set((json.deleted_ids || ids).map(Number));
+        allSlips = allSlips.filter(s => !deletedSet.has(Number(s.excuse_slip_id)));
+        selectedSlipIds.clear();
+        SlipCache.invalidate();
+
+        updateBulkActionBar();
+        applyFilters();
+
+        if (window.APP?.toast) {
+          APP.toast(json.message || `Successfully deleted ${count} excuse slip${count === 1 ? '' : 's'}.`, 'success', 4000);
+        }
+
+      } catch (err) {
+        console.error('Bulk Delete Error:', err);
+        // Remove overlays on error
+        ids.forEach(id => {
+          const card = document.getElementById(`slip-card-${id}`);
+          if (card) {
+            card.classList.remove('pointer-events-none');
+            const overlay = document.getElementById(`bulk-overlay-${id}`);
+            if (overlay) overlay.remove();
+          }
+        });
+        if (window.APP?.toast) {
+          APP.toast(err.message || 'Failed to delete selected excuse slips.', 'error', 5000);
         }
         throw err;
       }
