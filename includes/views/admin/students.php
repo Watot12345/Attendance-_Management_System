@@ -82,7 +82,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-amber-600">16</div>
+            <div class="text-xl font-black text-amber-600"><?= number_format($pendingSetup ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Pending Setup</div>
           </div>
         </div>
@@ -124,7 +124,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <div class="text-xs text-slate-400 font-medium">
-          Showing <span id="visible-count" class="font-bold text-slate-800">4</span> of <strong class="text-slate-800">1,248</strong> Students
+          Showing <span id="visible-count" class="font-bold text-slate-800"><?= count($students) ?></span> of <strong class="text-slate-800"><?= number_format($totalStudents ?? 0) ?></strong> Students
         </div>
       </div>
 
@@ -237,14 +237,14 @@ require_once dirname(__DIR__) . '/partials/header.php';
     </div>
 
     <!-- Modal Form Body -->
-    <form id="manual-student-form" onsubmit="handleManualStudentSubmit(event)" class="p-6 space-y-4">
+    <form id="manual-student-form" action="<?php echo url('admin/students/store'); ?>" method="POST" class="p-6 space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Student Number / ID -->
         <div>
           <label for="m-student-id" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Student Number / ID <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-student-id" required placeholder="e.g. 2026-00127" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-slate-800 outline-none">
+          <input type="text" id="m-student-id" name="student_id" required placeholder="e.g. 2026-00127" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-slate-800 outline-none">
         </div>
 
         <!-- Full Name -->
@@ -252,7 +252,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-student-name" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Student Full Name <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-student-name" required placeholder="e.g. Christian Paul D. Ramos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-slate-800 outline-none">
+          <input type="text" id="m-student-name" name="full_name" required placeholder="e.g. Christian Paul D. Ramos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-slate-800 outline-none">
         </div>
       </div>
 
@@ -262,7 +262,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-course" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Course Program <span class="text-rose-500">*</span>
           </label>
-          <select id="m-course" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <select id="m-course" name="course" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
             <option value="BSIT">BS Information Technology (BSIT)</option>
             <option value="BSIS">BS Information Systems (BSIS)</option>
             <option value="BSCS">BS Computer Science (BSCS)</option>
@@ -275,7 +275,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-year" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Year Level <span class="text-rose-500">*</span>
           </label>
-          <select id="m-year" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <select id="m-year" name="year_level" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
             <option value="1st Year">1st Year</option>
             <option value="2nd Year">2nd Year</option>
             <option value="3rd Year" selected>3rd Year</option>
@@ -288,7 +288,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-section" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Assigned Section <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-section" required placeholder="e.g. 3-A or 3-B" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <input type="text" id="m-section" name="section" required placeholder="e.g. 3-A or 3-B" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
         </div>
       </div>
 
@@ -298,7 +298,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-email" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Institutional Email <span class="text-rose-500">*</span>
           </label>
-          <input type="email" id="m-email" required placeholder="student.name@bestlink.edu.ph" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
+          <input type="email" id="m-email" name="email" required placeholder="student.name@bestlink.edu.ph" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
         </div>
 
         <!-- Parent Contact Number / Email -->
@@ -306,7 +306,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-parent" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Parent/Guardian Mobile or Email
           </label>
-          <input type="text" id="m-parent" placeholder="0917-000-0000 / parent@email.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
+          <input type="text" id="m-parent" name="parent_contact" placeholder="0917-000-0000 / parent@email.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
         </div>
       </div>
 
@@ -663,6 +663,24 @@ function processExcelImport() {
   closeExcelModal();
   APP.toast(`Successfully imported and provisioned ${sampleImported.length} student accounts from Excel file!`, 'success');
 }
+
+// URL notification handler (Sonner toast on redirect)
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('created')) {
+    const studentName = urlParams.get('created');
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast.success('Student account for ' + studentName + ' created successfully!');
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (urlParams.has('error')) {
+    const errorMsg = urlParams.get('error');
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast.error(errorMsg);
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
