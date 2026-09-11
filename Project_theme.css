@@ -454,3 +454,73 @@ h1, h2, h3, h4, h5, h6,
 @media (prefers-reduced-motion:reduce) {
   *, *::before, *::after { transition:none !important; animation:none !important; }
 }
+
+/* ── Universal Backdrop Blur Utilities ───────────────────── */
+.backdrop-blur-xs {
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+}
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+.backdrop-blur {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+.backdrop-blur-md {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.backdrop-blur-lg {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* ── Universal Confirmation Modal Supreme Front & Full-Window Blur ──── */
+#global-confirm-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999 !important;
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+#confirm-modal-box {
+  position: relative !important;
+  z-index: 1000000 !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Blur the header/navbar, sidebar, and whole application layout behind modal */
+body.confirm-modal-open {
+  overflow: hidden !important;
+}
+
+body.confirm-modal-open .app-layout,
+body.confirm-modal-open #topbar,
+body.confirm-modal-open #sidebar,
+body.confirm-modal-open .main-content,
+body.confirm-modal-open .page-body {
+  filter: blur(6px) !important;
+  -webkit-filter: blur(6px) !important;
+  transition: filter 0.25s ease-out !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Ensure modal contents and toast notifications remain razor-sharp */
+#global-confirm-modal,
+#global-confirm-modal *,
+#sonner-toast-container,
+#sonner-toast-container * {
+  filter: none !important;
+  -webkit-filter: none !important;
+}

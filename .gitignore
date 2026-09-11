@@ -1,5 +1,8 @@
 # Environment variables
 .env
+*.sql
+*.gitignore
+*.md
 
 # Dependencies
 /vendor/

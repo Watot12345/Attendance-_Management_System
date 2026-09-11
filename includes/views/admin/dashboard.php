@@ -169,15 +169,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <h3 class="font-bold text-slate-800 text-sm mb-3">System Architecture Guardrails</h3>
             <ul class="text-xs text-slate-600 space-y-2.5">
               <li class="flex items-start gap-2">
-                <span class="text-emerald-600 font-bold">✓</span>
+                <span class="text-emerald-600 font-bold"></span>
                 <span><strong>Role Isolation:</strong> Only Admin can create student accounts; teachers only manage class enrollments.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-emerald-600 font-bold">✓</span>
+                <span class="text-emerald-600 font-bold"></span>
                 <span><strong>Anti-Screenshot QR:</strong> 15-second rotation window on live teacher session projectors.</span>
               </li>
               <li class="flex items-start gap-2">
-                <span class="text-emerald-600 font-bold">✓</span>
+                <span class="text-emerald-600 font-bold"></span>
                 <span><strong>Audit Trail:</strong> Manual attendance adjustments require justification and author logging.</span>
               </li>
             </ul>

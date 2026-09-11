@@ -542,14 +542,14 @@ function handleTeacherFileSelected(event) {
       <td class="py-2 px-3 font-bold text-slate-800">Prof. Elena D. Bautista</td>
       <td class="py-2 px-3">College of Computer Studies</td>
       <td class="py-2 px-3">e.bautista@bestlink.edu.ph</td>
-      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]">✓ Valid Row</span></td>
+      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]"> Valid Row</span></td>
     </tr>
     <tr class="hover:bg-slate-50">
       <td class="py-2 px-3 font-mono font-bold text-purple-700">EMP-2026-0089</td>
       <td class="py-2 px-3 font-bold text-slate-800">Prof. Nelson K. Cruz</td>
       <td class="py-2 px-3">College of Business Admin</td>
       <td class="py-2 px-3">n.cruz@bestlink.edu.ph</td>
-      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]">✓ Valid Row</span></td>
+      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]"> Valid Row</span></td>
     </tr>
   `;
 

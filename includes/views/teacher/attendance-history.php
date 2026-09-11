@@ -105,7 +105,7 @@
                 <tr class="bg-rose-50/30">
                   <td class="font-mono text-xs font-semibold text-rose-700">2026-00125</td>
                   <td class="font-semibold text-rose-900">Pedro Reyes</td>
-                  <td><span class="badge badge-absent">✕ Absent</span></td>
+                  <td><span class="badge badge-absent"> Absent</span></td>
                   <td>—</td>
                   <td>Auto-Absence</td>
                   <td class="text-xs text-rose-600">Did not scan before session close</td>
@@ -116,7 +116,7 @@
                 <tr class="bg-rose-50/30">
                   <td class="font-mono text-xs font-semibold text-rose-700">2026-00129</td>
                   <td class="font-semibold text-rose-900">Robert Cruz</td>
-                  <td><span class="badge badge-absent">✕ Absent</span></td>
+                  <td><span class="badge badge-absent"> Absent</span></td>
                   <td>—</td>
                   <td>Auto-Absence</td>
                   <td class="text-xs text-rose-600">Did not scan before session close</td>
@@ -183,7 +183,7 @@
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <h3 class="text-lg font-bold text-text-primary">Manual Attendance Override</h3>
-        <button type="button" onclick="closeCorrectionModal()" class="text-text-muted hover:text-slate-800">✕</button>
+        <button type="button" onclick="closeCorrectionModal()" class="text-text-muted hover:text-slate-800"></button>
       </div>
 
       <form onsubmit="submitCorrection(event)">

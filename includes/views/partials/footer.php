@@ -1,3 +1,6 @@
+  <!-- Reusable Global Confirmation Modal Component -->
+  <?php require_once __DIR__ . '/confirmation-modal.php'; ?>
+
   <!-- Sonner Toast Container -->
   <ol id="sonner-toast-container"
       position="top-right"

@@ -43,6 +43,8 @@ class Router {
         '/teacher/roster'        => 'teacher/classes.php',
         '/teacher/live-session'  => 'teacher/live-session.php',
         '/teacher/attendance-history' => 'teacher/attendance-history.php',
+        '/teacher/attendance/history' => 'teacher/attendance-history.php',
+        '/teacher/history'       => 'teacher/attendance-history.php',
         '/teacher/daily-attendance' => 'attendance/daily.php',
         '/teacher/attendance'    => 'attendance/daily.php',
         '/teacher/tardy-logs'    => 'alerts/history.php',
@@ -91,6 +93,11 @@ class Router {
 
         // API Endpoints
         '/api/users/delete'      => 'UserController@apiDelete',
+        '/api/excuses/submit'    => 'ExcuseController@submit',
+        '/api/excuses/update'    => 'ExcuseController@update',
+        '/api/excuses/delete'    => 'ExcuseController@delete',
+        '/api/excuses/list'      => 'ExcuseController@listStudent',
+        '/api/excuses/review'    => 'ExcuseController@review',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',

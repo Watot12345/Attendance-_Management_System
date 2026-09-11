@@ -28,6 +28,10 @@
 
           <!-- Controls -->
           <div class="flex items-center gap-3">
+            <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-2 shadow-xs" onclick="manualGenerateQR()" title="Immediately generate a new token and QR code">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Generate QR Code
+            </button>
             <button type="button" class="btn btn-secondary" onclick="toggleFullscreen()">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
               Fullscreen Mode
@@ -45,7 +49,7 @@
             <div class="w-full">
               <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                 <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Dynamic Anti-Screenshot QR</span>
-                <span class="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-text-secondary" id="token-display">LAMS-8A2F1C</span>
+                <span class="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-text-secondary" id="token-display">LAMS-5DF97C</span>
               </div>
 
               <!-- Animated Rotating Countdown Bar -->
@@ -60,12 +64,20 @@
                 </div>
                 <div class="flex items-center gap-2 mt-3 text-xs font-semibold text-slate-600">
                   <svg class="w-3.5 h-3.5 text-teal-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  <span>Rotates in <span id="countdown-text" class="text-teal-700 font-bold">15s</span></span>
+                  <span>Rotates in <span id="countdown-text" class="text-teal-700 font-bold">1h 00m 00s</span></span>
                 </div>
               </div>
 
-              <p class="text-xs text-text-muted mt-4">
-                Students must scan with an authenticated device enrolled in <strong>BSIT 3-A</strong>. Screenshots expire after 15 seconds.
+              <!-- Generate QR Button in Card -->
+              <div class="mt-4 flex items-center justify-center">
+                <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-2 py-2 px-4 shadow-sm rounded-xl" onclick="manualGenerateQR()" title="Generate / rotate new QR code">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  <span>Generate QR Code</span>
+                </button>
+              </div>
+
+              <p id="qr-footer-note" class="text-xs text-text-muted mt-3">
+                Students must scan with an authenticated device enrolled in <strong>BSIT 3-A</strong>. Screenshots expire after 1 hour.
               </p>
             </div>
 
@@ -219,34 +231,101 @@
   <script src="<?= url('assets/js/qrcode-generator.js') ?>"></script>
 
   <script>
-    let remainingSeconds = 15;
+    const STORAGE_KEY = 'lams_dynamic_qr_session';
+    const ROTATION_INTERVAL_SECONDS = 3600; // 1 hour
+    let remainingSeconds = ROTATION_INTERVAL_SECONDS;
     let qrGenerator = null;
+    let currentExpiresAt = 0;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialize dynamic QR renderer
-      qrGenerator = new QRCode('qrcode-container', {
+    function formatCountdown(totalSecs) {
+      const hours = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+      if (hours > 0) {
+        return `${hours}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+      }
+      return `${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+    }
+
+    function formatCountdown(totalSecs) {
+      const hours = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      const secs = totalSecs % 60;
+      if (hours > 0) {
+        return `${hours}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+      }
+      return `${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+    }
+
+    function renderQRCode(content) {
+      const container = document.getElementById('qrcode-container');
+      if (!container) return;
+      container.innerHTML = '';
+      qrGenerator = new QRCode(container, {
         width: 250,
         height: 250,
-        colorDark: '#0B1929'
+        colorDark: '#0B1929',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
       });
-      generateNewToken();
+      qrGenerator.makeCode(content);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initOrRestoreSession();
       setInterval(tickTimer, 1000);
     });
 
+    function initOrRestoreSession() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const session = JSON.parse(stored);
+          const now = Date.now();
+          if (session.expiresAt && session.expiresAt > now && session.token && session.payload) {
+            currentExpiresAt = session.expiresAt;
+            remainingSeconds = Math.max(0, Math.floor((currentExpiresAt - now) / 1000));
+
+            document.getElementById('token-display').textContent = session.token;
+            renderQRCode(session.payload);
+            updateTimerDisplay();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read session from localStorage', e);
+      }
+
+      // Initial direct generation (QR code is always present)
+      generateNewToken('LAMS-5DF97C');
+    }
+
     function tickTimer() {
-      remainingSeconds--;
+      if (currentExpiresAt <= 0) return;
+
+      const now = Date.now();
+      remainingSeconds = Math.max(0, Math.floor((currentExpiresAt - now) / 1000));
+
       if (remainingSeconds <= 0) {
         generateNewToken();
-        remainingSeconds = 15;
+      } else {
+        updateTimerDisplay();
       }
-      document.getElementById('countdown-text').textContent = remainingSeconds + 's';
-      const pct = (remainingSeconds / 15) * 100;
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById('countdown-text').textContent = formatCountdown(remainingSeconds);
+      const pct = Math.min(100, Math.max(0, (remainingSeconds / ROTATION_INTERVAL_SECONDS) * 100));
       document.getElementById('qr-timer-bar').style.width = pct + '%';
     }
 
-    function generateNewToken() {
+    function generateNewToken(presetToken = null) {
       const randomHex = Math.random().toString(16).substr(2, 6).toUpperCase();
-      const token = 'LAMS-' + randomHex;
+      const token = presetToken || ('LAMS-' + randomHex);
+      const now = Date.now();
+      currentExpiresAt = now + (ROTATION_INTERVAL_SECONDS * 1000);
+      remainingSeconds = ROTATION_INTERVAL_SECONDS;
+
       document.getElementById('token-display').textContent = token;
 
       const payload = JSON.stringify({
@@ -254,11 +333,30 @@
         class_id: 'cls-1',
         section: 'BSIT 3-A',
         token: token,
-        created: Date.now()
+        created: now,
+        expires_at: currentExpiresAt
       });
 
-      if (qrGenerator) {
-        qrGenerator.makeCode(payload);
+      // Persist in localStorage so page reloads keep the current token and timer
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          token: token,
+          payload: payload,
+          expiresAt: currentExpiresAt,
+          createdAt: now
+        }));
+      } catch (e) {
+        console.warn('Could not save session to localStorage', e);
+      }
+
+      renderQRCode(payload);
+      updateTimerDisplay();
+    }
+
+    function manualGenerateQR() {
+      generateNewToken();
+      if (window.APP && typeof APP.showToast === 'function') {
+        APP.showToast('New dynamic QR code generated successfully!', 'success');
       }
     }
 
@@ -280,6 +378,9 @@
 
     function executeCloseSession() {
       closeModal();
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
       APP.showToast('Session closed. 2 students automatically marked Absent.', 'success');
       setTimeout(() => {
         window.location.href = '<?= url("teacher/attendance/history") ?>';

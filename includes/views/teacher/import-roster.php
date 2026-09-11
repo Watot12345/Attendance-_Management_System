@@ -179,7 +179,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
               </div>
               <div id="chosen-file-badge" class="hidden mt-3 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between text-xs font-medium text-teal-800">
                 <span id="chosen-file-name">students_bsit3a_roster.xlsx</span>
-                <span class="text-emerald-600 font-bold">Ready for Validation ✓</span>
+                <span class="text-emerald-600 font-bold">Ready for Validation </span>
               </div>
             </div>
 
@@ -239,7 +239,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <td class="font-mono text-xs font-bold text-slate-800">2026-00123</td>
                   <td class="font-medium text-slate-900">Juan Dela Cruz</td>
                   <td class="text-slate-700 font-medium">Juan Dela Cruz (BSIT 3)</td>
-                  <td><span class="badge badge-present">✓ Master Match</span></td>
+                  <td><span class="badge badge-present"> Master Match</span></td>
                   <td><span class="text-xs text-emerald-600 font-semibold">Will Enroll</span></td>
                 </tr>
                 <tr>
@@ -253,21 +253,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <td class="font-mono text-xs font-bold text-slate-800">2026-00125</td>
                   <td class="font-medium text-slate-900">Pedro Reyes</td>
                   <td class="text-slate-700 font-medium">Pedro Reyes (BSIT 3)</td>
-                  <td><span class="badge badge-present">✓ Master Match</span></td>
+                  <td><span class="badge badge-present"> Master Match</span></td>
                   <td><span class="text-xs text-emerald-600 font-semibold">Will Enroll</span></td>
                 </tr>
                 <tr>
                   <td class="font-mono text-xs font-bold text-slate-800">2026-00126</td>
                   <td class="font-medium text-slate-900">Ana Mendoza</td>
                   <td class="text-slate-700 font-medium">Ana Mendoza (BSIT 3)</td>
-                  <td><span class="badge badge-present">✓ Master Match</span></td>
+                  <td><span class="badge badge-present"> Master Match</span></td>
                   <td><span class="text-xs text-emerald-600 font-semibold">Will Enroll</span></td>
                 </tr>
                 <tr class="bg-rose-50/50">
                   <td class="font-mono text-xs font-bold text-rose-700">2026-99999</td>
                   <td class="text-rose-800 font-medium">Unregistered Student</td>
                   <td class="text-rose-600 italic">No record found in Student Master</td>
-                  <td><span class="badge badge-absent">✕ Not in Master</span></td>
+                  <td><span class="badge badge-absent"> Not in Master</span></td>
                   <td><span class="text-xs text-rose-600 font-semibold">Skipped</span></td>
                 </tr>
               </tbody>
@@ -276,7 +276,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           <div class="flex justify-between items-center pt-2">
             <button type="button" class="btn btn-secondary" onclick="backToStep1()">← Back to Upload</button>
-            <button type="button" class="btn btn-primary" onclick="confirmImport()">Confirm &amp; Import 4 Students ✓</button>
+            <button type="button" class="btn btn-primary" onclick="confirmImport()">Confirm &amp; Import 4 Students </button>
           </div>
         </div>
 

@@ -95,7 +95,7 @@
                   <td class="font-medium">Dela Cruz, Juan</td>
                   <td>parent.delacruz@email.com</td>
                   <td><span class="badge badge-absent">Absent</span></td>
-                  <td><span class="badge badge-sent">✓ Sent</span></td>
+                  <td><span class="badge badge-sent"> Sent</span></td>
                   <td class="text-sm" style="color:var(--color-text-secondary)">08:45 AM</td>
                   <td class="text-right">
                     <button type="button" class="btn btn-ghost btn-sm" onclick="APP.openModal('Alert Details', '<p class=text-sm><strong>Recipient:</strong> parent.delacruz@email.com<br><strong>Subject:</strong> BCP Attendance Alert: Juan Dela Cruz marked absent on Sep 7, 2026.<br><strong>Status:</strong> Delivered via SMTP (250 OK).</p>', '<button class=\'btn btn-secondary btn-sm\' onclick=\'APP.closeModal()\'>Close</button>')">View</button>
@@ -105,7 +105,7 @@
                   <td class="font-medium">Santos, Maria</td>
                   <td>maria.parent@email.com</td>
                   <td><span class="badge badge-tardy">Tardy</span></td>
-                  <td><span class="badge badge-sent">✓ Sent</span></td>
+                  <td><span class="badge badge-sent"> Sent</span></td>
                   <td class="text-sm" style="color:var(--color-text-secondary)">08:32 AM</td>
                   <td class="text-right">
                     <button type="button" class="btn btn-ghost btn-sm" onclick="APP.openModal('Alert Details', '<p class=text-sm><strong>Recipient:</strong> maria.parent@email.com<br><strong>Subject:</strong> BCP Attendance Alert: Maria Santos arrived 18 mins late.<br><strong>Status:</strong> Delivered via SMTP (250 OK).</p>', '<button class=\'btn btn-secondary btn-sm\' onclick=\'APP.closeModal()\'>Close</button>')">View</button>
@@ -115,7 +115,7 @@
                   <td class="font-medium">Reyes, Pedro</td>
                   <td>reyes.p@email.com</td>
                   <td><span class="badge badge-absent">Absent</span></td>
-                  <td><span class="badge badge-pending">⏳ Pending</span></td>
+                  <td><span class="badge badge-pending"> Pending</span></td>
                   <td class="text-sm" style="color:var(--color-text-secondary)">Queued (retry 1/3)</td>
                   <td class="text-right">
                     <button type="button" class="btn btn-ghost btn-sm" onclick="APP.showToast('Resending alert to reyes.p@email.com...', 'info')">Resend</button>

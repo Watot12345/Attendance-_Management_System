@@ -14,7 +14,7 @@ $isStatusOnly = in_array('--status', $argv ?? []) || in_array('-s', $argv ?? [])
 
 try {
     $db = Database::getConnection();
-    echo "✓ Connected to Aiven MySQL successfully.\n";
+    echo " Connected to Aiven MySQL successfully.\n";
 
     if (!$isStatusOnly) {
         $sqlFile = __DIR__ . '/schema.sql';
@@ -22,12 +22,12 @@ try {
             throw new Exception("schema.sql file not found at: {$sqlFile}");
         }
 
-        echo "✓ Reading schema.sql...\n";
+        echo " Reading schema.sql...\n";
         $sql = file_get_contents($sqlFile);
 
-        echo "✓ Executing schema migration...\n";
+        echo " Executing schema migration...\n";
         $db->exec($sql);
-        echo "✓ Schema execution finished successfully!\n\n";
+        echo " Schema execution finished successfully!\n\n";
     } else {
         echo "ℹ Running in status-only mode (viewing tables)...\n\n";
     }
@@ -49,7 +49,7 @@ try {
     }
 
     echo "---------------------------------------------------------------\n";
-    echo "✓ Migration complete! All tables and seed data are ready.\n";
+    echo " Migration complete! All tables and seed data are ready.\n";
     echo "===============================================================\n";
 
 } catch (PDOException $e) {

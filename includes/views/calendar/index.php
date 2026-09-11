@@ -37,7 +37,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-            ✓
+            
           </div>
           <div>
             <div class="text-lg font-black text-emerald-600">18 Days</div>
@@ -57,7 +57,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
-            ✕
+            
           </div>
           <div>
             <div class="text-lg font-black text-rose-600">1 Day</div>
@@ -121,7 +121,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="font-bold text-slate-800 text-xs">1</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <!-- Sep 2 (Present) -->
@@ -130,7 +130,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="font-bold text-slate-800 text-xs">2</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <!-- Sep 3 (Tardy) -->
@@ -148,7 +148,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="font-bold text-slate-800 text-xs">4</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <!-- Sep 5 (Weekend) -->
@@ -165,7 +165,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             
             <div onclick="showCalendarDayInfo('Sep 7, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">7</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 8, 2026', 'Present', 'IT312 • Present (10:01 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between ring-2 ring-indigo-500">
@@ -173,7 +173,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="font-bold text-indigo-700 text-xs">8 (Today)</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <!-- Sep 9 (Absent) -->
@@ -182,17 +182,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="font-bold text-slate-800 text-xs">9</span>
                 <span class="w-2 h-2 rounded-full bg-rose-500"></span>
               </div>
-              <div class="text-[10px] font-bold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded-md text-center">Absent ✕</div>
+              <div class="text-[10px] font-bold text-rose-700 bg-rose-100/70 px-1.5 py-0.5 rounded-md text-center">Absent </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 10, 2026', 'Present', 'IT312 • Present (09:58 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">10</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 11, 2026', 'Present', 'IT311 • Present (08:04 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">11</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div class="h-20 sm:h-24 p-2.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 flex flex-col justify-between">
@@ -208,7 +208,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <div onclick="showCalendarDayInfo('Sep 14, 2026', 'Present', 'IT311 • Present (08:02 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">14</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <!-- Sep 15 (Excused) -->
@@ -222,17 +222,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <div onclick="showCalendarDayInfo('Sep 16, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">16</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 17, 2026', 'Present', 'IT312 • Present (10:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">17</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 18, 2026', 'Present', 'IT311 • Present (08:05 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">18</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div class="h-20 sm:h-24 p-2.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 flex flex-col justify-between">
@@ -248,27 +248,27 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <div onclick="showCalendarDayInfo('Sep 21, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">21</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 22, 2026', 'Present', 'IT312 • Present (10:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">22</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 23, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">23</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 24, 2026', 'Present', 'IT312 • Present (10:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">24</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 25, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">25</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div class="h-20 sm:h-24 p-2.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 flex flex-col justify-between">
@@ -284,17 +284,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <div onclick="showCalendarDayInfo('Sep 28, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">28</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 29, 2026', 'Present', 'IT312 • Present (10:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">29</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div onclick="showCalendarDayInfo('Sep 30, 2026', 'Present', 'IT311 • Present (08:00 AM)')" class="h-20 sm:h-24 p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between">
               <span class="font-bold text-slate-800 text-xs">30</span>
-              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present ✓</div>
+              <div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-md text-center">Present </div>
             </div>
 
             <div class="h-20 sm:h-24 p-2 rounded-2xl bg-slate-50/50 border border-slate-100 opacity-30"></div>

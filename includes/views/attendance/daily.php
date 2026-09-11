@@ -197,21 +197,21 @@
                     <td>BCP-002</td>
                     <td>08:18 AM</td>
                     <td><span class="font-medium" style="color:var(--color-tardy)">+18 min</span></td>
-                    <td><span class="badge badge-sent">✓ Sent</span></td>
+                    <td><span class="badge badge-sent"> Sent</span></td>
                   </tr>
                   <tr>
                     <td class="font-medium">Villanueva, Carlo</td>
                     <td>BCP-012</td>
                     <td>08:22 AM</td>
                     <td><span class="font-medium" style="color:var(--color-tardy)">+22 min</span></td>
-                    <td><span class="badge badge-sent">✓ Sent</span></td>
+                    <td><span class="badge badge-sent"> Sent</span></td>
                   </tr>
                   <tr>
                     <td class="font-medium">Aquino, Bea</td>
                     <td>BCP-015</td>
                     <td>08:10 AM</td>
                     <td><span class="font-medium" style="color:var(--color-tardy)">+10 min</span></td>
-                    <td><span class="badge badge-pending">⏳ Pending</span></td>
+                    <td><span class="badge badge-pending"> Pending</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -239,14 +239,14 @@
                     <td class="font-medium">Reyes, Pedro</td>
                     <td>BCP-003</td>
                     <td>Sep 7, 2026</td>
-                    <td><span class="badge badge-sent">✓ Sent</span></td>
+                    <td><span class="badge badge-sent"> Sent</span></td>
                     <td><a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="text-sm font-medium" style="color:var(--color-teal-500)">Submit →</a></td>
                   </tr>
                   <tr>
                     <td class="font-medium">Moreno, Alex</td>
                     <td>BCP-019</td>
                     <td>Sep 7, 2026</td>
-                    <td><span class="badge badge-pending">⏳ Pending</span></td>
+                    <td><span class="badge badge-pending"> Pending</span></td>
                     <td><span class="text-sm" style="color:var(--color-text-muted)">None</span></td>
                   </tr>
                 </tbody>

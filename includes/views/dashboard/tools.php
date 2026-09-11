@@ -99,7 +99,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
               <div>
                 <h3 class="text-lg font-bold" style="color:var(--color-text-primary)">Award Recipients — September 2026</h3>
-                <p class="text-sm mt-0.5" style="color:var(--color-present)">✓ 14 students qualified with 100% attendance</p>
+                <p class="text-sm mt-0.5" style="color:var(--color-present)"> 14 students qualified with 100% attendance</p>
               </div>
               <div class="flex gap-2">
                 <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Batch notifications dispatched to all 14 parents.', 'success')">

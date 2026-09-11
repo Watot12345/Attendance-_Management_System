@@ -333,7 +333,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <h2 id="modal-course-title" class="text-lg font-bold text-slate-800">IT301 — Web Development 2</h2>
       </div>
       <button type="button" onclick="closeRosterModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center font-bold text-sm transition">
-        ✕
+        
       </button>
     </div>
 

@@ -104,8 +104,8 @@ if (!function_exists('isActiveLink')) {
       </a>
 
       <!-- Attendance History & Audit -->
-      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/attendance-history', $pathOnly) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/attendance-history', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         <span>Attendance History &amp; Audit</span>
       </a>
 

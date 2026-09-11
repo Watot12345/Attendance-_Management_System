@@ -131,7 +131,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <td class="py-2.5 px-3 font-semibold text-slate-800">Juan Dela Cruz</td>
                 <td class="py-2.5 px-3">juan.delacruz@bestlink.edu.ph</td>
                 <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">BSIT 3-A</span></td>
-                <td class="py-2.5 px-3"><span class="text-emerald-700 font-bold">✓ Valid (New Student)</span></td>
+                <td class="py-2.5 px-3"><span class="text-emerald-700 font-bold"> Valid (New Student)</span></td>
               </tr>
               <tr class="bg-emerald-50/20">
                 <td class="py-2.5 px-3 text-slate-400">2</td>
@@ -139,7 +139,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <td class="py-2.5 px-3 font-semibold text-slate-800">Maria Santos</td>
                 <td class="py-2.5 px-3">maria.santos@bestlink.edu.ph</td>
                 <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">BSIT 3-A</span></td>
-                <td class="py-2.5 px-3"><span class="text-emerald-700 font-bold">✓ Valid (New Student)</span></td>
+                <td class="py-2.5 px-3"><span class="text-emerald-700 font-bold"> Valid (New Student)</span></td>
               </tr>
               <tr class="bg-rose-50/30">
                 <td class="py-2.5 px-3 text-slate-400">3</td>

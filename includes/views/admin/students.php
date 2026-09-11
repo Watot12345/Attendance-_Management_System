@@ -630,21 +630,21 @@ function handleExcelFileSelected(event) {
       <td class="py-2 px-3 font-bold text-slate-800">Jerome A. Valdez</td>
       <td class="py-2 px-3">BSIT</td>
       <td class="py-2 px-3 font-bold text-blue-700">3-A</td>
-      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]">✓ Valid Row</span></td>
+      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]"> Valid Row</span></td>
     </tr>
     <tr class="hover:bg-slate-50">
       <td class="py-2 px-3 font-mono font-bold text-blue-700">2026-00151</td>
       <td class="py-2 px-3 font-bold text-slate-800">Alyssa Jane Mercado</td>
       <td class="py-2 px-3">BSIT</td>
       <td class="py-2 px-3 font-bold text-blue-700">3-A</td>
-      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]">✓ Valid Row</span></td>
+      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]"> Valid Row</span></td>
     </tr>
     <tr class="hover:bg-slate-50">
       <td class="py-2 px-3 font-mono font-bold text-blue-700">2026-00152</td>
       <td class="py-2 px-3 font-bold text-slate-800">Gabriel Kyle Soriano</td>
       <td class="py-2 px-3">BSIS</td>
       <td class="py-2 px-3 font-bold text-indigo-700">2-B</td>
-      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]">✓ Valid Row</span></td>
+      <td class="py-2 px-3 text-right"><span class="text-emerald-600 font-bold text-[10px]"> Valid Row</span></td>
     </tr>
   `;
 

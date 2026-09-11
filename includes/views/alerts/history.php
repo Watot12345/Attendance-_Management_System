@@ -47,7 +47,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
           <div class="w-11 h-11 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 font-black text-sm">
-            ✕
+            
           </div>
           <div>
             <div class="text-xl font-black text-rose-600">12</div>
@@ -139,7 +139,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <div class="text-[10px] text-slate-400">08:18 AM (18m late)</div>
                 </td>
                 <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏱ Tardy (18 min)</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ SMS Sent (08:20 AM)</span></td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"> SMS Sent (08:20 AM)</span></td>
                 <td class="py-3.5 px-4 text-slate-400">—</td>
                 <td class="py-3.5 px-4 text-right">
                   <button type="button" class="text-xs text-emerald-600 font-bold hover:underline" onclick="APP.toast('Viewing check-in audit for Maria Santos', 'info')">View Audit</button>
@@ -161,8 +161,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <div class="font-bold text-slate-800">Sep 7, 2026</div>
                   <div class="text-[10px] text-slate-400">Session 08:00–10:00 AM</div>
                 </td>
-                <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">✕ Unexcused Absent</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ SMS &amp; Email Sent</span></td>
+                <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200"> Unexcused Absent</span></td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"> SMS &amp; Email Sent</span></td>
                 <td class="py-3.5 px-4">
                   <a href="<?php echo url('teacher/excuse-slips'); ?>" class="text-xs font-bold text-blue-600 hover:underline">Review Slip #104 →</a>
                 </td>
@@ -187,7 +187,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <div class="text-[10px] text-slate-400">01:22 PM (22m late)</div>
                 </td>
                 <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏱ Tardy (22 min)</span></td>
-                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ SMS Sent (01:25 PM)</span></td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"> SMS Sent (01:25 PM)</span></td>
                 <td class="py-3.5 px-4 text-slate-400">—</td>
                 <td class="py-3.5 px-4 text-right">
                   <button type="button" class="text-xs text-emerald-600 font-bold hover:underline" onclick="APP.toast('Viewing check-in audit for Carlo Villanueva', 'info')">View Audit</button>
@@ -212,7 +212,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-blue-800 border border-blue-200">✉ Excused Slip #101</span></td>
                 <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Exempted by Faculty</span></td>
                 <td class="py-3.5 px-4">
-                  <span class="text-xs font-bold text-emerald-600">✓ Approved</span>
+                  <span class="text-xs font-bold text-emerald-600"> Approved</span>
                 </td>
                 <td class="py-3.5 px-4 text-right">
                   <button type="button" class="text-xs text-emerald-600 font-bold hover:underline" onclick="APP.toast('Viewing excused slip detail', 'info')">View Audit</button>

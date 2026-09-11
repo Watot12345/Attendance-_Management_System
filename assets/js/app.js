@@ -70,14 +70,190 @@ const APP = {
     if (e.key === 'Escape') APP.closeModal();
   },
 
-  /* ── Confirm Dialog ───────────────────────────────────────── */
-  confirm(message, onConfirm) {
-    APP.openModal(
-      'Confirm Action',
-      `<p class="text-sm" style="color:var(--color-text-secondary)">${message}</p>`,
-      `<button class="btn btn-secondary" onclick="APP.closeModal()">Cancel</button>
-       <button class="btn btn-danger" onclick="APP.closeModal(); (${onConfirm})()">Confirm</button>`
-    );
+  /* ── Universal Confirmation Modal Component Manager ───────── */
+  _confirmResolver: null,
+  _confirmOptions: null,
+
+  confirm(optionsOrMessage, legacyOnConfirm) {
+    return new Promise((resolve) => {
+      let opts = {};
+      if (typeof optionsOrMessage === 'string') {
+        opts = {
+          message: optionsOrMessage,
+          title: 'Confirm Action',
+          type: 'danger',
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+          onConfirm: typeof legacyOnConfirm === 'function' ? legacyOnConfirm : null
+        };
+      } else if (typeof optionsOrMessage === 'object' && optionsOrMessage !== null) {
+        opts = {
+          title: optionsOrMessage.title || 'Confirm Action',
+          message: optionsOrMessage.message || 'Are you sure you want to proceed?',
+          type: optionsOrMessage.type || 'danger', // danger | warning | info | success
+          confirmText: optionsOrMessage.confirmText || 'Confirm',
+          cancelText: optionsOrMessage.cancelText || 'Cancel',
+          confirmLoadingText: optionsOrMessage.confirmLoadingText || (optionsOrMessage.type === 'danger' ? 'Deleting...' : 'Processing...'),
+          onConfirm: optionsOrMessage.onConfirm || null,
+          onCancel: optionsOrMessage.onCancel || null
+        };
+      }
+
+      APP._confirmResolver = resolve;
+      APP._confirmOptions = opts;
+
+      const modal = document.getElementById('global-confirm-modal');
+      const box = document.getElementById('confirm-modal-box');
+      const titleEl = document.getElementById('confirm-modal-title');
+      const msgEl = document.getElementById('confirm-modal-message');
+      const btnText = document.getElementById('confirm-modal-btn-text');
+      const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+      const actionBtn = document.getElementById('confirm-modal-action-btn');
+      const spinner = document.getElementById('confirm-modal-btn-spinner');
+      const iconWrap = document.getElementById('confirm-modal-icon-wrap');
+
+      // Fallback if modal HTML not present
+      if (!modal) {
+        const stripHtml = (opts.message || '').replace(/<[^>]*>?/gm, '');
+        const confirmed = window.confirm(stripHtml || 'Are you sure you want to proceed?');
+        if (confirmed) {
+          if (typeof opts.onConfirm === 'function') opts.onConfirm();
+          resolve(true);
+        } else {
+          if (typeof opts.onCancel === 'function') opts.onCancel();
+          resolve(false);
+        }
+        return;
+      }
+
+      if (titleEl) titleEl.textContent = opts.title;
+      if (msgEl) msgEl.innerHTML = opts.message;
+      if (btnText) btnText.textContent = opts.confirmText;
+      if (cancelBtn) cancelBtn.textContent = opts.cancelText;
+      if (actionBtn) actionBtn.disabled = false;
+      if (cancelBtn) cancelBtn.disabled = false;
+      if (spinner) spinner.classList.add('hidden');
+
+      // Set thematic styling based on type
+      const type = (opts.type || 'danger').toLowerCase();
+      
+      if (iconWrap) {
+        // Hide all SVGs first
+        iconWrap.querySelectorAll('[data-icon-type]').forEach(ic => ic.classList.add('hidden'));
+
+        // Reset icon wrap base classes
+        iconWrap.className = 'w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-all duration-200';
+
+        if (actionBtn) {
+          actionBtn.className = 'flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed';
+        }
+
+        if (type === 'danger') {
+          iconWrap.classList.add('bg-rose-100', 'text-rose-600', 'ring-8', 'ring-rose-50');
+          if (actionBtn) actionBtn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'text-white', 'shadow-rose-600/20');
+          const ic = iconWrap.querySelector('[data-icon-type="danger"]');
+          if (ic) ic.classList.remove('hidden');
+        } else if (type === 'warning') {
+          iconWrap.classList.add('bg-amber-100', 'text-amber-600', 'ring-8', 'ring-amber-50');
+          if (actionBtn) actionBtn.classList.add('bg-amber-600', 'hover:bg-amber-700', 'text-white', 'shadow-amber-600/20');
+          const ic = iconWrap.querySelector('[data-icon-type="warning"]');
+          if (ic) ic.classList.remove('hidden');
+        } else if (type === 'success') {
+          iconWrap.classList.add('bg-emerald-100', 'text-emerald-600', 'ring-8', 'ring-emerald-50');
+          if (actionBtn) actionBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'text-white', 'shadow-emerald-600/20');
+          const ic = iconWrap.querySelector('[data-icon-type="success"]');
+          if (ic) ic.classList.remove('hidden');
+        } else { // info
+          iconWrap.classList.add('bg-blue-100', 'text-blue-600', 'ring-8', 'ring-blue-50');
+          if (actionBtn) actionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'shadow-blue-600/20');
+          const ic = iconWrap.querySelector('[data-icon-type="info"]');
+          if (ic) ic.classList.remove('hidden');
+        }
+      }
+
+      // Display with smooth animation and background blur
+      document.body.classList.add('confirm-modal-open');
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        if (box) {
+          box.classList.remove('scale-95');
+          box.classList.add('scale-100');
+        }
+      });
+
+      document.addEventListener('keydown', APP._confirmEscHandler);
+      if (actionBtn) actionBtn.focus();
+    });
+  },
+
+  async handleConfirmModalAction() {
+    const opts = APP._confirmOptions;
+    const resolver = APP._confirmResolver;
+    const actionBtn = document.getElementById('confirm-modal-action-btn');
+    const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+    const btnText = document.getElementById('confirm-modal-btn-text');
+    const spinner = document.getElementById('confirm-modal-btn-spinner');
+
+    if (opts && typeof opts.onConfirm === 'function') {
+      try {
+        if (actionBtn) actionBtn.disabled = true;
+        if (cancelBtn) cancelBtn.disabled = true;
+        if (spinner) spinner.classList.remove('hidden');
+        if (btnText) btnText.textContent = opts.confirmLoadingText || 'Processing...';
+
+        await opts.onConfirm();
+        APP.closeConfirmModal(true, false);
+        if (resolver) resolver(true);
+      } catch (err) {
+        console.error('Confirmation action error:', err);
+        if (actionBtn) actionBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+        if (btnText) btnText.textContent = opts.confirmText || 'Confirm';
+      }
+    } else {
+      APP.closeConfirmModal(true, false);
+      if (resolver) resolver(true);
+    }
+  },
+
+  closeConfirmModal(confirmed = false, triggerResolver = true) {
+    const modal = document.getElementById('global-confirm-modal');
+    const box = document.getElementById('confirm-modal-box');
+    const opts = APP._confirmOptions;
+    const resolver = APP._confirmResolver;
+
+    document.removeEventListener('keydown', APP._confirmEscHandler);
+    document.body.classList.remove('confirm-modal-open');
+
+    if (modal && box) {
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      box.classList.remove('scale-100');
+      box.classList.add('scale-95');
+
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 150);
+    }
+
+    if (!confirmed && opts && typeof opts.onCancel === 'function') {
+      opts.onCancel();
+    }
+
+    if (triggerResolver && resolver) {
+      resolver(confirmed);
+      APP._confirmResolver = null;
+      APP._confirmOptions = null;
+    }
+  },
+
+  _confirmEscHandler(e) {
+    if (e.key === 'Escape') {
+      APP.closeConfirmModal(false);
+    }
   },
 
   /* ── Manual Entry Modal ───────────────────────────────────── */
@@ -317,5 +493,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
   }
 });
+
+/* ── Declarative [data-confirm] Attribute Delegation ───────── */
+document.addEventListener('click', async function(e) {
+  const trigger = e.target.closest('[data-confirm]');
+  if (!trigger) return;
+
+  // Prevent immediate default action (e.g. form submit or link navigation)
+  e.preventDefault();
+  e.stopPropagation();
+
+  const message = trigger.getAttribute('data-confirm') || 'Are you sure you want to proceed?';
+  const title = trigger.getAttribute('data-confirm-title') || 'Confirm Action';
+  const type = trigger.getAttribute('data-confirm-type') || 'danger';
+  const confirmText = trigger.getAttribute('data-confirm-btn') || 'Confirm';
+  const cancelText = trigger.getAttribute('data-confirm-cancel') || 'Cancel';
+
+  const confirmed = await APP.confirm({
+    title,
+    message,
+    type,
+    confirmText,
+    cancelText
+  });
+
+  if (confirmed) {
+    if (trigger.tagName === 'A' && trigger.href) {
+      window.location.href = trigger.href;
+    } else if (trigger.form) {
+      trigger.form.submit();
+    } else {
+      // Re-trigger click without data-confirm or call custom event
+      trigger.removeAttribute('data-confirm');
+      trigger.click();
+      trigger.setAttribute('data-confirm', message);
+    }
+  }
+}, true);
+
 
 
