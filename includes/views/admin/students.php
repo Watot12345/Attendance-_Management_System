@@ -335,9 +335,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
         <div>
           <div class="font-bold text-slate-800">Initial Student Password</div>
-          <div class="text-[11px] text-slate-500">Defaults to student number. Prompted to change on first login.</div>
+          <div class="text-[11px] text-slate-500">Format: # + 1st &amp; 2nd letter of Last Name + 8080. Prompted to change on first login.</div>
         </div>
-        <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-blue-700 text-xs shadow-2xs">BCP@2026</span>
+        <span id="m-password-preview" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-blue-700 text-xs shadow-2xs">#La8080</span>
       </div>
 
       <!-- Action Footer -->
@@ -630,11 +630,40 @@ function validateStudentIdUniqueness() {
   }
 }
 
+// Real-time password preview generator (# + Last Name Initials + 8080)
+function updatePasswordPreview() {
+  const nameInput = document.getElementById('m-student-name');
+  const preview = document.getElementById('m-password-preview');
+  if (!nameInput || !preview) return;
+
+  const val = nameInput.value.trim();
+  if (!val) {
+    preview.textContent = '#La8080';
+    return;
+  }
+
+  const parts = val.split(/\s+/).filter(Boolean);
+  const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+  const clean = lastName.replace(/[^a-zA-Z]/g, '');
+
+  let c1 = 'S', c2 = 't';
+  if (clean.length >= 2) {
+    c1 = clean.charAt(0).toUpperCase();
+    c2 = clean.charAt(1).toLowerCase();
+  } else if (clean.length === 1) {
+    c1 = clean.charAt(0).toUpperCase();
+    c2 = 'x';
+  }
+
+  preview.textContent = '#' + c1 + c2 + '8080';
+}
+
 // Manual Student Modal controls
 function openManualStudentModal() {
   const modal = document.getElementById('manualStudentModal');
   if (modal) modal.classList.remove('hidden');
   validateStudentIdUniqueness();
+  updatePasswordPreview();
 }
 
 function closeManualStudentModal() {
@@ -830,6 +859,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const mStudentId = document.getElementById('m-student-id');
   if (mStudentId) {
     mStudentId.addEventListener('input', validateStudentIdUniqueness);
+  }
+
+  // Live password preview based on entered last name
+  const mStudentName = document.getElementById('m-student-name');
+  if (mStudentName) {
+    mStudentName.addEventListener('input', updatePasswordPreview);
   }
 
   // Prevent form submission if student ID is duplicated

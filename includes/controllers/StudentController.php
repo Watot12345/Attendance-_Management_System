@@ -105,8 +105,20 @@ class StudentController {
         preg_match('/\d+/', $yearLevelRaw, $matches);
         $yearLevel = isset($matches[0]) ? (int) $matches[0] : 1;
 
-        // Default initial password: BCP@2026
-        $hashedPassword = password_hash('BCP@2026', PASSWORD_BCRYPT);
+        // Default initial password: # + First Uppercase of Last Name + Second Lowercase of Last Name + 8080
+        $cleanLast = preg_replace('/[^a-zA-Z]/', '', $lastName);
+        if (strlen($cleanLast) >= 2) {
+            $c1 = strtoupper(substr($cleanLast, 0, 1));
+            $c2 = strtolower(substr($cleanLast, 1, 1));
+        } elseif (strlen($cleanLast) === 1) {
+            $c1 = strtoupper(substr($cleanLast, 0, 1));
+            $c2 = 'x';
+        } else {
+            $c1 = 'S';
+            $c2 = 't';
+        }
+        $defaultPassword = '#' . $c1 . $c2 . '8080';
+        $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
 
         $db = Database::getConnection();
 
