@@ -15,6 +15,7 @@
   "dependencies": {
     "qrcode": "^1.5.4",
     "qrcodejs": "^1.0.0",
-    "vanilla-sonner": "^0.5.2"
+    "vanilla-sonner": "^0.5.2",
+    "xlsx": "^0.18.5"
   }
 }

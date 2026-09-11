@@ -213,6 +213,32 @@ class StudentController {
     }
 
     /**
+     * GET /teacher/roster/template
+     * Download sample CSV spreadsheet template for class roster
+     * Contains student fields: student_id, first_name, middle_initial, last_name, extension (optional)
+     * as class, course, room, and schedule are captured via Target Class & Section Details form inputs.
+     */
+    public function downloadRosterTemplate(): void {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="class_roster_template.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $output = fopen('php://output', 'w');
+        // Student identification columns with middle initial and optional name extension
+        fputcsv($output, ['student_id', 'first_name', 'middle_initial', 'last_name', 'extension'], ',', '"', "\\");
+
+        // Sample data rows matching verified students
+        fputcsv($output, ['2026-00123', 'Juan', 'A.', 'Dela Cruz', 'Jr.'], ',', '"', "\\");
+        fputcsv($output, ['2026-00124', 'Maria', 'C.', 'Santos', ''], ',', '"', "\\");
+        fputcsv($output, ['2026-00125', 'Pedro', 'M.', 'Reyes', 'III'], ',', '"', "\\");
+        fputcsv($output, ['2026-00126', 'Ana', 'B.', 'Mendoza', ''], ',', '"', "\\");
+
+        fclose($output);
+        exit;
+    }
+
+    /**
      * POST /admin/students/import
      * Batch import student master accounts from an uploaded CSV file
      */
@@ -265,7 +291,9 @@ class StudentController {
         $colId      = $findCol(['student_id', 'student_number', 'id', 'student_no']);
         $colName    = $findCol(['full_name', 'student_name', 'name']);
         $colFirst   = $findCol(['first_name', 'firstname']);
+        $colMiddle  = $findCol(['middle_initial', 'middle_name', 'mi']);
         $colLast    = $findCol(['last_name', 'lastname']);
+        $colExt     = $findCol(['extension', 'suffix', 'name_extension', 'ext']);
         $colEmail   = $findCol(['email', 'student_email', 'email_address']);
         $colCourse  = $findCol(['course', 'program', 'course_code']);
         $colYear    = $findCol(['year_level', 'year', 'grade_level']);
@@ -367,7 +395,17 @@ class StudentController {
                 if ($colFirst !== null && $colLast !== null) {
                     $firstName = trim($row[$colFirst] ?? '');
                     $lastName  = trim($row[$colLast] ?? 'Student');
-                    $fullName  = $firstName . ' ' . $lastName;
+                    $middleInitial = $colMiddle !== null ? trim($row[$colMiddle] ?? '') : '';
+                    $ext = $colExt !== null ? trim($row[$colExt] ?? '') : '';
+
+                    if ($middleInitial !== '') {
+                        $mFormatted = str_ends_with($middleInitial, '.') ? $middleInitial : $middleInitial . '.';
+                        $firstName = "{$firstName} {$mFormatted}";
+                    }
+                    if ($ext !== '') {
+                        $lastName = "{$lastName} {$ext}";
+                    }
+                    $fullName  = trim("{$firstName} {$lastName}");
                 } elseif ($colName !== null) {
                     $fullName = trim($row[$colName] ?? '');
                     $parts = preg_split('/\s+/', $fullName);
@@ -460,5 +498,354 @@ class StudentController {
             exit;
         }
     }
+
+    /**
+     * POST /api/teacher/roster/validate
+     * Validates an uploaded student list against users and class_roster for duplicates
+     */
+    public function validateRoster(): void {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $raw = file_get_contents('php://input');
+        $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+        if (empty($input) || !is_array($input)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request payload']);
+            exit;
+        }
+
+        $courseCode = strtoupper(trim($input['course_code'] ?? 'IT301'));
+        $section = trim($input['section'] ?? '1');
+        $teacherId = !empty($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (!empty($input['teacher_id']) ? (int)$input['teacher_id'] : 2));
+        $students = $input['students'] ?? [];
+
+        if (!is_array($students)) {
+            echo json_encode(['success' => false, 'message' => 'No student data provided']);
+            exit;
+        }
+
+        try {
+            $db = Database::getConnection();
+
+            // Pre-fetch all students in users table
+            $userStmt = $db->query("SELECT user_id, student_id, first_name, last_name FROM users WHERE role = 'student'");
+            $userRows = $userStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $usersByCleanId = [];
+            foreach ($userRows as $u) {
+                if (!empty($u['student_id'])) {
+                    $clean = (string)preg_replace('/\D/', '', (string)$u['student_id']);
+                    $usersByCleanId[$clean] = $u;
+                }
+            }
+
+            // Pre-fetch existing class_roster enrollments for this teacher + course_code + section
+            $rosterCheckStmt = $db->prepare("
+                SELECT student_id FROM class_roster
+                WHERE teacher_id = :teacher_id AND course_code = :course_code AND section = :section
+            ");
+            $rosterCheckStmt->execute([
+                ':teacher_id'   => $teacherId,
+                ':course_code'  => $courseCode,
+                ':section'      => $section,
+            ]);
+            $enrolledUserIds = [];
+            foreach ($rosterCheckStmt->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+                $enrolledUserIds[(int)$uid] = true;
+            }
+
+            $validatedRows = [];
+            $validCount = 0;
+            $duplicateCount = 0;
+            $unregisteredCount = 0;
+
+            foreach ($students as $row) {
+                $rawId = trim($row['student_id'] ?? $row['student_number'] ?? '');
+                $cleanId = (string)preg_replace('/\D/', '', $rawId);
+                $fn = trim($row['first_name'] ?? '');
+                $mi = trim($row['middle_initial'] ?? $row['middle_name'] ?? $row['mi'] ?? '');
+                $ln = trim($row['last_name'] ?? '');
+                $ext = trim($row['extension'] ?? $row['suffix'] ?? $row['name_extension'] ?? '');
+
+                $miStr = $mi !== '' ? (str_ends_with($mi, '.') ? $mi : $mi . '.') : '';
+                $nameParts = array_filter([$fn, $miStr, $ln, $ext], fn($p) => $p !== '');
+                $excelName = !empty($nameParts) ? implode(' ', $nameParts) : trim($row['full_name'] ?? $row['name'] ?? 'Student');
+
+                $matchedUser = $usersByCleanId[$cleanId] ?? null;
+                $isMasterMatch = $matchedUser !== null;
+                $userId = $matchedUser ? (int)$matchedUser['user_id'] : null;
+
+                $isDuplicate = false;
+                $statusType = 'valid';
+
+                if (!$isMasterMatch) {
+                    $statusType = 'unregistered';
+                    $unregisteredCount++;
+                } elseif ($userId !== null && isset($enrolledUserIds[$userId])) {
+                    $isDuplicate = true;
+                    $statusType = 'duplicate';
+                    $duplicateCount++;
+                } else {
+                    $statusType = 'valid';
+                    $validCount++;
+                }
+
+                $validatedRows[] = [
+                    'student_id'      => !empty($rawId) ? $rawId : $cleanId,
+                    'clean_id'        => $cleanId,
+                    'excel_name'      => $excelName,
+                    'first_name'      => $fn,
+                    'middle_initial'  => $mi,
+                    'last_name'       => $ln,
+                    'extension'       => $ext,
+                    'is_master_match' => $isMasterMatch,
+                    'master_name'     => $matchedUser ? "{$matchedUser['first_name']} {$matchedUser['last_name']}" : 'Not found in Student Master',
+                    'is_duplicate'    => $isDuplicate,
+                    'status_type'     => $statusType,
+                    'user_id'         => $userId,
+                ];
+            }
+
+            echo json_encode([
+                'success'           => true,
+                'status'            => 'success',
+                'teacher_id'        => $teacherId,
+                'course_code'       => $courseCode,
+                'section'           => $section,
+                'students'          => $validatedRows,
+                'total'             => count($students),
+                'valid_count'       => $validCount,
+                'duplicate_count'   => $duplicateCount,
+                'unregistered_count'=> $unregisteredCount,
+                'all_duplicate'     => (count($students) > 0 && $duplicateCount === count($students)),
+                'all_unregistered'  => (count($students) > 0 && $unregisteredCount === count($students)),
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Validation error: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * POST /api/teacher/roster/import
+     * Enrolls students into class_roster table in Strict Master Mode (skips unregistered, skips duplicates)
+     */
+    public function importClassRoster(): void {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $raw = file_get_contents('php://input');
+        $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+        if (empty($input) || !is_array($input)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request payload']);
+            exit;
+        }
+
+        $course      = trim($input['course'] ?? 'BSIT');
+        $yearLevel   = (int)preg_replace('/\D/', '', (string)($input['year_level'] ?? '3')) ?: 3;
+        $section     = trim($input['section'] ?? '1');
+        $major       = trim($input['major'] ?? '');
+        $courseCode  = strtoupper(trim($input['course_code'] ?? 'IT301'));
+        $courseTitle = trim($input['course_title'] ?? 'Web Systems and Technologies');
+        $scheduleDay = trim($input['schedule_day'] ?? 'Monday');
+        $scheduledTime = trim($input['scheduled_time'] ?? '08:00:00');
+        if (strlen($scheduledTime) === 5) {
+            $scheduledTime .= ':00';
+        }
+        $roomNumber  = trim($input['room_number'] ?? $input['room_num'] ?? '402');
+        $teacherId   = !empty($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (!empty($input['teacher_id']) ? (int)$input['teacher_id'] : 2));
+        $students    = $input['students'] ?? [];
+
+        if (empty($students) || !is_array($students)) {
+            echo json_encode(['success' => false, 'message' => 'No student rows found to import.']);
+            exit;
+        }
+
+        $db = Database::getConnection();
+
+        try {
+            $db->beginTransaction();
+
+            // Pre-load existing official students from users table
+            $userStmt = $db->query("SELECT user_id, student_id, first_name, last_name FROM users WHERE role = 'student'");
+            $existingUsers = [];
+            foreach ($userStmt->fetchAll(PDO::FETCH_ASSOC) as $u) {
+                if (!empty($u['student_id'])) {
+                    $clean = (string)preg_replace('/\D/', '', (string)$u['student_id']);
+                    $existingUsers[$clean] = $u;
+                }
+            }
+
+            // Prepare statements
+            $checkRosterStmt = $db->prepare("
+                SELECT roster_id FROM class_roster
+                WHERE teacher_id = :teacher_id AND course_code = :course_code AND section = :section AND student_id = :student_id
+            ");
+
+            $insertRosterStmt = $db->prepare("
+                INSERT INTO class_roster (
+                    student_id,
+                    teacher_id,
+                    first_name,
+                    last_name,
+                    section,
+                    room_number,
+                    scheduled_time,
+                    schedule_day,
+                    course_code,
+                    course_title,
+                    major,
+                    course,
+                    year_level
+                ) VALUES (
+                    :student_id,
+                    :teacher_id,
+                    :first_name,
+                    :last_name,
+                    :section,
+                    :room_number,
+                    :scheduled_time,
+                    :schedule_day,
+                    :course_code,
+                    :course_title,
+                    :major,
+                    :course,
+                    :year_level
+                )
+            ");
+
+            $importedCount = 0;
+            $duplicateCount = 0;
+            $unregisteredCount = 0;
+            $duplicateNames = [];
+            $unregisteredNames = [];
+            $enrolledNames = [];
+
+            foreach ($students as $row) {
+                $rawId = trim($row['student_id'] ?? $row['student_number'] ?? '');
+                $cleanId = (string)preg_replace('/\D/', '', $rawId);
+
+                $fn = trim($row['first_name'] ?? '');
+                $mi = trim($row['middle_initial'] ?? $row['middle_name'] ?? $row['mi'] ?? '');
+                $ln = trim($row['last_name'] ?? '');
+                $ext = trim($row['extension'] ?? $row['suffix'] ?? $row['name_extension'] ?? '');
+
+                $miStr = $mi !== '' ? (str_ends_with($mi, '.') ? $mi : $mi . '.') : '';
+                $nameParts = array_filter([$fn, $miStr, $ln, $ext], fn($p) => $p !== '');
+                $displayFullName = !empty($nameParts) ? implode(' ', $nameParts) : trim($row['full_name'] ?? "Student {$rawId}");
+
+                // 1. Strict Master Check: Must exist in official users table
+                if (!isset($existingUsers[$cleanId])) {
+                    $unregisteredCount++;
+                    $unregisteredNames[] = "{$displayFullName} (ID: {$rawId})";
+                    continue; // Skip! Do not create fake accounts
+                }
+
+                $officialUser = $existingUsers[$cleanId];
+                $userId = (int)$officialUser['user_id'];
+
+                // Use official master name if provided, or spreadsheet name
+                $formattedFn = !empty($fn) ? trim($fn . ($mi !== '' ? ' ' . $miStr : '')) : $officialUser['first_name'];
+                $formattedLn = !empty($ln) ? trim($ln . ($ext !== '' ? ' ' . $ext : '')) : $officialUser['last_name'];
+
+                // 2. Check if already enrolled in this class roster
+                $checkRosterStmt->execute([
+                    ':teacher_id'   => $teacherId,
+                    ':course_code'  => $courseCode,
+                    ':section'      => $section,
+                    ':student_id'   => $userId,
+                ]);
+
+                if ($checkRosterStmt->fetch()) {
+                    $duplicateCount++;
+                    $duplicateNames[] = $displayFullName;
+                    continue; // Skip duplicate
+                }
+
+                // 3. Insert into class_roster
+                $insertRosterStmt->execute([
+                    ':student_id'    => $userId,
+                    ':teacher_id'    => $teacherId,
+                    ':first_name'    => $formattedFn,
+                    ':last_name'     => $formattedLn,
+                    ':section'       => $section,
+                    ':room_number'   => $roomNumber,
+                    ':scheduled_time'=> $scheduledTime,
+                    ':schedule_day'  => $scheduleDay,
+                    ':course_code'   => $courseCode,
+                    ':course_title'  => $courseTitle,
+                    ':major'         => !empty($major) ? $major : null,
+                    ':course'        => $course,
+                    ':year_level'    => $yearLevel,
+                ]);
+
+                $importedCount++;
+                $enrolledNames[] = "{$formattedFn} {$formattedLn}";
+            }
+
+            $db->commit();
+
+            $total = count($students);
+            $totalSkipped = $duplicateCount + $unregisteredCount;
+            $allDuplicate = ($total > 0 && $duplicateCount === $total);
+            $allUnregistered = ($total > 0 && $unregisteredCount === $total);
+
+            if ($allDuplicate) {
+                $message = "All {$total} students in this spreadsheet are already enrolled in {$courseCode} (Section {$section}).";
+            } elseif ($allUnregistered) {
+                $message = "None of the {$total} student IDs in this spreadsheet exist in the official Student Master records. Please contact the Registrar.";
+            } elseif ($totalSkipped > 0) {
+                $notes = [];
+                if ($duplicateCount > 0) $notes[] = "{$duplicateCount} duplicate(s) skipped";
+                if ($unregisteredCount > 0) $notes[] = "{$unregisteredCount} unregistered ID(s) skipped";
+                $message = "{$importedCount} student(s) successfully enrolled. (" . implode(', ', $notes) . ").";
+            } else {
+                $message = "{$importedCount} student(s) successfully enrolled into {$courseCode} (Section {$section}).";
+            }
+
+            echo json_encode([
+                'success'            => true,
+                'status'             => 'success',
+                'imported'           => $importedCount,
+                'skipped'            => $totalSkipped,
+                'duplicate_count'    => $duplicateCount,
+                'unregistered_count' => $unregisteredCount,
+                'total'              => $total,
+                'all_duplicate'      => $allDuplicate,
+                'all_unregistered'   => $allUnregistered,
+                'duplicate_names'    => $duplicateNames,
+                'unregistered_names' => $unregisteredNames,
+                'enrolled_names'     => $enrolledNames,
+                'course_code'        => $courseCode,
+                'section'            => $section,
+                'message'            => $message,
+                'details'            => [
+                    'course'         => $course,
+                    'year_level'     => $yearLevel,
+                    'section'        => $section,
+                    'major'          => $major,
+                    'course_code'    => $courseCode,
+                    'course_title'   => $courseTitle,
+                    'schedule_day'   => $scheduleDay,
+                    'scheduled_time' => $scheduledTime,
+                    'room_number'    => $roomNumber,
+                ],
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            echo json_encode([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 }
+
 

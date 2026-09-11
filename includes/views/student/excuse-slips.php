@@ -68,15 +68,53 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <form id="excuse-slip-form" onsubmit="event.preventDefault(); submitExcuseSlip();" class="space-y-4">
             <input type="hidden" id="excuse-student-id" value="<?php echo $studentId; ?>">
 
-            <!-- Subject -->
+            <!-- Send to All Subject Teachers Checkbox Banner -->
+            <div class="p-3 rounded-xl bg-gradient-to-r from-indigo-50/90 to-blue-50/70 border border-indigo-200/90 shadow-2xs">
+              <label class="flex items-start gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="send-to-all-teachers" name="send_to_all" value="1" onchange="toggleSendToAllTeachers(this.checked)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600">
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5 font-bold text-xs text-indigo-950 flex-wrap">
+                    <span>Send to All Subject Teachers</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-800">Whole Day Absence</span>
+                  </div>
+                  <p class="text-[11px] text-indigo-700/90 mt-0.5 leading-snug">
+                    Submit once to deliver your excuse slip and documents to all course instructors at the same time.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Subject Selection -->
             <div>
-              <label for="excuse-subject" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Class / Subject *</label>
-              <select id="excuse-subject" name="subject" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <option value="">Select subject...</option>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="excuse-subject" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Class / Subject *</label>
+                <span id="subject-all-indicator" class="hidden text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  All 3 Classes Selected
+                </span>
+              </div>
+              <select id="excuse-subject" name="subject" onchange="handleSubjectDropdownChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <option value="">Select subject or send to all...</option>
+                <option value="ALL" class="font-bold text-indigo-700 bg-indigo-50/70">★ All Subject Teachers (All 3 Enrolled Classes)</option>
+                <option disabled>────────────────────────────</option>
                 <option value="IT301 — Web Development 2 (Prof. Ramirez)">IT301 — Web Development 2 (Prof. Ramirez)</option>
                 <option value="IT302 — Database Systems 2 (Prof. Ramirez)">IT302 — Database Systems 2 (Prof. Ramirez)</option>
                 <option value="IT303 — Systems Integration (Prof. Santos)">IT303 — Systems Integration (Prof. Santos)</option>
               </select>
+
+              <!-- Recipient Teachers Summary Pill List -->
+              <div id="recipient-teachers-box" class="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Faculty receiving this request:</div>
+                <div id="recipient-pills" class="flex flex-wrap gap-1.5">
+                  <span id="pill-ramirez" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium transition-opacity">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Prof. Manuel Ramirez (IT301, IT302)
+                  </span>
+                  <span id="pill-santos" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-medium transition-opacity">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    Prof. Jose Santos (IT303)
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- Date of Absence -->
@@ -137,6 +175,24 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <button type="button" onclick="event.stopPropagation(); removeSelectedFile();" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" title="Remove file">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                   </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Already-Pending Conflict Alert Banner -->
+            <div id="already-pending-alert" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-2xs transition-all duration-200">
+              <div class="flex items-start gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 font-black text-xs">
+                  !
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-bold text-amber-900 flex items-center gap-1.5 flex-wrap">
+                    <span>Already Pending</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-800">Duplicate</span>
+                  </div>
+                  <div id="already-pending-msg" class="mt-0.5 text-[11px] text-amber-800 leading-snug font-medium">
+                    Already pending for this date.
+                  </div>
                 </div>
               </div>
             </div>
@@ -387,6 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (excuseDateInput) {
     excuseDateInput.min = today;
     if (!excuseDateInput.value) excuseDateInput.value = today;
+    excuseDateInput.addEventListener('change', checkPendingConflict);
+    excuseDateInput.addEventListener('input', checkPendingConflict);
   }
   const editDateInput = document.getElementById('edit-date');
   if (editDateInput) {
@@ -407,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   applyFilters();
+  checkPendingConflict();
 });
 
 async function refreshSlips(force = false) {
@@ -931,6 +990,106 @@ function formatBytes(bytes, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+// --- MULTI-TEACHER RECIPIENT TOGGLES & CONFLICT DETECTION ---
+function toggleSendToAllTeachers(isAll) {
+  const subjectSelect = document.getElementById('excuse-subject');
+  const allIndicator = document.getElementById('subject-all-indicator');
+  const pillRamirez = document.getElementById('pill-ramirez');
+  const pillSantos = document.getElementById('pill-santos');
+
+  if (isAll) {
+    subjectSelect.value = 'ALL';
+    if (allIndicator) allIndicator.classList.remove('hidden');
+    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
+    if (pillSantos) pillSantos.classList.remove('opacity-40');
+  } else {
+    if (subjectSelect.value === 'ALL') {
+      subjectSelect.value = '';
+    }
+    if (allIndicator) allIndicator.classList.add('hidden');
+    updateTeacherRecipientPreview(subjectSelect.value);
+  }
+  checkPendingConflict();
+}
+
+function handleSubjectDropdownChange(val) {
+  const checkbox = document.getElementById('send-to-all-teachers');
+  const allIndicator = document.getElementById('subject-all-indicator');
+
+  if (val === 'ALL') {
+    if (checkbox) checkbox.checked = true;
+    if (allIndicator) allIndicator.classList.remove('hidden');
+  } else {
+    if (checkbox) checkbox.checked = false;
+    if (allIndicator) allIndicator.classList.add('hidden');
+  }
+  updateTeacherRecipientPreview(val);
+  checkPendingConflict();
+}
+
+function updateTeacherRecipientPreview(val) {
+  const pillRamirez = document.getElementById('pill-ramirez');
+  const pillSantos = document.getElementById('pill-santos');
+
+  if (!val || val === 'ALL') {
+    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
+    if (pillSantos) pillSantos.classList.remove('opacity-40');
+  } else if (val.includes('Santos') || val.includes('IT303')) {
+    if (pillRamirez) pillRamirez.classList.add('opacity-40');
+    if (pillSantos) pillSantos.classList.remove('opacity-40');
+  } else {
+    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
+    if (pillSantos) pillSantos.classList.add('opacity-40');
+  }
+}
+
+function checkPendingConflict() {
+  const alertBox = document.getElementById('already-pending-alert');
+  const alertMsg = document.getElementById('already-pending-msg');
+  if (!alertBox || !alertMsg) return false;
+
+  const dateVal = document.getElementById('excuse-date')?.value?.trim();
+  const subjectVal = document.getElementById('excuse-subject')?.value?.trim();
+  const isSendToAll = Boolean(document.getElementById('send-to-all-teachers')?.checked) || subjectVal === 'ALL';
+
+  if (!dateVal || (!subjectVal && !isSendToAll) || !Array.isArray(allSlips) || allSlips.length === 0) {
+    alertBox.classList.add('hidden');
+    return false;
+  }
+
+  const conflicts = [];
+  allSlips.forEach(s => {
+    const sDate = s.date_of_absence;
+    const sStatus = (s.status || '').toLowerCase();
+    if (sDate === dateVal && sStatus === 'pending') {
+      const isSantos = (s.subject || '').includes('Santos') || (s.subject || '').includes('IT303') || Number(s.teacher_id) === 3;
+      const targetIsSantos = subjectVal.includes('Santos') || subjectVal.includes('IT303');
+      const targetIsRamirez = subjectVal.includes('Ramirez') || subjectVal.includes('IT301') || subjectVal.includes('IT302');
+
+      if (isSendToAll) {
+        conflicts.push(s);
+      } else if (targetIsSantos && isSantos) {
+        conflicts.push(s);
+      } else if (targetIsRamirez && !isSantos) {
+        conflicts.push(s);
+      }
+    }
+  });
+
+  if (conflicts.length > 0) {
+    const profNames = [...new Set(conflicts.map(c => {
+      const name = c.teacher_name || (c.subject.includes('Santos') ? 'Prof. Santos' : 'Prof. Ramirez');
+      return name.replace('Jose Santos', 'Santos').replace('Manuel Ramirez', 'Ramirez');
+    }))].join(' & ');
+    alertMsg.innerHTML = `Already pending for <strong>${escapeHtml(profNames)}</strong>.`;
+    alertBox.classList.remove('hidden');
+    return true;
+  } else {
+    alertBox.classList.add('hidden');
+    return false;
+  }
+}
+
 async function submitExcuseSlip() {
   const form = document.getElementById('excuse-slip-form');
   const submitBtn = document.getElementById('submit-btn');
@@ -939,14 +1098,15 @@ async function submitExcuseSlip() {
   const btnSpinner = document.getElementById('btn-spinner');
 
   const subject = document.getElementById('excuse-subject').value.trim();
+  const isSendToAll = Boolean(document.getElementById('send-to-all-teachers')?.checked) || subject === 'ALL';
   const dateOfAbsence = document.getElementById('excuse-date').value.trim();
   const category = document.getElementById('excuse-category').value.trim();
   const reason = document.getElementById('excuse-reason').value.trim();
   const studentId = document.getElementById('excuse-student-id').value;
   const fileInput = document.getElementById('excuse-file');
 
-  if (!subject) {
-    APP.toast('Please select a subject or class.', 'warning');
+  if (!subject && !isSendToAll) {
+    APP.toast('Please select a subject or send to all.', 'warning');
     return;
   }
   if (!dateOfAbsence) {
@@ -954,18 +1114,33 @@ async function submitExcuseSlip() {
     return;
   }
   if (!reason) {
-    APP.toast('Please provide a detailed explanation for your absence.', 'warning');
+    APP.toast('Please provide a reason explanation.', 'warning');
+    return;
+  }
+
+  // Pre-check for pending conflict in local state
+  if (checkPendingConflict()) {
+    const alertBox = document.getElementById('already-pending-alert');
+    if (alertBox) {
+      alertBox.classList.add('ring-4', 'ring-amber-300');
+      setTimeout(() => alertBox.classList.remove('ring-4', 'ring-amber-300'), 1500);
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    APP.toast('Already pending for this date.', 'warning', 3000);
     return;
   }
 
   submitBtn.disabled = true;
-  btnText.textContent = 'Uploading to Supabase & Submitting...';
+  btnText.textContent = isSendToAll ? 'Submitting to All Teachers...' : 'Uploading to Supabase & Submitting...';
   btnIcon.classList.add('hidden');
   btnSpinner.classList.remove('hidden');
 
   const formData = new FormData();
   formData.append('student_id', studentId);
-  formData.append('subject', subject);
+  formData.append('subject', isSendToAll ? 'ALL' : subject);
+  if (isSendToAll) {
+    formData.append('send_to_all', '1');
+  }
   formData.append('date_of_absence', dateOfAbsence);
   formData.append('reason', category);
   formData.append('explanation', reason);
@@ -984,12 +1159,24 @@ async function submitExcuseSlip() {
     const result = await response.json();
 
     if (!response.ok || result.status !== 'success') {
+      if (result.code === 'ALREADY_PENDING' || response.status === 409) {
+        const alertBox = document.getElementById('already-pending-alert');
+        const alertMsg = document.getElementById('already-pending-msg');
+        if (alertBox && alertMsg) {
+          alertMsg.innerHTML = escapeHtml(result.message);
+          alertBox.classList.remove('hidden');
+          alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        APP.toast(result.message || 'Already pending for this date.', 'warning', 3500);
+        return;
+      }
       throw new Error(result.message || 'Failed to submit excuse slip.');
     }
 
     SlipCache.invalidate();
 
-    APP.toast('Excuse slip submitted & uploaded to Supabase successfully!', 'success');
+    const toastMsg = result.message || 'Excuse slip submitted & uploaded to Supabase successfully!';
+    APP.toast(toastMsg, 'success', 5000);
 
     form.reset();
     removeSelectedFile();
@@ -999,9 +1186,20 @@ async function submitExcuseSlip() {
       excuseDateEl.value = today;
       excuseDateEl.min = today;
     }
+    const allCheckbox = document.getElementById('send-to-all-teachers');
+    if (allCheckbox) allCheckbox.checked = false;
+    const allIndicator = document.getElementById('subject-all-indicator');
+    if (allIndicator) allIndicator.classList.add('hidden');
+    const alertBox = document.getElementById('already-pending-alert');
+    if (alertBox) alertBox.classList.add('hidden');
+    updateTeacherRecipientPreview('');
 
     if (result.data) {
-      allSlips.unshift(result.data);
+      if (Array.isArray(result.data)) {
+        allSlips.unshift(...result.data);
+      } else {
+        allSlips.unshift(result.data);
+      }
       applyFilters();
     }
 

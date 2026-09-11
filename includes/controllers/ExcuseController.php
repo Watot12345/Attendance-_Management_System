@@ -29,23 +29,76 @@ class ExcuseController {
             $dateOfAbsence = trim($_POST['date_of_absence'] ?? '');
             $reason = trim($_POST['reason'] ?? '');
             $explanation = trim($_POST['explanation'] ?? '');
+            $isSendToAll = !empty($_POST['send_to_all']) && ($_POST['send_to_all'] === '1' || $_POST['send_to_all'] === 'true' || $_POST['send_to_all'] === 'on');
 
             // Student ID (Juan Dela Cruz default = 1)
             $studentId = !empty($_POST['student_id']) ? (int)$_POST['student_id'] : 1;
 
-            // Map Teacher ID from Subject
-            // IT301 / IT302 -> Prof. Manuel Ramirez (ID 2), IT303 -> Prof. Jose Santos (ID 3)
-            $teacherId = 2;
-            if (stripos($subject, 'IT303') !== false || stripos($subject, 'Santos') !== false) {
-                $teacherId = 3;
+            // Check if "All Subject Teachers" is requested via dropdown or flag
+            if (!$isSendToAll && (strtoupper($subject) === 'ALL' || stripos($subject, 'All Subject Teachers') !== false || stripos($subject, 'All Enrolled') !== false)) {
+                $isSendToAll = true;
             }
-            if (!empty($_POST['teacher_id'])) {
-                $teacherId = (int)$_POST['teacher_id'];
+
+            // Define institutional course list with respective faculty
+            $availableCourses = [
+                [
+                    'subject'      => 'IT301 — Web Development 2 (Prof. Ramirez)',
+                    'teacher_id'   => 2,
+                    'teacher_name' => 'Prof. Manuel Ramirez'
+                ],
+                [
+                    'subject'      => 'IT302 — Database Systems 2 (Prof. Ramirez)',
+                    'teacher_id'   => 2,
+                    'teacher_name' => 'Prof. Manuel Ramirez'
+                ],
+                [
+                    'subject'      => 'IT303 — Systems Integration (Prof. Santos)',
+                    'teacher_id'   => 3,
+                    'teacher_name' => 'Prof. Jose Santos'
+                ],
+            ];
+
+            // Determine target courses
+            $targetCourses = [];
+            if ($isSendToAll) {
+                $targetCourses = $availableCourses;
+            } elseif (!empty($_POST['subjects']) && is_array($_POST['subjects'])) {
+                foreach ($_POST['subjects'] as $s) {
+                    $s = trim($s);
+                    if (empty($s)) continue;
+                    $tId = 2;
+                    $tName = 'Prof. Manuel Ramirez';
+                    if (stripos($s, 'IT303') !== false || stripos($s, 'Santos') !== false) {
+                        $tId = 3;
+                        $tName = 'Prof. Jose Santos';
+                    }
+                    $targetCourses[] = [
+                        'subject'      => $s,
+                        'teacher_id'   => $tId,
+                        'teacher_name' => $tName
+                    ];
+                }
+            } else {
+                // Single subject
+                $teacherId = 2;
+                $teacherName = 'Prof. Manuel Ramirez';
+                if (stripos($subject, 'IT303') !== false || stripos($subject, 'Santos') !== false) {
+                    $teacherId = 3;
+                    $teacherName = 'Prof. Jose Santos';
+                }
+                if (!empty($_POST['teacher_id'])) {
+                    $teacherId = (int)$_POST['teacher_id'];
+                }
+                $targetCourses[] = [
+                    'subject'      => $subject,
+                    'teacher_id'   => $teacherId,
+                    'teacher_name' => $teacherName
+                ];
             }
 
             // 2. Validate required inputs
             $errors = [];
-            if (empty($subject)) {
+            if (empty($targetCourses) || (empty($subject) && !$isSendToAll)) {
                 $errors[] = 'Subject / Class is required.';
             }
             if (empty($dateOfAbsence) || !strtotime($dateOfAbsence)) {
@@ -66,6 +119,56 @@ class ExcuseController {
                     'errors'  => $errors,
                 ]);
                 exit;
+            }
+
+            // 2b. Check for existing pending or approved excuse slips for that date and professor
+            $conflictTeachers = [];
+            $conflictStatus = 'pending';
+            $filteredTargetCourses = [];
+
+            foreach ($targetCourses as $course) {
+                $cTeacherId = (int)$course['teacher_id'];
+                $cTeacherName = $course['teacher_name'] ?? ($cTeacherId === 3 ? 'Prof. Jose Santos' : 'Prof. Manuel Ramirez');
+
+                $checkStmt = $db->prepare("
+                    SELECT excuse_slip_id, subject, status, created_at
+                    FROM excuse_slips
+                    WHERE student_id = ? 
+                      AND teacher_id = ? 
+                      AND date_of_absence = ? 
+                      AND LOWER(status) IN ('pending', 'approved')
+                    ORDER BY FIELD(LOWER(status), 'pending', 'approved')
+                    LIMIT 1
+                ");
+                $checkStmt->execute([$studentId, $cTeacherId, $dateOfAbsence]);
+                $existingSlip = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($existingSlip) {
+                    if (strtolower($existingSlip['status']) === 'approved') {
+                        $conflictStatus = 'approved';
+                    }
+                    $shortName = (stripos($cTeacherName, 'Ramirez') !== false) ? 'Prof. Ramirez' : ((stripos($cTeacherName, 'Santos') !== false) ? 'Prof. Santos' : $cTeacherName);
+                    $conflictTeachers[$cTeacherId] = $shortName;
+                } else {
+                    $filteredTargetCourses[] = $course;
+                }
+            }
+
+            if (!empty($conflictTeachers)) {
+                if (!$isSendToAll || empty($filteredTargetCourses)) {
+                    $teacherListStr = implode(' & ', array_values($conflictTeachers));
+                    $conflictMsg = "Already {$conflictStatus} for {$teacherListStr}.";
+                    http_response_code(409); // Conflict
+                    echo json_encode([
+                        'status'    => 'error',
+                        'code'      => 'ALREADY_PENDING',
+                        'message'   => $conflictMsg,
+                        'conflicts' => $conflictTeachers,
+                    ]);
+                    exit;
+                }
+                // When submitting to all teachers and some already have pending slips, proceed only for the remaining teachers
+                $targetCourses = $filteredTargetCourses;
             }
 
             // 3. Handle Supporting Document Upload to Supabase Storage
@@ -117,9 +220,8 @@ class ExcuseController {
 
             // 4. Ensure foreign key users exist (auto-seed if missing)
             self::ensureUserExists($db, $studentId, 'student');
-            self::ensureUserExists($db, $teacherId, 'teacher');
 
-            // 5. Insert Excuse Slip into database
+            // 5. Insert Excuse Slip(s) for each target course / teacher
             $insertSql = "
                 INSERT INTO excuse_slips (
                     student_id,
@@ -134,61 +236,84 @@ class ExcuseController {
                     updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, NOW(), NOW())
             ";
+            $insertStmt = $db->prepare($insertSql);
 
-            $stmt = $db->prepare($insertSql);
-            $stmt->execute([
-                $studentId,
-                $teacherId,
-                $subject,
-                $dateOfAbsence,
-                $reason,
-                $explanation,
-                $supportingDocumentUrl
-            ]);
+            $notifStmt = $db->prepare("
+                INSERT INTO notifications (
+                    user_id,
+                    title,
+                    message,
+                    type,
+                    reference_type,
+                    reference_id,
+                    is_read,
+                    created_at
+                ) VALUES (?, 'New Excuse Slip Submitted', ?, 'excuse_slip', 'excuse_slips', ?, 0, NOW())
+            ");
 
-            $newSlipId = (int)$db->lastInsertId();
+            $createdSlips = [];
+            foreach ($targetCourses as $course) {
+                $cSubject = $course['subject'];
+                $cTeacherId = (int)$course['teacher_id'];
+                $cTeacherName = $course['teacher_name'] ?? ($cTeacherId === 3 ? 'Prof. Jose Santos' : 'Prof. Manuel Ramirez');
 
-            // 6. Create Instructor Notification
-            try {
-                $notifStmt = $db->prepare("
-                    INSERT INTO notifications (
-                        user_id,
-                        title,
-                        message,
-                        type,
-                        reference_type,
-                        reference_id,
-                        is_read,
-                        created_at
-                    ) VALUES (?, 'New Excuse Slip Submitted', ?, 'excuse_slip', 'excuse_slips', ?, 0, NOW())
-                ");
-                $notifStmt->execute([
-                    $teacherId,
-                    "A new excuse slip was submitted for {$subject} (Absence: {$dateOfAbsence}). Please review and update attendance.",
-                    $newSlipId
+                self::ensureUserExists($db, $cTeacherId, 'teacher');
+
+                $insertStmt->execute([
+                    $studentId,
+                    $cTeacherId,
+                    $cSubject,
+                    $dateOfAbsence,
+                    $reason,
+                    $explanation,
+                    $supportingDocumentUrl
                 ]);
-            } catch (Exception $ne) {
-                // Non-critical, continue
-            }
 
-            // 7. Return success response with newly created record details
-            http_response_code(201);
-            echo json_encode([
-                'status'  => 'success',
-                'message' => 'Excuse slip submitted successfully! Your instructor has been notified to review the attached documentation.',
-                'data'    => [
+                $newSlipId = (int)$db->lastInsertId();
+
+                // Notification for this instructor
+                try {
+                    $notifStmt->execute([
+                        $cTeacherId,
+                        "A new excuse slip was submitted for {$cSubject} (Absence: {$dateOfAbsence}). Please review and update attendance.",
+                        $newSlipId
+                    ]);
+                } catch (Exception $ne) {
+                    // Non-critical, continue
+                }
+
+                $createdSlips[] = [
                     'excuse_slip_id'      => $newSlipId,
                     'student_id'          => $studentId,
-                    'teacher_id'          => $teacherId,
-                    'subject'             => $subject,
+                    'teacher_id'          => $cTeacherId,
+                    'teacher_name'        => $cTeacherName,
+                    'subject'             => $cSubject,
                     'date_of_absence'     => $dateOfAbsence,
                     'reason'              => $reason,
                     'explanation'         => $explanation,
                     'status'              => 'pending',
                     'supporting_document' => $supportingDocumentUrl,
                     'created_at'          => date('Y-m-d H:i:s'),
-                ]
-            ]);
+                ];
+            }
+
+            // 6. Return success response
+            http_response_code(201);
+            if (count($createdSlips) > 1) {
+                echo json_encode([
+                    'status'  => 'success',
+                    'count'   => count($createdSlips),
+                    'message' => 'Excuse slip successfully submitted to all subject teachers (' . count($createdSlips) . ' classes: Prof. Ramirez & Prof. Santos).',
+                    'data'    => $createdSlips
+                ]);
+            } else {
+                echo json_encode([
+                    'status'  => 'success',
+                    'count'   => 1,
+                    'message' => 'Excuse slip submitted successfully! Your instructor has been notified to review the attached documentation.',
+                    'data'    => $createdSlips[0]
+                ]);
+            }
             exit;
 
         } catch (PDOException $pe) {
@@ -414,9 +539,14 @@ class ExcuseController {
                 exit;
             }
 
-            // Remove storage object from Supabase if present
+            // Remove storage object from Supabase if present and not shared by other slips
             if (!empty($slip['supporting_document'])) {
-                SupabaseStorage::delete($slip['supporting_document']);
+                $otherCheck = $db->prepare("SELECT COUNT(*) FROM excuse_slips WHERE supporting_document = ? AND excuse_slip_id != ?");
+                $otherCheck->execute([$slip['supporting_document'], $slipId]);
+                $otherCount = (int)$otherCheck->fetchColumn();
+                if ($otherCount === 0) {
+                    SupabaseStorage::delete($slip['supporting_document']);
+                }
             }
 
             // Remove notifications

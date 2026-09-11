@@ -18,6 +18,19 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('asset')) {
+    /**
+     * Generate asset URL supporting relative assets directory
+     */
+    function asset(string $path = ''): string {
+        $path = ltrim($path, '/');
+        if (!str_starts_with($path, 'assets/')) {
+            $path = 'assets/' . $path;
+        }
+        return url($path);
+    }
+}
+
 class Router {
     /**
      * Map of clean URL paths to view files relative to includes/views/
@@ -40,6 +53,8 @@ class Router {
         '/teacher/dashboard'     => 'teacher/dashboard.php',
         '/teacher/classes'       => 'teacher/classes.php',
         '/teacher/import-roster' => 'teacher/import-roster.php',
+        '/teacher/import-roster/template' => 'StudentController@downloadRosterTemplate',
+        '/teacher/roster/template' => 'StudentController@downloadRosterTemplate',
         '/teacher/roster'        => 'teacher/classes.php',
         '/teacher/live-session'  => 'teacher/live-session.php',
         '/teacher/attendance-history' => 'teacher/attendance-history.php',
@@ -101,6 +116,8 @@ class Router {
         '/api/excuses/delete'    => 'ExcuseController@delete',
         '/api/excuses/list'      => 'ExcuseController@listStudent',
         '/api/excuses/review'    => 'ExcuseController@review',
+        '/api/teacher/roster/validate' => 'StudentController@validateRoster',
+        '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',
