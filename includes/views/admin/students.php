@@ -309,17 +309,29 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-section" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Assigned Section <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-section" name="section" required placeholder="e.g. 3-A or 3-B" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <div class="relative">
+            <input type="text" id="m-section" name="section" required placeholder="e.g. BSIT 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 outline-none bg-slate-50/70 font-mono transition">
+          </div>
+          <div id="m-section-capacity-badge" class="text-[11px] mt-1.5 font-medium text-slate-500 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            <span id="m-section-status-text">Auto-assigned based on Course &amp; Year Level</span>
+          </div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Student Email -->
         <div>
-          <label for="m-email" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+          <label for="m-email-prefix" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Institutional Email <span class="text-rose-500">*</span>
           </label>
-          <input type="email" id="m-email" name="email" required placeholder="student.name@bestlink.edu.ph" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
+          <div class="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition bg-white shadow-2xs">
+            <input type="text" id="m-email-prefix" name="email_prefix" required placeholder="student.name" class="w-full px-3.5 py-2.5 text-xs font-mono font-medium text-slate-800 outline-none bg-transparent" autocomplete="off">
+            <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-500 bg-slate-50 border-l border-slate-200 select-none shrink-0 font-mono">
+              @bestlink.edu.ph
+            </span>
+          </div>
+          <input type="hidden" id="m-email" name="email" value="">
         </div>
 
         <!-- Parent Contact Number / Email -->
@@ -658,12 +670,100 @@ function updatePasswordPreview() {
   preview.textContent = '#' + c1 + c2 + '8080';
 }
 
+// Institutional Email handlers
+let emailPrefixManuallyEdited = false;
+
+function syncInstitutionalEmail() {
+  const prefixInput = document.getElementById('m-email-prefix');
+  const hiddenEmail = document.getElementById('m-email');
+  if (!prefixInput || !hiddenEmail) return;
+
+  let val = prefixInput.value.trim();
+  // Automatically strip @... if admin pasted full email address
+  if (val.includes('@')) {
+    val = val.split('@')[0].trim();
+    prefixInput.value = val;
+  }
+  hiddenEmail.value = val ? val.toLowerCase() + '@bestlink.edu.ph' : '';
+}
+
+function autoSuggestEmailPrefix() {
+  if (emailPrefixManuallyEdited) return;
+  const nameInput = document.getElementById('m-student-name');
+  const prefixInput = document.getElementById('m-email-prefix');
+  if (!nameInput || !prefixInput) return;
+
+  const val = nameInput.value.trim();
+  if (!val) {
+    prefixInput.value = '';
+    syncInstitutionalEmail();
+    return;
+  }
+
+  const parts = val.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const last = parts[parts.length - 1].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    prefixInput.value = `${first}.${last}`;
+  } else {
+    prefixInput.value = parts[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  }
+  syncInstitutionalEmail();
+}
+
+// Section Enrollment Counts passed from database
+const sectionRosterCounts = <?= json_encode($sectionCounts ?? []) ?>;
+
+// Dynamic Section Assignment & 50-Student Capacity Auto-Rollover
+function updateAssignedSection() {
+  const courseSelect = document.getElementById('m-course');
+  const yearSelect = document.getElementById('m-year');
+  const sectionInput = document.getElementById('m-section');
+  const statusText = document.getElementById('m-section-status-text');
+  if (!courseSelect || !yearSelect || !sectionInput) return;
+
+  const course = (courseSelect.value || 'BSIT').trim().toUpperCase();
+  const yearVal = yearSelect.value || '1st Year';
+  let yearNum = 1;
+  const match = yearVal.match(/\d+/);
+  if (match) yearNum = parseInt(match[0], 10);
+
+  let seq = 1;
+  let assignedSection = '';
+  let currentCount = 0;
+
+  // Scan sequence (e.g. 41001, 41002...) until a section with < 50 students is found
+  while (seq <= 999) {
+    const candidate = `${course} ${yearNum}1${String(seq).padStart(3, '0')}`;
+    const count = sectionRosterCounts[candidate] || 0;
+    if (count < 50) {
+      assignedSection = candidate;
+      currentCount = count;
+      break;
+    }
+    seq++;
+  }
+
+  sectionInput.value = assignedSection;
+
+  if (statusText) {
+    if (currentCount === 0) {
+      statusText.innerHTML = `<span class="text-emerald-600 font-semibold">New Section: 0 / 50 Enrolled</span>`;
+    } else {
+      const remaining = 50 - currentCount;
+      statusText.innerHTML = `<span class="text-blue-600 font-semibold">Enrolled: ${currentCount} / 50 Students</span> <span class="text-slate-400">(${remaining} slot${remaining !== 1 ? 's' : ''} remaining)</span>`;
+    }
+  }
+}
+
 // Manual Student Modal controls
 function openManualStudentModal() {
   const modal = document.getElementById('manualStudentModal');
   if (modal) modal.classList.remove('hidden');
   validateStudentIdUniqueness();
   updatePasswordPreview();
+  syncInstitutionalEmail();
+  updateAssignedSection();
 }
 
 function closeManualStudentModal() {
@@ -861,16 +961,40 @@ document.addEventListener('DOMContentLoaded', function() {
     mStudentId.addEventListener('input', validateStudentIdUniqueness);
   }
 
-  // Live password preview based on entered last name
+  // Live password preview & email auto-suggestion based on entered name
   const mStudentName = document.getElementById('m-student-name');
   if (mStudentName) {
-    mStudentName.addEventListener('input', updatePasswordPreview);
+    mStudentName.addEventListener('input', function() {
+      updatePasswordPreview();
+      autoSuggestEmailPrefix();
+    });
   }
+
+  // Institutional email input listener
+  const mEmailPrefix = document.getElementById('m-email-prefix');
+  if (mEmailPrefix) {
+    mEmailPrefix.addEventListener('input', function() {
+      emailPrefixManuallyEdited = this.value.trim().length > 0;
+      syncInstitutionalEmail();
+    });
+  }
+
+  // Dynamic section calculation when Course or Year Level changes
+  const mCourse = document.getElementById('m-course');
+  if (mCourse) {
+    mCourse.addEventListener('change', updateAssignedSection);
+  }
+  const mYear = document.getElementById('m-year');
+  if (mYear) {
+    mYear.addEventListener('change', updateAssignedSection);
+  }
+  updateAssignedSection();
 
   // Prevent form submission if student ID is duplicated
   const manualForm = document.getElementById('manual-student-form');
   if (manualForm) {
     manualForm.addEventListener('submit', function(e) {
+      syncInstitutionalEmail();
       if (!validateStudentIdUniqueness()) {
         e.preventDefault();
         if (typeof APP !== 'undefined' && APP.toast) {

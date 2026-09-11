@@ -66,9 +66,57 @@ class StudentController {
         $nextSeq = $maxStudentSeq > 0 ? $maxStudentSeq + 1 : 1;
         $nextStudentId = '23011' . str_pad((string)$nextSeq, $seqLength, '0', STR_PAD_LEFT);
 
+        // Query current section student counts for real-time section allocation and 50-capacity rollover
+        $secStmt = $db->query("
+            SELECT section, COUNT(*) as student_count
+            FROM class_roster
+            WHERE section IS NOT NULL AND section != ''
+            GROUP BY section
+        ");
+        $sectionCounts = [];
+        while ($secRow = $secStmt->fetch(PDO::FETCH_ASSOC)) {
+            $sectionCounts[$secRow['section']] = (int) $secRow['student_count'];
+        }
+
         $page_title = 'Official Student Master Accounts';
         
         include dirname(__DIR__) . '/views/admin/students.php';
+    }
+
+    /**
+     * Resolve assigned section according to Course + Year1001 convention and 50-student capacity rollover
+     * e.g. 1st Year: BSIT 11001, 4th Year: BSIT 41001. Rolls over to 41002 once 50 students is reached.
+     */
+    public static function resolveSection(PDO $db, string $course, int $yearLevel, string $requested = ''): string {
+        $course = strtoupper(trim($course));
+        if ($yearLevel < 1 || $yearLevel > 4) {
+            $yearLevel = 1;
+        }
+
+        // If a specific section was requested and still has capacity (< 50)
+        if (!empty($requested)) {
+            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec");
+            $chkStmt->execute([':sec' => $requested]);
+            $cnt = (int) $chkStmt->fetchColumn();
+            if ($cnt < 50) {
+                return $requested;
+            }
+        }
+
+        // Auto-assign next available sequence in [Course] [Year]1XXX series
+        $seq = 1;
+        while ($seq <= 999) {
+            $candidate = sprintf('%s %d1%03d', $course, $yearLevel, $seq);
+            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec");
+            $chkStmt->execute([':sec' => $candidate]);
+            $cnt = (int) $chkStmt->fetchColumn();
+            if ($cnt < 50) {
+                return $candidate;
+            }
+            $seq++;
+        }
+
+        return sprintf('%s %d1001', $course, $yearLevel);
     }
 
     /**
@@ -78,14 +126,19 @@ class StudentController {
     public function store(): void {
         $studentIdRaw  = trim($_POST['student_id'] ?? '');
         $fullName      = trim($_POST['full_name'] ?? '');
-        $email         = trim($_POST['email'] ?? '');
+        $emailRaw      = trim($_POST['email_prefix'] ?? $_POST['email'] ?? '');
         $course        = trim($_POST['course'] ?? 'BSIT');
         $yearLevelRaw  = trim($_POST['year_level'] ?? '1st Year');
-        $section       = trim($_POST['section'] ?? '');
+        $sectionRaw    = trim($_POST['section'] ?? '');
         $parentContact = trim($_POST['parent_contact'] ?? '');
 
+        // Normalize institutional email: automatically attach @bestlink.edu.ph
+        $emailPrefix   = preg_replace('/@.*$/', '', $emailRaw);
+        $emailPrefix   = trim($emailPrefix);
+        $email         = !empty($emailPrefix) ? strtolower($emailPrefix) . '@bestlink.edu.ph' : '';
+
         // Validation
-        if (empty($studentIdRaw) || empty($fullName) || empty($email) || empty($section)) {
+        if (empty($studentIdRaw) || empty($fullName) || empty($email)) {
             header('Location: ' . url('admin/students?error=' . urlencode('Please fill in all required fields.')));
             exit;
         }
@@ -121,6 +174,9 @@ class StudentController {
         $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
 
         $db = Database::getConnection();
+
+        // Resolve section: Course + Year1001 with 50-student capacity rollover
+        $section = self::resolveSection($db, $course, $yearLevel, $sectionRaw);
 
         // Check for duplicate student_id
         $dupStmt = $db->prepare("SELECT user_id, first_name, last_name FROM users WHERE student_id = :student_id LIMIT 1");
