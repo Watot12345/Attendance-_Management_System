@@ -750,8 +750,7 @@ function updateAssignedSection() {
     if (currentCount === 0) {
       statusText.innerHTML = `<span class="text-emerald-600 font-semibold">New Section: 0 / 50 Enrolled</span>`;
     } else {
-      const remaining = 50 - currentCount;
-      statusText.innerHTML = `<span class="text-blue-600 font-semibold">Enrolled: ${currentCount} / 50 Students</span> <span class="text-slate-400">(${remaining} slot${remaining !== 1 ? 's' : ''} remaining)</span>`;
+      statusText.innerHTML = `<span class="text-blue-600 font-semibold">Enrolled: ${currentCount} / 50 Students</span>`;
     }
   }
 }
