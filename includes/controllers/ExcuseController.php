@@ -39,61 +39,100 @@ class ExcuseController {
                 $isSendToAll = true;
             }
 
-            // Define institutional course list with respective faculty
-            $availableCourses = [
-                [
-                    'subject'      => 'IT301 — Web Development 2 (Prof. Ramirez)',
-                    'teacher_id'   => 2,
-                    'teacher_name' => 'Prof. Manuel Ramirez'
-                ],
-                [
-                    'subject'      => 'IT302 — Database Systems 2 (Prof. Ramirez)',
-                    'teacher_id'   => 2,
-                    'teacher_name' => 'Prof. Manuel Ramirez'
-                ],
-                [
-                    'subject'      => 'IT303 — Systems Integration (Prof. Santos)',
-                    'teacher_id'   => 3,
-                    'teacher_name' => 'Prof. Jose Santos'
-                ],
-            ];
+            // Query student's enrolled subjects & faculty exclusively from class_roster
+            $rosterStmt = $db->prepare("
+                SELECT 
+                    cr.course_code,
+                    cr.course_title,
+                    cr.section,
+                    cr.teacher_id,
+                    t.first_name,
+                    t.last_name,
+                    CONCAT(t.first_name, ' ', t.last_name) AS teacher_full_name
+                FROM class_roster cr
+                LEFT JOIN users t ON cr.teacher_id = t.user_id
+                WHERE cr.student_id = ?
+                GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id
+                ORDER BY cr.course_code ASC
+            ");
+            $rosterStmt->execute([$studentId]);
+            $rosterRows = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $availableCourses = [];
+            foreach ($rosterRows as $rr) {
+                $tLastName = !empty($rr['last_name']) ? $rr['last_name'] : (!empty($rr['first_name']) ? $rr['first_name'] : 'Faculty');
+                $tName = "Prof. {$tLastName}";
+                $title = !empty($rr['course_title']) ? $rr['course_title'] : $rr['course_code'];
+                $subjectFormatted = "{$rr['course_code']} — {$title} ({$tName})";
+
+                $availableCourses[] = [
+                    'course_code'       => $rr['course_code'],
+                    'course_title'      => $title,
+                    'section'           => $rr['section'],
+                    'subject'           => $subjectFormatted,
+                    'teacher_id'        => (int)$rr['teacher_id'],
+                    'teacher_name'      => $tName,
+                    'teacher_full_name' => $rr['teacher_full_name'] ?: $tName,
+                ];
+            }
 
             // Determine target courses
             $targetCourses = [];
             if ($isSendToAll) {
+                if (empty($availableCourses)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'status'  => 'error',
+                        'message' => 'You are not currently enrolled in any class rosters. Please contact your instructor.'
+                    ]);
+                    exit;
+                }
                 $targetCourses = $availableCourses;
             } elseif (!empty($_POST['subjects']) && is_array($_POST['subjects'])) {
                 foreach ($_POST['subjects'] as $s) {
                     $s = trim($s);
                     if (empty($s)) continue;
-                    $tId = 2;
-                    $tName = 'Prof. Manuel Ramirez';
-                    if (stripos($s, 'IT303') !== false || stripos($s, 'Santos') !== false) {
-                        $tId = 3;
-                        $tName = 'Prof. Jose Santos';
+                    
+                    // Match against student's class_roster
+                    $matched = null;
+                    foreach ($availableCourses as $ac) {
+                        if ($ac['subject'] === $s || $ac['course_code'] === $s || stripos($s, $ac['course_code']) !== false) {
+                            $matched = $ac;
+                            break;
+                        }
                     }
-                    $targetCourses[] = [
-                        'subject'      => $s,
-                        'teacher_id'   => $tId,
-                        'teacher_name' => $tName
-                    ];
+
+                    if ($matched) {
+                        $targetCourses[] = $matched;
+                    } else {
+                        $tId = !empty($_POST['teacher_id']) ? (int)$_POST['teacher_id'] : 2;
+                        $targetCourses[] = [
+                            'subject'      => $s,
+                            'teacher_id'   => $tId,
+                            'teacher_name' => 'Instructor'
+                        ];
+                    }
                 }
             } else {
                 // Single subject
-                $teacherId = 2;
-                $teacherName = 'Prof. Manuel Ramirez';
-                if (stripos($subject, 'IT303') !== false || stripos($subject, 'Santos') !== false) {
-                    $teacherId = 3;
-                    $teacherName = 'Prof. Jose Santos';
+                $matched = null;
+                foreach ($availableCourses as $ac) {
+                    if ($ac['subject'] === $subject || $ac['course_code'] === $subject || stripos($subject, $ac['course_code']) !== false) {
+                        $matched = $ac;
+                        break;
+                    }
                 }
-                if (!empty($_POST['teacher_id'])) {
-                    $teacherId = (int)$_POST['teacher_id'];
+
+                if ($matched) {
+                    $targetCourses[] = $matched;
+                } else {
+                    $teacherId = !empty($_POST['teacher_id']) ? (int)$_POST['teacher_id'] : 2;
+                    $targetCourses[] = [
+                        'subject'      => $subject,
+                        'teacher_id'   => $teacherId,
+                        'teacher_name' => 'Instructor'
+                    ];
                 }
-                $targetCourses[] = [
-                    'subject'      => $subject,
-                    'teacher_id'   => $teacherId,
-                    'teacher_name' => $teacherName
-                ];
             }
 
             // 2. Validate required inputs
@@ -299,18 +338,21 @@ class ExcuseController {
 
             // 6. Return success response
             http_response_code(201);
+            $profNames = array_unique(array_filter(array_column($createdSlips, 'teacher_name')));
+            $profStr = !empty($profNames) ? implode(' & ', $profNames) : 'instructors';
+
             if (count($createdSlips) > 1) {
                 echo json_encode([
                     'status'  => 'success',
                     'count'   => count($createdSlips),
-                    'message' => 'Excuse slip successfully submitted to all subject teachers (' . count($createdSlips) . ' classes: Prof. Ramirez & Prof. Santos).',
+                    'message' => 'Excuse slip successfully submitted to all subject teachers (' . count($createdSlips) . ' classes: ' . $profStr . ').',
                     'data'    => $createdSlips
                 ]);
             } else {
                 echo json_encode([
                     'status'  => 'success',
                     'count'   => 1,
-                    'message' => 'Excuse slip submitted successfully! Your instructor has been notified to review the attached documentation.',
+                    'message' => 'Excuse slip submitted successfully! Your instructor (' . $profStr . ') has been notified to review the attached documentation.',
                     'data'    => $createdSlips[0]
                 ]);
             }
@@ -424,12 +466,19 @@ class ExcuseController {
             $reason = trim($_POST['reason'] ?? $existing['reason']);
             $explanation = trim($_POST['explanation'] ?? $existing['explanation']);
 
-            // Teacher mapping
+            // Teacher mapping based on class_roster
             $teacherId = $existing['teacher_id'];
-            if (stripos($subject, 'IT303') !== false || stripos($subject, 'Santos') !== false) {
-                $teacherId = 3;
-            } elseif (stripos($subject, 'IT301') !== false || stripos($subject, 'IT302') !== false) {
-                $teacherId = 2;
+            $rMatchStmt = $db->prepare("
+                SELECT teacher_id FROM class_roster 
+                WHERE student_id = ? AND (course_code = ? OR ? LIKE CONCAT('%', course_code, '%'))
+                LIMIT 1
+            ");
+            $rMatchStmt->execute([$studentId, $subject, $subject]);
+            $matchedTeacherId = $rMatchStmt->fetchColumn();
+            if ($matchedTeacherId) {
+                $teacherId = (int)$matchedTeacherId;
+            } elseif (!empty($_POST['teacher_id'])) {
+                $teacherId = (int)$_POST['teacher_id'];
             }
 
             // Handle optional replacement document upload

@@ -3,12 +3,82 @@ $page_title = 'Excuse Slips';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
 require_once dirname(__DIR__, 2) . '/core/Database.php';
 
-// Fetch current student excuse slips from database (Juan Dela Cruz, student_id = 1)
-$studentId = 1;
+// Fetch current student ID from session or default to Juan Dela Cruz (user_id = 1)
+$studentId = !empty($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 1);
 $slips = [];
+$enrolledClasses = [];
+$enrolledTeachers = [];
+$studentName = 'Juan Dela Cruz';
+$studentSection = 'BSIT 3-1';
 
 try {
     $db = Database::getConnection();
+
+    // 1. Fetch student's profile info
+    $uStmt = $db->prepare("SELECT user_id, first_name, last_name, email FROM users WHERE user_id = ?");
+    $uStmt->execute([$studentId]);
+    $userRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+    if ($userRow) {
+        $studentName = trim("{$userRow['first_name']} {$userRow['last_name']}");
+    }
+
+    // 2. Fetch student's enrolled subjects & professors from class_roster
+    $rosterStmt = $db->prepare("
+        SELECT 
+            cr.roster_id,
+            cr.course_code,
+            cr.course_title,
+            cr.section,
+            cr.teacher_id,
+            cr.schedule_day,
+            cr.scheduled_time,
+            cr.room_number,
+            cr.course,
+            cr.year_level,
+            t.first_name AS teacher_first_name,
+            t.last_name AS teacher_last_name,
+            CONCAT(t.first_name, ' ', t.last_name) AS teacher_full_name
+        FROM class_roster cr
+        LEFT JOIN users t ON cr.teacher_id = t.user_id
+        WHERE cr.student_id = ?
+        GROUP BY cr.course_code, cr.course_title, cr.section, cr.teacher_id
+        ORDER BY cr.course_code ASC
+    ");
+    $rosterStmt->execute([$studentId]);
+    $rawClasses = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($rawClasses as $rc) {
+        $tLastName = !empty($rc['teacher_last_name']) ? $rc['teacher_last_name'] : (!empty($rc['teacher_first_name']) ? $rc['teacher_first_name'] : 'Faculty');
+        $tName = "Prof. {$tLastName}";
+        $title = !empty($rc['course_title']) ? $rc['course_title'] : $rc['course_code'];
+        $formattedSubject = "{$rc['course_code']} — {$title} ({$tName})";
+        if (!empty($rc['section'])) {
+            $studentSection = $rc['section'];
+        }
+
+        $enrolledClasses[] = [
+            'course_code'       => $rc['course_code'],
+            'course_title'      => $title,
+            'section'           => $rc['section'],
+            'teacher_id'        => (int)$rc['teacher_id'],
+            'teacher_name'      => $tName,
+            'teacher_full_name' => $rc['teacher_full_name'] ?: $tName,
+            'formatted_subject' => $formattedSubject,
+        ];
+
+        $tId = (int)$rc['teacher_id'];
+        if (!isset($enrolledTeachers[$tId])) {
+            $enrolledTeachers[$tId] = [
+                'teacher_id'   => $tId,
+                'teacher_name' => $tName,
+                'full_name'    => $rc['teacher_full_name'] ?: $tName,
+                'subjects'     => []
+            ];
+        }
+        $enrolledTeachers[$tId]['subjects'][] = $rc['course_code'];
+    }
+
+    // 3. Fetch current student excuse slips from database
     $stmt = $db->prepare("
         SELECT 
             es.excuse_slip_id,
@@ -32,6 +102,8 @@ try {
     $slips = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $slips = [];
+    $enrolledClasses = [];
+    $enrolledTeachers = [];
 }
 
 require_once dirname(__DIR__) . '/partials/header.php';
@@ -49,7 +121,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="badge badge-present">Student Portal</span>
-            <span class="text-xs text-slate-500 font-medium">Juan Dela Cruz • BSIT 3-A</span>
+            <span class="text-xs text-slate-500 font-medium"><?php echo htmlspecialchars($studentName); ?> • <?php echo htmlspecialchars($studentSection); ?></span>
           </div>
           <h1 class="text-2xl font-bold text-slate-800">Excuse Slips &amp; Absence Clearance</h1>
           <p class="text-sm text-slate-500">Submit justifications, manage requests, and track approval status with Supabase Cloud Storage.</p>
@@ -68,6 +140,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <form id="excuse-slip-form" onsubmit="event.preventDefault(); submitExcuseSlip();" class="space-y-4">
             <input type="hidden" id="excuse-student-id" value="<?php echo $studentId; ?>">
 
+            <?php if (count($enrolledClasses) > 1): ?>
             <!-- Send to All Subject Teachers Checkbox Banner -->
             <div class="p-3 rounded-xl bg-gradient-to-r from-indigo-50/90 to-blue-50/70 border border-indigo-200/90 shadow-2xs">
               <label class="flex items-start gap-2.5 cursor-pointer select-none">
@@ -83,36 +156,61 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 </div>
               </label>
             </div>
+            <?php endif; ?>
 
-            <!-- Subject Selection -->
+            <!-- Subject Selection (Populated exclusively from Class Roster) -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <label for="excuse-subject" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Class / Subject *</label>
+                <?php if (count($enrolledClasses) > 1): ?>
                 <span id="subject-all-indicator" class="hidden text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                  All 3 Classes Selected
+                  All <?php echo count($enrolledClasses); ?> Classes Selected
                 </span>
+                <?php endif; ?>
               </div>
               <select id="excuse-subject" name="subject" onchange="handleSubjectDropdownChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <option value="">Select subject or send to all...</option>
-                <option value="ALL" class="font-bold text-indigo-700 bg-indigo-50/70">★ All Subject Teachers (All 3 Enrolled Classes)</option>
-                <option disabled>────────────────────────────</option>
-                <option value="IT301 — Web Development 2 (Prof. Ramirez)">IT301 — Web Development 2 (Prof. Ramirez)</option>
-                <option value="IT302 — Database Systems 2 (Prof. Ramirez)">IT302 — Database Systems 2 (Prof. Ramirez)</option>
-                <option value="IT303 — Systems Integration (Prof. Santos)">IT303 — Systems Integration (Prof. Santos)</option>
+                <?php if (!empty($enrolledClasses)): ?>
+                  <option value="">Select subject or send to all...</option>
+                  <?php if (count($enrolledClasses) > 1): ?>
+                    <option value="ALL" class="font-bold text-indigo-700 bg-indigo-50/70">★ All Subject Teachers (All <?php echo count($enrolledClasses); ?> Enrolled Classes)</option>
+                    <option disabled>────────────────────────────</option>
+                  <?php endif; ?>
+                  <?php foreach ($enrolledClasses as $c): ?>
+                    <option value="<?php echo htmlspecialchars($c['formatted_subject']); ?>" 
+                            data-teacher-id="<?php echo (int)$c['teacher_id']; ?>" 
+                            data-course-code="<?php echo htmlspecialchars($c['course_code']); ?>">
+                      <?php echo htmlspecialchars($c['formatted_subject']); ?>
+                    </option>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <option value="" disabled selected>No subjects found in Class Roster for your account</option>
+                <?php endif; ?>
               </select>
 
-              <!-- Recipient Teachers Summary Pill List -->
+              <?php if (empty($enrolledClasses)): ?>
+                <p class="text-[11px] text-amber-700 mt-1.5 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                  <span>You are not enrolled in any class rosters yet. Please contact your instructor.</span>
+                </p>
+              <?php endif; ?>
+
+              <!-- Recipient Teachers Summary Pill List (Populated dynamically from Class Roster) -->
               <div id="recipient-teachers-box" class="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Faculty receiving this request:</div>
                 <div id="recipient-pills" class="flex flex-wrap gap-1.5">
-                  <span id="pill-ramirez" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium transition-opacity">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Prof. Manuel Ramirez (IT301, IT302)
-                  </span>
-                  <span id="pill-santos" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-medium transition-opacity">
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                    Prof. Jose Santos (IT303)
-                  </span>
+                  <?php if (!empty($enrolledTeachers)): ?>
+                    <?php foreach ($enrolledTeachers as $tId => $tInfo): ?>
+                      <span id="pill-teacher-<?php echo $tId; ?>" 
+                            data-teacher-id="<?php echo $tId; ?>"
+                            data-subjects="<?php echo htmlspecialchars(implode(',', $tInfo['subjects'])); ?>"
+                            class="teacher-recipient-pill inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium transition-opacity">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <?php echo htmlspecialchars($tInfo['teacher_name'] . ' (' . implode(', ', $tInfo['subjects']) . ')'); ?>
+                      </span>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <span class="text-xs text-slate-400 italic">No faculty roster records found.</span>
+                  <?php endif; ?>
                 </div>
               </div>
             </div>
@@ -341,9 +439,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div>
         <label for="edit-subject" class="block font-semibold text-slate-700 uppercase tracking-wider mb-1">Class / Subject *</label>
         <select id="edit-subject" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-          <option value="IT301 — Web Development 2 (Prof. Ramirez)">IT301 — Web Development 2 (Prof. Ramirez)</option>
-          <option value="IT302 — Database Systems 2 (Prof. Ramirez)">IT302 — Database Systems 2 (Prof. Ramirez)</option>
-          <option value="IT303 — Systems Integration (Prof. Santos)">IT303 — Systems Integration (Prof. Santos)</option>
+          <?php if (!empty($enrolledClasses)): ?>
+            <?php foreach ($enrolledClasses as $c): ?>
+              <option value="<?php echo htmlspecialchars($c['formatted_subject']); ?>" data-teacher-id="<?php echo (int)$c['teacher_id']; ?>">
+                <?php echo htmlspecialchars($c['formatted_subject']); ?>
+              </option>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <option value="" disabled selected>No subjects found in Class Roster</option>
+          <?php endif; ?>
         </select>
       </div>
 
@@ -430,6 +534,9 @@ const SlipCache = {
     sessionStorage.removeItem(this.KEY);
   }
 };
+
+const ENROLLED_CLASSES = <?php echo json_encode($enrolledClasses); ?>;
+const ENROLLED_TEACHERS = <?php echo json_encode(array_values($enrolledTeachers)); ?>;
 
 let allSlips = <?php echo json_encode($slips); ?>;
 let filteredSlips = [...allSlips];
@@ -994,14 +1101,11 @@ function formatBytes(bytes, decimals = 1) {
 function toggleSendToAllTeachers(isAll) {
   const subjectSelect = document.getElementById('excuse-subject');
   const allIndicator = document.getElementById('subject-all-indicator');
-  const pillRamirez = document.getElementById('pill-ramirez');
-  const pillSantos = document.getElementById('pill-santos');
 
   if (isAll) {
     subjectSelect.value = 'ALL';
     if (allIndicator) allIndicator.classList.remove('hidden');
-    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
-    if (pillSantos) pillSantos.classList.remove('opacity-40');
+    updateTeacherRecipientPreview('ALL');
   } else {
     if (subjectSelect.value === 'ALL') {
       subjectSelect.value = '';
@@ -1028,19 +1132,26 @@ function handleSubjectDropdownChange(val) {
 }
 
 function updateTeacherRecipientPreview(val) {
-  const pillRamirez = document.getElementById('pill-ramirez');
-  const pillSantos = document.getElementById('pill-santos');
+  const pills = document.querySelectorAll('.teacher-recipient-pill');
+  if (!pills.length) return;
 
   if (!val || val === 'ALL') {
-    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
-    if (pillSantos) pillSantos.classList.remove('opacity-40');
-  } else if (val.includes('Santos') || val.includes('IT303')) {
-    if (pillRamirez) pillRamirez.classList.add('opacity-40');
-    if (pillSantos) pillSantos.classList.remove('opacity-40');
-  } else {
-    if (pillRamirez) pillRamirez.classList.remove('opacity-40');
-    if (pillSantos) pillSantos.classList.add('opacity-40');
+    pills.forEach(p => p.classList.remove('opacity-30', 'grayscale'));
+    return;
   }
+
+  // Find target teacher from ENROLLED_CLASSES
+  const matchedClass = ENROLLED_CLASSES.find(c => c.formatted_subject === val || c.course_code === val);
+  const targetTeacherId = matchedClass ? matchedClass.teacher_id : null;
+
+  pills.forEach(p => {
+    const pTeacherId = Number(p.getAttribute('data-teacher-id'));
+    if (targetTeacherId && pTeacherId === targetTeacherId) {
+      p.classList.remove('opacity-30', 'grayscale');
+    } else {
+      p.classList.add('opacity-30', 'grayscale');
+    }
+  });
 }
 
 function checkPendingConflict() {
@@ -1057,30 +1168,27 @@ function checkPendingConflict() {
     return false;
   }
 
+  const matchedClass = ENROLLED_CLASSES.find(c => c.formatted_subject === subjectVal || c.course_code === subjectVal);
+  const targetTeacherId = matchedClass ? matchedClass.teacher_id : null;
+
   const conflicts = [];
   allSlips.forEach(s => {
     const sDate = s.date_of_absence;
     const sStatus = (s.status || '').toLowerCase();
     if (sDate === dateVal && sStatus === 'pending') {
-      const isSantos = (s.subject || '').includes('Santos') || (s.subject || '').includes('IT303') || Number(s.teacher_id) === 3;
-      const targetIsSantos = subjectVal.includes('Santos') || subjectVal.includes('IT303');
-      const targetIsRamirez = subjectVal.includes('Ramirez') || subjectVal.includes('IT301') || subjectVal.includes('IT302');
-
+      const sTeacherId = Number(s.teacher_id);
       if (isSendToAll) {
         conflicts.push(s);
-      } else if (targetIsSantos && isSantos) {
+      } else if (targetTeacherId && sTeacherId === targetTeacherId) {
         conflicts.push(s);
-      } else if (targetIsRamirez && !isSantos) {
+      } else if (!targetTeacherId && (s.subject === subjectVal || (s.subject && subjectVal && s.subject.includes(subjectVal)))) {
         conflicts.push(s);
       }
     }
   });
 
   if (conflicts.length > 0) {
-    const profNames = [...new Set(conflicts.map(c => {
-      const name = c.teacher_name || (c.subject.includes('Santos') ? 'Prof. Santos' : 'Prof. Ramirez');
-      return name.replace('Jose Santos', 'Santos').replace('Manuel Ramirez', 'Ramirez');
-    }))].join(' & ');
+    const profNames = [...new Set(conflicts.map(c => c.teacher_name || 'Instructor'))].join(' & ');
     alertMsg.innerHTML = `Already pending for <strong>${escapeHtml(profNames)}</strong>.`;
     alertBox.classList.remove('hidden');
     return true;
@@ -1140,6 +1248,12 @@ async function submitExcuseSlip() {
   formData.append('subject', isSendToAll ? 'ALL' : subject);
   if (isSendToAll) {
     formData.append('send_to_all', '1');
+  } else {
+    const matchedClass = ENROLLED_CLASSES.find(c => c.formatted_subject === subject || c.course_code === subject);
+    if (matchedClass) {
+      formData.append('teacher_id', String(matchedClass.teacher_id));
+      formData.append('course_code', matchedClass.course_code);
+    }
   }
   formData.append('date_of_absence', dateOfAbsence);
   formData.append('reason', category);
