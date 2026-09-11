@@ -27,8 +27,14 @@ class StudentController {
                 u.status,
                 COALESCE(r.course, 'BSIT') AS course,
                 COALESCE(r.year_level, 3) AS year_level,
-                CONCAT(COALESCE(r.year_level, 3), ' Year') AS grade_level,
-                COALESCE(r.section, '3-A') AS section,
+                CASE COALESCE(r.year_level, 3)
+                    WHEN 1 THEN '1st Year'
+                    WHEN 2 THEN '2nd Year'
+                    WHEN 3 THEN '3rd Year'
+                    WHEN 4 THEN '4th Year'
+                    ELSE CONCAT(COALESCE(r.year_level, 3), 'th Year')
+                END AS grade_level,
+                COALESCE(r.section, 'Unassigned') AS section,
                 u.student_id AS qr_code
             FROM users u
             LEFT JOIN class_roster r ON u.user_id = r.student_id
@@ -84,8 +90,9 @@ class StudentController {
     }
 
     /**
-     * Resolve assigned section according to Course + Year1001 convention and 50-student capacity rollover
-     * e.g. 1st Year: BSIT 11001, 4th Year: BSIT 41001. Rolls over to 41002 once 50 students is reached.
+     * Resolve assigned section according to 5-digit Year1001 convention and 50-student capacity rollover
+     * e.g. 1st Year: 11001, 2nd Year: 21001, 3rd Year: 31001, 4th Year: 41001. Rolls over to 41002 once 50 students is reached.
+     * Pure 5 digits (no course prefix, since table header is ASSIGNED SECTION).
      */
     public static function resolveSection(PDO $db, string $course, int $yearLevel, string $requested = ''): string {
         $course = strtoupper(trim($course));
@@ -93,22 +100,25 @@ class StudentController {
             $yearLevel = 1;
         }
 
+        // Clean requested: strip any leading non-digits/course prefix if entered (e.g. "BSIT 31001" -> "31001")
+        $requested = trim(preg_replace('/^[a-zA-Z\s-]+/', '', $requested));
+
         // If a specific section was requested and still has capacity (< 50)
         if (!empty($requested)) {
-            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec");
-            $chkStmt->execute([':sec' => $requested]);
+            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec OR section = :sec_legacy");
+            $chkStmt->execute([':sec' => $requested, ':sec_legacy' => $course . ' ' . $requested]);
             $cnt = (int) $chkStmt->fetchColumn();
             if ($cnt < 50) {
                 return $requested;
             }
         }
 
-        // Auto-assign next available sequence in [Course] [Year]1XXX series
+        // Auto-assign next available sequence in [Year]1XXX series (e.g. 11001, 21001, 31001, 41001)
         $seq = 1;
         while ($seq <= 999) {
-            $candidate = sprintf('%s %d1%03d', $course, $yearLevel, $seq);
-            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec");
-            $chkStmt->execute([':sec' => $candidate]);
+            $candidate = sprintf('%d1%03d', $yearLevel, $seq);
+            $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec OR section = :sec_legacy");
+            $chkStmt->execute([':sec' => $candidate, ':sec_legacy' => $course . ' ' . $candidate]);
             $cnt = (int) $chkStmt->fetchColumn();
             if ($cnt < 50) {
                 return $candidate;
@@ -116,7 +126,7 @@ class StudentController {
             $seq++;
         }
 
-        return sprintf('%s %d1001', $course, $yearLevel);
+        return sprintf('%d1001', $yearLevel);
     }
 
     /**
@@ -132,10 +142,10 @@ class StudentController {
         $sectionRaw    = trim($_POST['section'] ?? '');
         $parentContact = trim($_POST['parent_contact'] ?? '');
 
-        // Normalize institutional email: automatically attach @bestlink.edu.ph
+        // Normalize institutional email: automatically attach @bcp.edu.ph
         $emailPrefix   = preg_replace('/@.*$/', '', $emailRaw);
         $emailPrefix   = trim($emailPrefix);
-        $email         = !empty($emailPrefix) ? strtolower($emailPrefix) . '@bestlink.edu.ph' : '';
+        $email         = !empty($emailPrefix) ? strtolower($emailPrefix) . '@bcp.edu.ph' : '';
 
         // Validation
         if (empty($studentIdRaw) || empty($fullName) || empty($email)) {
@@ -240,6 +250,10 @@ class StudentController {
 
             $userId = (int) $db->lastInsertId();
 
+            // Dynamically resolve active teacher ID
+            $tStmt = $db->query("SELECT user_id FROM users WHERE role = 'teacher' AND status = 'active' ORDER BY user_id ASC LIMIT 1");
+            $defaultTeacherId = (int) ($tStmt->fetchColumn() ?: 2);
+
             // 2. Insert class section details into class_roster table
             $rosterStmt = $db->prepare("
                 INSERT INTO class_roster (
@@ -256,7 +270,7 @@ class StudentController {
                     year_level
                 ) VALUES (
                     :student_id,
-                    2,
+                    :teacher_id,
                     :first_name,
                     :last_name,
                     :section,
@@ -271,6 +285,7 @@ class StudentController {
 
             $rosterStmt->execute([
                 ':student_id'   => $userId,
+                ':teacher_id'   => $defaultTeacherId,
                 ':first_name'   => $firstName,
                 ':last_name'    => $lastName,
                 ':section'      => $section,
@@ -305,9 +320,9 @@ class StudentController {
 
         $output = fopen('php://output', 'w');
         fputcsv($output, ['student_id', 'full_name', 'email', 'course', 'year_level', 'section', 'parent_contact'], ',', '"', "\\");
-        fputcsv($output, ['230110150', 'Jerome A. Valdez', 'jerome.valdez@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', '09123456789'], ',', '"', "\\");
-        fputcsv($output, ['230110151', 'Alyssa Jane Mercado', 'alyssa.mercado@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', 'alyssa.parent@gmail.com'], ',', '"', "\\");
-        fputcsv($output, ['230110152', 'Gabriel Kyle Soriano', 'gabriel.soriano@bestlink.edu.ph', 'BSIS', '2nd Year', '2-B', '09987654321'], ',', '"', "\\");
+        fputcsv($output, ['230110150', 'Jerome A. Valdez', 'jerome.valdez@bcp.edu.ph', 'BSIT', '3rd Year', '3-A', '09123456789'], ',', '"', "\\");
+        fputcsv($output, ['230110151', 'Alyssa Jane Mercado', 'alyssa.mercado@bcp.edu.ph', 'BSIT', '3rd Year', '3-A', 'alyssa.parent@gmail.com'], ',', '"', "\\");
+        fputcsv($output, ['230110152', 'Gabriel Kyle Soriano', 'gabriel.soriano@bcp.edu.ph', 'BSIS', '2nd Year', '2-B', '09987654321'], ',', '"', "\\");
         fclose($output);
         exit;
     }
@@ -328,11 +343,11 @@ class StudentController {
         // Student identification columns with middle initial and optional name extension
         fputcsv($output, ['student_id', 'first_name', 'middle_initial', 'last_name', 'extension'], ',', '"', "\\");
 
-        // Sample data rows matching verified students
-        fputcsv($output, ['2026-00123', 'Juan', 'A.', 'Dela Cruz', 'Jr.'], ',', '"', "\\");
-        fputcsv($output, ['2026-00124', 'Maria', 'C.', 'Santos', ''], ',', '"', "\\");
-        fputcsv($output, ['2026-00125', 'Pedro', 'M.', 'Reyes', 'III'], ',', '"', "\\");
-        fputcsv($output, ['2026-00126', 'Ana', 'B.', 'Mendoza', ''], ',', '"', "\\");
+        // Sample data rows matching verified students (format: 23011XXXX)
+        fputcsv($output, ['230110001', 'Juan', 'A.', 'Dela Cruz', 'Jr.'], ',', '"', "\\");
+        fputcsv($output, ['230110002', 'Maria', 'C.', 'Santos', ''], ',', '"', "\\");
+        fputcsv($output, ['230110003', 'Pedro', 'M.', 'Reyes', 'III'], ',', '"', "\\");
+        fputcsv($output, ['230110004', 'Ana', 'B.', 'Mendoza', ''], ',', '"', "\\");
 
         fclose($output);
         exit;
@@ -459,7 +474,7 @@ class StudentController {
                     year_level
                 ) VALUES (
                     :student_id,
-                    2,
+                    :teacher_id,
                     :first_name,
                     :last_name,
                     :section,
@@ -472,7 +487,10 @@ class StudentController {
                 )
             ");
 
-            $hashedPassword = password_hash('BCP@2026', PASSWORD_BCRYPT);
+            // Dynamically resolve active teacher ID for imported roster mappings
+            $tStmt = $db->query("SELECT user_id FROM users WHERE role = 'teacher' AND status = 'active' ORDER BY user_id ASC LIMIT 1");
+            $defaultTeacherId = (int) ($tStmt->fetchColumn() ?: 2);
+
             $importedCount = 0;
             $skippedCount = 0;
 
@@ -521,12 +539,12 @@ class StudentController {
                     $firstName = 'Student';
                 }
 
-                // Resolve email
+                // Resolve institutional email
                 $email = $colEmail !== null ? strtolower(trim($row[$colEmail] ?? '')) : '';
                 if (empty($email)) {
                     $cleanF = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($firstName));
                     $cleanL = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($lastName));
-                    $email = "{$cleanF}.{$cleanL}@bestlink.edu.ph";
+                    $email = "{$cleanF}.{$cleanL}@bcp.edu.ph";
                 }
 
                 // Check for duplicates
@@ -543,8 +561,26 @@ class StudentController {
                 preg_match('/\d+/', $yearRaw, $mYear);
                 $yearLevel = isset($mYear[0]) ? (int)$mYear[0] : 3;
 
-                $section = $colSection !== null ? trim($row[$colSection] ?? '3-A') : '3-A';
-                if (empty($section)) $section = '3-A';
+                // Dynamically resolve section if missing or legacy
+                $section = $colSection !== null ? trim($row[$colSection] ?? '') : '';
+                if (empty($section) || $section === '3-A') {
+                    $section = self::resolveSection($db, $course, $yearLevel);
+                }
+
+                // Generate dynamic initial password: # + Last Name Initials + 8080
+                $cleanLast = preg_replace('/[^a-zA-Z]/', '', $lastName);
+                if (strlen($cleanLast) >= 2) {
+                    $c1 = strtoupper(substr($cleanLast, 0, 1));
+                    $c2 = strtolower(substr($cleanLast, 1, 1));
+                } elseif (strlen($cleanLast) === 1) {
+                    $c1 = strtoupper(substr($cleanLast, 0, 1));
+                    $c2 = 'x';
+                } else {
+                    $c1 = 'S';
+                    $c2 = 't';
+                }
+                $rowPassword = '#' . $c1 . $c2 . '8080';
+                $rowPasswordHash = password_hash($rowPassword, PASSWORD_BCRYPT);
 
                 // Resolve contact info
                 $contact = $colContact !== null ? trim($row[$colContact] ?? '') : '';
@@ -554,7 +590,7 @@ class StudentController {
                 $userInsert->execute([
                     ':student_id'    => $studentId,
                     ':email'         => $email,
-                    ':password_hash' => $hashedPassword,
+                    ':password_hash' => $rowPasswordHash,
                     ':first_name'    => $firstName,
                     ':last_name'     => $lastName,
                     ':phone'         => !$isEmailContact ? $contact : null,
@@ -567,6 +603,7 @@ class StudentController {
                 // Insert into class_roster
                 $rosterInsert->execute([
                     ':student_id'   => $userId,
+                    ':teacher_id'   => $defaultTeacherId,
                     ':first_name'   => $firstName,
                     ':last_name'    => $lastName,
                     ':section'      => $section,

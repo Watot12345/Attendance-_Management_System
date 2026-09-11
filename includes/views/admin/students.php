@@ -310,7 +310,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             Assigned Section <span class="text-rose-500">*</span>
           </label>
           <div class="relative">
-            <input type="text" id="m-section" name="section" required placeholder="e.g. BSIT 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 outline-none bg-slate-50/70 font-mono transition">
+            <input type="text" id="m-section" name="section" required placeholder="e.g. 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 outline-none bg-slate-50/70 font-mono transition">
           </div>
           <div id="m-section-capacity-badge" class="text-[11px] mt-1.5 font-medium text-slate-500 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
@@ -328,7 +328,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <div class="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition bg-white shadow-2xs">
             <input type="text" id="m-email-prefix" name="email_prefix" required placeholder="student.name" class="w-full px-3.5 py-2.5 text-xs font-mono font-medium text-slate-800 outline-none bg-transparent" autocomplete="off">
             <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-500 bg-slate-50 border-l border-slate-200 select-none shrink-0 font-mono">
-              @bestlink.edu.ph
+              @bcp.edu.ph
             </span>
           </div>
           <input type="hidden" id="m-email" name="email" value="">
@@ -395,7 +395,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <div class="text-xs text-emerald-950">
             <div class="font-bold mb-0.5">Required Spreadsheet Format (.csv, .txt):</div>
             <p class="text-emerald-800 text-[11.5px] leading-relaxed">
-              Ensure your spreadsheet includes headers: <strong class="font-mono text-emerald-950">student_id</strong>, <strong class="font-mono text-emerald-950">full_name</strong>, <strong class="font-mono text-emerald-950">email</strong>, <strong class="font-mono text-emerald-950">course</strong>, and <strong class="font-mono text-emerald-950">section</strong>. Student accounts with default credentials (<code class="bg-emerald-200/60 px-1 py-0.5 rounded text-emerald-900 font-semibold">BCP@2026</code>) and class roster mappings will be created automatically.
+              Ensure your spreadsheet includes headers: <strong class="font-mono text-emerald-950">student_id</strong>, <strong class="font-mono text-emerald-950">full_name</strong>, <strong class="font-mono text-emerald-950">email</strong>, <strong class="font-mono text-emerald-950">course</strong>, and <strong class="font-mono text-emerald-950">section</strong>. Student accounts with default credentials (<code class="bg-emerald-200/60 px-1 py-0.5 rounded text-emerald-900 font-semibold font-mono"># + Last Name Initials + 8080 (e.g. #Ra8080)</code>) and class roster mappings will be created automatically.
             </p>
           </div>
         </div>
@@ -684,7 +684,7 @@ function syncInstitutionalEmail() {
     val = val.split('@')[0].trim();
     prefixInput.value = val;
   }
-  hiddenEmail.value = val ? val.toLowerCase() + '@bestlink.edu.ph' : '';
+  hiddenEmail.value = val ? val.toLowerCase() + '@bcp.edu.ph' : '';
 }
 
 function autoSuggestEmailPrefix() {
@@ -714,7 +714,7 @@ function autoSuggestEmailPrefix() {
 // Section Enrollment Counts passed from database
 const sectionRosterCounts = <?= json_encode($sectionCounts ?? []) ?>;
 
-// Dynamic Section Assignment & 50-Student Capacity Auto-Rollover
+// Dynamic Section Assignment & 50-Student Capacity Auto-Rollover (strictly 5 digits: e.g. 31001)
 function updateAssignedSection() {
   const courseSelect = document.getElementById('m-course');
   const yearSelect = document.getElementById('m-year');
@@ -732,10 +732,10 @@ function updateAssignedSection() {
   let assignedSection = '';
   let currentCount = 0;
 
-  // Scan sequence (e.g. 41001, 41002...) until a section with < 50 students is found
+  // Scan sequence (e.g. 11001, 21001, 31001, 41001...) until a section with < 50 students is found
   while (seq <= 999) {
-    const candidate = `${course} ${yearNum}1${String(seq).padStart(3, '0')}`;
-    const count = sectionRosterCounts[candidate] || 0;
+    const candidate = `${yearNum}1${String(seq).padStart(3, '0')}`;
+    const count = (sectionRosterCounts[candidate] || 0) + (sectionRosterCounts[`${course} ${candidate}`] || 0);
     if (count < 50) {
       assignedSection = candidate;
       currentCount = count;
@@ -769,77 +769,6 @@ function openManualStudentModal() {
 function closeManualStudentModal() {
   const modal = document.getElementById('manualStudentModal');
   if (modal) modal.classList.add('hidden');
-}
-
-function handleManualStudentSubmit(e) {
-  e.preventDefault();
-  const id = document.getElementById('m-student-id').value.trim();
-  const name = document.getElementById('m-student-name').value.trim();
-  const course = document.getElementById('m-course').value;
-  const year = document.getElementById('m-year').value;
-  const section = document.getElementById('m-section').value.trim();
-  const email = document.getElementById('m-email').value.trim();
-
-  if (!id || !name || !section || !email) {
-    APP.toast('Please complete all required fields.', 'error');
-    return;
-  }
-
-  // Get Initials
-  const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
-  // Create new table row
-  const tbody = document.getElementById('students-table-body');
-  const tr = document.createElement('tr');
-  tr.className = 'student-row hover:bg-slate-50/80 transition bg-blue-50/30';
-  tr.setAttribute('data-program', course);
-  tr.setAttribute('data-year', year);
-  tr.setAttribute('data-status', 'Active');
-  tr.setAttribute('data-text', `${id} ${name} ${email} ${course} ${section}`);
-
-  tr.innerHTML = `
-    <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
-      <div class="flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-        <span>${id}</span>
-      </div>
-    </td>
-    <td class="py-3.5 px-4">
-      <div class="flex items-center gap-2.5">
-        <div class="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">${initials}</div>
-        <div>
-          <div class="font-bold text-slate-900">${name}</div>
-          <div class="text-[10px] text-emerald-600 font-bold">● Just Created (Manual)</div>
-        </div>
-      </div>
-    </td>
-    <td class="py-3.5 px-4 text-slate-600 font-medium">${email}</td>
-    <td class="py-3.5 px-4 font-semibold text-slate-800">${course} • ${year}</td>
-    <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">${course} ${section}</span></td>
-    <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active Account</span></td>
-    <td class="py-3.5 px-4 text-right">
-      <div class="flex items-center justify-end gap-2">
-        <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition" onclick="APP.toast('Editing student record ${id}', 'info')">Edit</button>
-        <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition" onclick="APP.toast('Reset password link sent to student email', 'success')" title="Reset Password">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-        </button>
-      </div>
-    </td>
-  `;
-
-  tbody.insertBefore(tr, tbody.firstChild);
-
-  // Update counter
-  const totalElem = document.getElementById('stat-total-students');
-  if (totalElem) {
-    const curr = parseInt(totalElem.textContent.replace(/,/g, '')) || 1248;
-    totalElem.textContent = (curr + 1).toLocaleString();
-  }
-
-  filterStudents();
-  closeManualStudentModal();
-  document.getElementById('manual-student-form').reset();
-  APP.toast(`Student account for ${name} (${id}) created successfully!`, 'success');
 }
 
 // Excel Import Modal controls
