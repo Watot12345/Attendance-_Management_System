@@ -26,6 +26,7 @@ class StudentController {
                 u.phone,
                 u.status,
                 COALESCE(r.course, 'BSIT') AS course,
+                COALESCE(r.year_level, 3) AS year_level,
                 CONCAT(COALESCE(r.year_level, 3), ' Year') AS grade_level,
                 COALESCE(r.section, '3-A') AS section,
                 u.student_id AS qr_code

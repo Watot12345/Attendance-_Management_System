@@ -98,7 +98,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
 
           <!-- Program filter -->
-          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition" onchange="filterStudents()">
+          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
             <option value="all">All Programs &amp; Courses</option>
             <option value="BSIT">BS Information Technology (BSIT)</option>
             <option value="BSIS">BS Information Systems (BSIS)</option>
@@ -107,19 +107,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </select>
 
           <!-- Year Level Filter -->
-          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition" onchange="filterStudents()">
+          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
             <option value="all">All Year Levels</option>
-            <option value="1st Year">1st Year</option>
-            <option value="2nd Year">2nd Year</option>
-            <option value="3rd Year">3rd Year</option>
-            <option value="4th Year">4th Year</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
           </select>
 
           <!-- Status filter -->
-          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition" onchange="filterStudents()">
+          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
             <option value="all">All Statuses</option>
-            <option value="Active">Active Accounts Only</option>
-            <option value="Inactive">Inactive / Suspended</option>
+            <option value="active">Active Accounts Only</option>
+            <option value="inactive">Inactive / Suspended</option>
           </select>
         </div>
 
@@ -161,9 +161,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     $initials = strtoupper(substr($st['first_name'], 0, 1) . substr($st['last_name'], 0, 1));
                   ?>
                   <tr class="student-row hover:bg-slate-50/80 transition" 
-                      data-program="<?= htmlspecialchars($st['grade_level']) ?>" 
-                      data-status="<?= htmlspecialchars($st['status']) ?>" 
-                      data-text="<?= strtolower($st['student_code'] . ' ' . $fullName . ' ' . $st['email'] . ' ' . $st['grade_level'] . ' ' . $st['section']) ?>">
+                      data-program="<?= htmlspecialchars($st['course']) ?>" 
+                      data-year="<?= htmlspecialchars($st['grade_level']) ?>" 
+                      data-year-num="<?= (int) ($st['year_level'] ?? 3) ?>" 
+                      data-status="<?= strtolower($st['status'] ?? 'active') ?>" 
+                      data-text="<?= strtolower($st['student_code'] . ' ' . $fullName . ' ' . $st['email'] . ' ' . $st['course'] . ' ' . $st['grade_level'] . ' ' . $st['section']) ?>">
                     
                     <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
                       <div class="flex items-center gap-1.5">
@@ -185,7 +187,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     </td>
 
                     <td class="py-3.5 px-4 text-slate-600 font-medium"><?= htmlspecialchars($st['email']) ?></td>
-                    <td class="py-3.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($st['grade_level']) ?></td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($st['course']) ?> • <?= htmlspecialchars($st['grade_level']) ?></td>
                     
                     <td class="py-3.5 px-4">
                       <span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">
@@ -208,6 +210,16 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     </td>
                   </tr>
                 <?php endforeach; ?>
+                <!-- Empty Filter Results Row -->
+                <tr id="no-filter-results" class="hidden">
+                  <td colspan="7" class="py-12 text-center text-slate-400">
+                    <div class="flex flex-col items-center justify-center gap-1.5">
+                      <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                      <span class="font-semibold text-xs text-slate-600">No students match your filter criteria</span>
+                      <span class="text-[11px] text-slate-400">Try adjusting the Program, Year Level, Status, or Search keywords.</span>
+                    </div>
+                  </td>
+                </tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -436,23 +448,40 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <script>
 // Filter students live
 function filterStudents() {
-  const program = document.getElementById('filter-program').value;
-  const year = document.getElementById('filter-year').value;
-  const status = document.getElementById('filter-status').value;
-  const query = document.getElementById('search-student').value.toLowerCase().trim();
+  const program = (document.getElementById('filter-program')?.value || 'all').trim();
+  const year = (document.getElementById('filter-year')?.value || 'all').trim();
+  const status = (document.getElementById('filter-status')?.value || 'all').trim().toLowerCase();
+  const query = (document.getElementById('search-student')?.value || '').toLowerCase().trim();
 
   const rows = document.querySelectorAll('.student-row');
   let visible = 0;
 
   rows.forEach(row => {
-    const rowProg = row.getAttribute('data-program');
-    const rowYear = row.getAttribute('data-year');
-    const rowStatus = row.getAttribute('data-status');
+    const rowProg = (row.getAttribute('data-program') || '').toUpperCase();
+    const rowYear = (row.getAttribute('data-year') || '').toLowerCase();
+    const rowYearNum = (row.getAttribute('data-year-num') || '').trim();
+    const rowStatus = (row.getAttribute('data-status') || 'active').toLowerCase();
     const rowText = (row.getAttribute('data-text') || '').toLowerCase();
 
-    const matchProg = (program === 'all' || rowProg === program);
-    const matchYear = (year === 'all' || rowYear === year);
-    const matchStatus = (status === 'all' || rowStatus === status);
+    // 1. Program / Course Filter
+    const matchProg = (program === 'all' || rowProg === program.toUpperCase());
+
+    // 2. Year Level Filter (checks numeric or string format, e.g. "3" or "3rd Year")
+    const matchYear = (
+      year === 'all' || 
+      rowYearNum === year || 
+      rowYear.includes(year.toLowerCase())
+    );
+
+    // 3. Status Filter (Active vs Inactive/Suspended/Pending)
+    let matchStatus = true;
+    if (status === 'active') {
+      matchStatus = (rowStatus === 'active');
+    } else if (status === 'inactive') {
+      matchStatus = (rowStatus !== 'active');
+    }
+
+    // 4. Live Text Search Filter
     const matchQuery = (!query || rowText.includes(query));
 
     if (matchProg && matchYear && matchStatus && matchQuery) {
@@ -463,7 +492,20 @@ function filterStudents() {
     }
   });
 
-  document.getElementById('visible-count').textContent = visible;
+  const countElem = document.getElementById('visible-count');
+  if (countElem) {
+    countElem.textContent = visible;
+  }
+
+  // Toggle empty results row
+  const noResultsRow = document.getElementById('no-filter-results');
+  if (noResultsRow) {
+    if (visible === 0 && rows.length > 0) {
+      noResultsRow.classList.remove('hidden');
+    } else {
+      noResultsRow.classList.add('hidden');
+    }
+  }
 }
 
 // Manual Student Modal controls
