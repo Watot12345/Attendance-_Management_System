@@ -31,7 +31,7 @@ class StudentController {
                 COALESCE(r.section, '3-A') AS section,
                 u.student_id AS qr_code
             FROM users u
-            LEFT JOIN class_roster r ON u.user_id = r.user_id
+            LEFT JOIN class_roster r ON u.user_id = r.student_id
             WHERE u.role = 'student'
             ORDER BY u.user_id DESC
         ");
@@ -143,7 +143,7 @@ class StudentController {
             // 2. Insert class section details into class_roster table
             $rosterStmt = $db->prepare("
                 INSERT INTO class_roster (
-                    user_id,
+                    student_id,
                     teacher_id,
                     first_name,
                     last_name,
@@ -155,7 +155,7 @@ class StudentController {
                     course,
                     year_level
                 ) VALUES (
-                    :user_id,
+                    :student_id,
                     2,
                     :first_name,
                     :last_name,
@@ -170,7 +170,7 @@ class StudentController {
             ");
 
             $rosterStmt->execute([
-                ':user_id'      => $userId,
+                ':student_id'   => $userId,
                 ':first_name'   => $firstName,
                 ':last_name'    => $lastName,
                 ':section'      => $section,
@@ -346,7 +346,7 @@ class StudentController {
 
             $rosterInsert = $db->prepare("
                 INSERT INTO class_roster (
-                    user_id,
+                    student_id,
                     teacher_id,
                     first_name,
                     last_name,
@@ -358,7 +358,7 @@ class StudentController {
                     course,
                     year_level
                 ) VALUES (
-                    :user_id,
+                    :student_id,
                     2,
                     :first_name,
                     :last_name,
@@ -466,7 +466,7 @@ class StudentController {
 
                 // Insert into class_roster
                 $rosterInsert->execute([
-                    ':user_id'      => $userId,
+                    ':student_id'   => $userId,
                     ':first_name'   => $firstName,
                     ':last_name'    => $lastName,
                     ':section'      => $section,

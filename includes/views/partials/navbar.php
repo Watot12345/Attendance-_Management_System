@@ -27,8 +27,12 @@ if ($sessionUser) {
         $userAvatarBg = 'bg-blue-600';
     }
 
-    $firstInitial = mb_substr($sessionUser['first_name'] ?? '', 0, 1);
-    $lastInitial  = mb_substr($sessionUser['last_name'] ?? '', 0, 1);
+    $firstInitial = function_exists('mb_substr') 
+        ? mb_substr($sessionUser['first_name'] ?? '', 0, 1) 
+        : substr($sessionUser['first_name'] ?? '', 0, 1);
+    $lastInitial  = function_exists('mb_substr') 
+        ? mb_substr($sessionUser['last_name'] ?? '', 0, 1) 
+        : substr($sessionUser['last_name'] ?? '', 0, 1);
     $userInitials = strtoupper($firstInitial . $lastInitial);
     if (empty($userInitials)) {
         $userInitials = 'US';
