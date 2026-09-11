@@ -256,7 +256,16 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-student-id" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Student Number / ID <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-student-id" name="student_id" required placeholder="e.g. 2026-00127" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-slate-800 outline-none">
+          <div class="relative">
+            <input type="text" id="m-student-id" name="student_id" required placeholder="23011XXXX" data-next-id="<?= htmlspecialchars($nextStudentId ?? '230110007') ?>" class="w-full pl-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-slate-800 outline-none transition" style="padding-left: 1rem; padding-right: 4.75rem;">
+            <button type="button" onclick="autoGenerateStudentId()" title="Auto-generate Student Number" class="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition flex items-center gap-1 border border-blue-200 shadow-2xs group cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-blue-600 group-hover:rotate-45 transition duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <span>Auto</span>
+            </button>
+          </div>
+          <div id="m-student-id-feedback" class="text-[11px] mt-1 hidden font-semibold"></div>
         </div>
 
         <!-- Full Name -->
@@ -336,7 +345,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <button type="button" onclick="closeManualStudentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition">
           Cancel
         </button>
-        <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
+        <button type="submit" id="btn-manual-submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           <span>Save &amp; Create Student Account</span>
         </button>
@@ -508,13 +517,129 @@ function filterStudents() {
   }
 }
 
+// Auto-generate new unique student ID (format: 23011XXXX)
+function autoGenerateStudentId() {
+  const idInput = document.getElementById('m-student-id');
+  if (!idInput) return;
+
+  const prefix = '23011';
+  let highestSeq = 0;
+  let padLength = 4;
+
+  // 1. Read server-provided baseline if available
+  const serverBaseline = (idInput.getAttribute('data-next-id') || '').trim();
+  const serverMatch = serverBaseline.match(/^23011(\d+)$/);
+  if (serverMatch) {
+    const sNum = parseInt(serverMatch[1], 10);
+    if (!isNaN(sNum)) {
+      highestSeq = sNum - 1;
+      padLength = Math.max(padLength, serverMatch[1].length);
+    }
+  }
+
+  // 2. Scan existing student rows in directory to find highest sequence
+  const rows = document.querySelectorAll('.student-row');
+  rows.forEach(row => {
+    const text = (row.getAttribute('data-text') || '');
+    const matches = text.match(/23011[-]?(\d+)\b/);
+    if (matches && matches[1]) {
+      const num = parseInt(matches[1], 10);
+      if (!isNaN(num) && num > highestSeq) {
+        highestSeq = num;
+        padLength = Math.max(padLength, matches[1].length);
+      }
+    }
+  });
+
+  // 3. Increment on repeated clicks if current input value is already >= nextSeq
+  const currentVal = idInput.value.trim();
+  const currMatch = currentVal.match(/^23011(\d+)$/);
+  let nextSeq = highestSeq + 1;
+  if (currMatch) {
+    const currNum = parseInt(currMatch[1], 10);
+    if (!isNaN(currNum) && currNum >= nextSeq) {
+      nextSeq = currNum + 1;
+    }
+  }
+
+  const formattedSeq = String(nextSeq).padStart(padLength, '0');
+  const generatedId = `${prefix}${formattedSeq}`;
+
+  idInput.value = generatedId;
+  validateStudentIdUniqueness();
+
+  // Visual pulse confirmation
+  idInput.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50/50');
+  setTimeout(() => {
+    idInput.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50/50');
+  }, 600);
+
+  if (typeof APP !== 'undefined' && APP.toast) {
+    APP.toast.info(`Auto-generated Student ID: ${generatedId}`);
+  }
+}
+
+// Real-time Student ID uniqueness validation
+function validateStudentIdUniqueness() {
+  const idInput = document.getElementById('m-student-id');
+  const feedback = document.getElementById('m-student-id-feedback');
+  const submitBtn = document.getElementById('btn-manual-submit');
+  if (!idInput) return true;
+
+  const enteredId = idInput.value.trim();
+  if (!enteredId) {
+    if (feedback) {
+      feedback.classList.add('hidden');
+      feedback.textContent = '';
+    }
+    idInput.classList.remove('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    if (submitBtn) submitBtn.disabled = false;
+    return true;
+  }
+
+  // Scan student rows for exact student ID match
+  let conflictName = null;
+  const rows = document.querySelectorAll('.student-row');
+  for (const row of rows) {
+    const firstCol = row.querySelector('td:first-child');
+    const rowId = firstCol ? firstCol.textContent.replace(/[^\d]/g, '').trim() : '';
+    if (rowId === enteredId) {
+      const nameElem = row.querySelector('.font-bold.text-slate-900');
+      conflictName = nameElem ? nameElem.textContent.trim() : 'another student';
+      break;
+    }
+  }
+
+  if (conflictName) {
+    if (feedback) {
+      feedback.classList.remove('hidden', 'text-emerald-600');
+      feedback.classList.add('text-rose-600');
+      feedback.innerHTML = `⚠️ Student ID <strong>${enteredId}</strong> is already assigned to <strong>${escapeHtml(conflictName)}</strong>.`;
+    }
+    idInput.classList.add('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    if (submitBtn) submitBtn.disabled = true;
+    return false;
+  } else {
+    if (feedback) {
+      feedback.classList.add('hidden');
+      feedback.textContent = '';
+    }
+    idInput.classList.remove('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    if (submitBtn) submitBtn.disabled = false;
+    return true;
+  }
+}
+
 // Manual Student Modal controls
 function openManualStudentModal() {
-  document.getElementById('manualStudentModal').classList.remove('hidden');
+  const modal = document.getElementById('manualStudentModal');
+  if (modal) modal.classList.remove('hidden');
+  validateStudentIdUniqueness();
 }
 
 function closeManualStudentModal() {
-  document.getElementById('manualStudentModal').classList.add('hidden');
+  const modal = document.getElementById('manualStudentModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function handleManualStudentSubmit(e) {
@@ -699,8 +824,27 @@ function processExcelImport() {
   }
 }
 
-// URL notification handler (Sonner toast on redirect)
+// Form validation and URL notification handlers
 document.addEventListener('DOMContentLoaded', function() {
+  // Real-time listener on manual student input
+  const mStudentId = document.getElementById('m-student-id');
+  if (mStudentId) {
+    mStudentId.addEventListener('input', validateStudentIdUniqueness);
+  }
+
+  // Prevent form submission if student ID is duplicated
+  const manualForm = document.getElementById('manual-student-form');
+  if (manualForm) {
+    manualForm.addEventListener('submit', function(e) {
+      if (!validateStudentIdUniqueness()) {
+        e.preventDefault();
+        if (typeof APP !== 'undefined' && APP.toast) {
+          APP.toast.error('Please resolve conflicting student number before proceeding.');
+        }
+      }
+    });
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('created')) {
     const studentName = urlParams.get('created');

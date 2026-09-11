@@ -42,6 +42,8 @@ class StudentController {
         $activeStudents = 0;
         $qrPairedStudents = 0;
         $pendingSetup = 0;
+        $maxStudentSeq = 0;
+        $seqLength = 4;
 
         foreach ($students as $st) {
             if ($st['status'] === 'active') {
@@ -50,7 +52,19 @@ class StudentController {
                 $pendingSetup++;
             }
             if (!empty($st['student_id'])) $qrPairedStudents++;
+
+            $sid = trim((string)($st['student_id'] ?? ''));
+            if (preg_match('/^23011(\d+)$/', $sid, $m)) {
+                $seqVal = (int)$m[1];
+                if ($seqVal > $maxStudentSeq) {
+                    $maxStudentSeq = $seqVal;
+                    $seqLength = max($seqLength, strlen($m[1]));
+                }
+            }
         }
+
+        $nextSeq = $maxStudentSeq > 0 ? $maxStudentSeq + 1 : 1;
+        $nextStudentId = '23011' . str_pad((string)$nextSeq, $seqLength, '0', STR_PAD_LEFT);
 
         $page_title = 'Official Student Master Accounts';
         
@@ -95,6 +109,24 @@ class StudentController {
         $hashedPassword = password_hash('BCP@2026', PASSWORD_BCRYPT);
 
         $db = Database::getConnection();
+
+        // Check for duplicate student_id
+        $dupStmt = $db->prepare("SELECT user_id, first_name, last_name FROM users WHERE student_id = :student_id LIMIT 1");
+        $dupStmt->execute([':student_id' => $studentId]);
+        $existingStudent = $dupStmt->fetch(PDO::FETCH_ASSOC);
+        if ($existingStudent) {
+            $ownerName = trim($existingStudent['first_name'] . ' ' . $existingStudent['last_name']);
+            header('Location: ' . url('admin/students?error=' . urlencode("Student number {$studentId} is already assigned to {$ownerName}.")));
+            exit;
+        }
+
+        // Check for duplicate email
+        $dupEmailStmt = $db->prepare("SELECT user_id FROM users WHERE email = :email LIMIT 1");
+        $dupEmailStmt->execute([':email' => $email]);
+        if ($dupEmailStmt->fetch()) {
+            header('Location: ' . url('admin/students?error=' . urlencode("Email address {$email} is already registered.")));
+            exit;
+        }
 
         try {
             $db->beginTransaction();
@@ -205,9 +237,9 @@ class StudentController {
 
         $output = fopen('php://output', 'w');
         fputcsv($output, ['student_id', 'full_name', 'email', 'course', 'year_level', 'section', 'parent_contact'], ',', '"', "\\");
-        fputcsv($output, ['2026-00150', 'Jerome A. Valdez', 'jerome.valdez@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', '09123456789'], ',', '"', "\\");
-        fputcsv($output, ['2026-00151', 'Alyssa Jane Mercado', 'alyssa.mercado@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', 'alyssa.parent@gmail.com'], ',', '"', "\\");
-        fputcsv($output, ['2026-00152', 'Gabriel Kyle Soriano', 'gabriel.soriano@bestlink.edu.ph', 'BSIS', '2nd Year', '2-B', '09987654321'], ',', '"', "\\");
+        fputcsv($output, ['230110150', 'Jerome A. Valdez', 'jerome.valdez@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', '09123456789'], ',', '"', "\\");
+        fputcsv($output, ['230110151', 'Alyssa Jane Mercado', 'alyssa.mercado@bestlink.edu.ph', 'BSIT', '3rd Year', '3-A', 'alyssa.parent@gmail.com'], ',', '"', "\\");
+        fputcsv($output, ['230110152', 'Gabriel Kyle Soriano', 'gabriel.soriano@bestlink.edu.ph', 'BSIS', '2nd Year', '2-B', '09987654321'], ',', '"', "\\");
         fclose($output);
         exit;
     }
