@@ -130,6 +130,7 @@ class Router {
         '/users/profile'         => 'users/profile.php',
 
         // API Endpoints
+        '/api/student/calendar'  => 'StudentController@apiCalendarData',
         '/api/users/delete'      => 'UserController@apiDelete',
         '/api/excuses/submit'    => 'ExcuseController@submit',
         '/api/excuses/update'    => 'ExcuseController@update',
@@ -139,6 +140,7 @@ class Router {
         '/api/excuses/review'    => 'ExcuseController@review',
         '/api/teacher/roster/validate' => 'StudentController@validateRoster',
         '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
+        '/api/teacher/dashboard/overview' => 'TeacherController@apiDashboardOverview',
         '/api/teacher/qr-session/generate' => 'AttendanceController@generateQrSession',
         '/api/teacher/qr-session/active'   => 'AttendanceController@getActiveQrSession',
         '/api/teacher/qr-session/close'    => 'AttendanceController@closeQrSession',

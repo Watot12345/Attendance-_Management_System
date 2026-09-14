@@ -1152,5 +1152,276 @@ class AttendanceController {
             exit;
         }
     }
+
+    /**
+     * GET/POST /api/teacher/awards/calculate
+     * Evaluates attendance records for assigned sections over a date range,
+     * identifying eligible perfect attendance (100%) and high honors (98%+) candidates.
+     */
+    public function apiCalculateAwards(): void {
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            $section = trim($_GET['section'] ?? $_POST['section'] ?? 'all');
+            $startDate = trim($_GET['start_date'] ?? $_POST['start_date'] ?? date('Y-m-01'));
+            $endDate = trim($_GET['end_date'] ?? $_POST['end_date'] ?? date('Y-m-t'));
+            $threshold = (int)($_GET['threshold'] ?? $_POST['threshold'] ?? 100);
+            if ($threshold !== 98) {
+                $threshold = 100;
+            }
+            $isExportCsv = (isset($_GET['export']) && strtolower($_GET['export']) === 'csv')
+                        || (isset($_POST['export']) && strtolower($_POST['export']) === 'csv');
+
+            // 1. Determine total session dates held for this teacher in the date range
+            $sessParams = [
+                ':teacher_id' => $teacherId,
+                ':start_date' => $startDate,
+                ':end_date'   => $endDate
+            ];
+            $sessSql = "
+                SELECT COUNT(DISTINCT a.date) AS session_count
+                FROM attendance a
+                WHERE a.teacher_id = :teacher_id
+                  AND a.date BETWEEN :start_date AND :end_date
+            ";
+            if ($section !== '' && strtolower($section) !== 'all') {
+                $sessSql .= " AND a.subject IN (SELECT DISTINCT course_title FROM class_roster WHERE teacher_id = :sec_teacher_id AND section = :sec_name)";
+                $sessParams[':sec_teacher_id'] = $teacherId;
+                $sessParams[':sec_name'] = $section;
+            }
+            $sessStmt = $db->prepare($sessSql);
+            $sessStmt->execute($sessParams);
+            $totalSessionsHeld = (int)($sessStmt->fetchColumn() ?: 0);
+
+            // 2. Fetch aggregate attendance statistics for all enrolled students of this teacher
+            $rosterParams = [
+                ':teacher_id'  => $teacherId,
+                ':start_date'  => $startDate,
+                ':end_date'    => $endDate,
+            ];
+            $rosterSql = "
+                SELECT 
+                    cr.student_id,
+                    cr.first_name,
+                    cr.last_name,
+                    CONCAT(cr.last_name, ', ', cr.first_name) AS full_name,
+                    COALESCE(u.student_id, '230110001') AS student_number,
+                    COALESCE(u.email, '') AS email,
+                    cr.section,
+                    cr.course_code,
+                    cr.course_title,
+                    COUNT(DISTINCT CASE WHEN a.date IS NOT NULL THEN a.date END) AS sessions_recorded,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    SUM(CASE WHEN a.status = 'tardy' THEN 1 ELSE 0 END) AS tardy_count,
+                    SUM(CASE WHEN a.status = 'absent' AND (es.status IS NULL OR LOWER(es.status) != 'approved') THEN 1 ELSE 0 END) AS absent_count,
+                    SUM(CASE WHEN a.status = 'absent' AND LOWER(es.status) = 'approved' THEN 1 ELSE 0 END) AS excused_count
+                FROM class_roster cr
+                JOIN users u ON u.user_id = cr.student_id
+                LEFT JOIN attendance a ON a.student_id = cr.student_id 
+                                      AND a.teacher_id = cr.teacher_id 
+                                      AND a.subject = cr.course_title
+                                      AND a.date BETWEEN :start_date AND :end_date
+                LEFT JOIN excuse_slips es ON es.student_id = cr.student_id 
+                                         AND es.teacher_id = cr.teacher_id 
+                                         AND es.date_of_absence = a.date
+                                         AND es.subject = cr.course_title
+                WHERE cr.teacher_id = :teacher_id
+            ";
+
+            if ($section !== '' && strtolower($section) !== 'all') {
+                $rosterSql .= " AND cr.section = :roster_section";
+                $rosterParams[':roster_section'] = $section;
+            }
+
+            $rosterSql .= " GROUP BY cr.student_id, cr.first_name, cr.last_name, u.student_id, u.email, cr.section, cr.course_code, cr.course_title ORDER BY cr.last_name ASC, cr.first_name ASC";
+
+            $stmt = $db->prepare($rosterSql);
+            $stmt->execute($rosterParams);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Filter candidates based on threshold
+            $candidates = [];
+            foreach ($rows as $r) {
+                $presentCount = (int)$r['present_count'];
+                $tardyCount   = (int)$r['tardy_count'];
+                $absentCount  = (int)$r['absent_count'];
+                $excusedCount = (int)$r['excused_count'];
+
+                // Effective sessions for this student: maximum of total sessions held or recorded
+                $baseSessions = max($totalSessionsHeld, (int)$r['sessions_recorded']);
+                if ($baseSessions === 0) {
+                    continue; // No sessions held in this window
+                }
+
+                // If student missed recording on held days, those count as unrecorded/absent
+                $unrecordedDays = max(0, $baseSessions - ($presentCount + $tardyCount + $absentCount + $excusedCount));
+                $effectiveAbsent = $absentCount + $unrecordedDays;
+
+                $attendanceRate = round(($presentCount / $baseSessions) * 100, 1);
+                $effectiveRate = round((($presentCount + $excusedCount) / $baseSessions) * 100, 1);
+
+                $isEligible = false;
+                if ($threshold === 100) {
+                    // Flawless 100%: All sessions present, 0 tardies, 0 absences
+                    $isEligible = ($presentCount === $baseSessions) && ($tardyCount === 0) && ($effectiveAbsent === 0);
+                } elseif ($threshold === 98) {
+                    // 98%+ High Honors: At least 98% attendance (excused count), max 1 tardy
+                    $isEligible = ($effectiveRate >= 98.0) && ($tardyCount <= 1);
+                }
+
+                if ($isEligible) {
+                    $candidates[] = [
+                        'student_id'      => (int)$r['student_id'],
+                        'student_number'  => (string)$r['student_number'],
+                        'full_name'       => $r['full_name'],
+                        'first_name'      => $r['first_name'],
+                        'last_name'       => $r['last_name'],
+                        'email'           => $r['email'],
+                        'section'         => $r['section'],
+                        'course_code'     => $r['course_code'],
+                        'course_title'    => $r['course_title'],
+                        'total_sessions'  => $baseSessions,
+                        'present_count'   => $presentCount,
+                        'tardy_count'     => $tardyCount,
+                        'absent_count'    => $effectiveAbsent,
+                        'excused_count'   => $excusedCount,
+                        'attendance_rate' => $attendanceRate,
+                        'effective_rate'  => $effectiveRate
+                    ];
+                }
+            }
+
+            // 4. Sort candidates: highest attendance rate first, then fewest tardies, then alphabetical
+            usort($candidates, function($a, $b) {
+                if ($b['effective_rate'] !== $a['effective_rate']) {
+                    return $b['effective_rate'] <=> $a['effective_rate'];
+                }
+                if ($a['tardy_count'] !== $b['tardy_count']) {
+                    return $a['tardy_count'] <=> $b['tardy_count'];
+                }
+                return strcmp($a['last_name'], $b['last_name']);
+            });
+
+            // Assign ranks (1, 2, 3...)
+            $rank = 1;
+            foreach ($candidates as &$c) {
+                $c['rank'] = $rank++;
+            }
+            unset($c);
+
+            // 5. CSV Export streaming if requested
+            if ($isExportCsv) {
+                if (!headers_sent()) {
+                    header('Content-Type: text/csv; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="perfect_attendance_awards_' . $startDate . '_to_' . $endDate . '.csv"');
+                    header('Pragma: no-cache');
+                    header('Expires: 0');
+                }
+
+                $output = fopen('php://output', 'w');
+                fputcsv($output, [
+                    'Rank',
+                    'Student Number',
+                    'Student Name',
+                    'Email',
+                    'Section',
+                    'Course Title',
+                    'Total Sessions',
+                    'Present Days',
+                    'Tardy Days',
+                    'Absent Days',
+                    'Excused Days',
+                    'Attendance Rate'
+                ]);
+
+                foreach ($candidates as $cand) {
+                    $row = [
+                        $cand['rank'],
+                        $cand['student_number'],
+                        $cand['full_name'],
+                        $cand['email'],
+                        $cand['section'],
+                        $cand['course_title'],
+                        $cand['total_sessions'],
+                        $cand['present_count'],
+                        $cand['tardy_count'],
+                        $cand['absent_count'],
+                        $cand['excused_count'],
+                        $cand['effective_rate'] . '%'
+                    ];
+                    $escaped = array_map([$this, 'escapeCsvCell'], $row);
+                    fputcsv($output, $escaped);
+                }
+                fclose($output);
+                exit;
+            }
+
+            // 6. JSON Response
+            if (!headers_sent()) {
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode([
+                'status'              => 'success',
+                'teacher_id'          => $teacherId,
+                'section'             => $section,
+                'start_date'          => $startDate,
+                'end_date'            => $endDate,
+                'threshold'           => $threshold,
+                'total_sessions_held' => $totalSessionsHeld,
+                'total_eligible'      => count($candidates),
+                'candidates'          => $candidates
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to calculate awards: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    /**
+     * POST/GET /api/teacher/awards/seed-sample
+     * Generates a realistic sample dataset of 10 class sessions for testing.
+     */
+    public function apiSeedAwardsSample(): void {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            require_once dirname(__DIR__, 2) . '/database/seed_awards_sample.php';
+            $result = seedAwardsSampleData($db, $teacherId);
+
+            echo json_encode([
+                'status'        => 'success',
+                'message'       => 'Test sample data generated successfully (10 held sessions for September 2026).',
+                'sessions_held' => $result['sessions_held'] ?? 10,
+                'section'       => $result['section'] ?? '31001',
+                'start_date'    => $result['start_date'] ?? '2026-09-01',
+                'end_date'      => $result['end_date'] ?? '2026-09-30'
+            ]);
+            exit;
+        } catch (Exception $e) {
+            if (!headers_sent()) {
+                http_response_code(500);
+            }
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to seed sample: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 }
 
