@@ -1,6 +1,21 @@
 <?php
 $page_title = 'Teacher Dashboard';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/controllers/TeacherController.php';
+
+$teacherId = TeacherController::resolveCurrentTeacherId();
+$overview = TeacherController::getTeacherDashboardOverview($teacherId);
+
+$teacher = $overview['teacher'];
+$classesMetric = $overview['classes_metric'];
+$attendanceMetric = $overview['today_attendance'];
+$activeSession = $overview['active_session'];
+$atRiskCount = $overview['at_risk_count'];
+$schedule = $overview['schedule'];
+$classesOverview = $overview['classes_overview'];
+$liveFeed = $overview['live_feed'];
+$currentDay = $overview['current_day'];
+
 require_once dirname(__DIR__) . '/partials/header.php';
 ?>
 
@@ -16,10 +31,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="badge badge-present">Faculty Portal</span>
-            <span class="text-xs text-slate-500">1st Semester 2025–2026</span>
+            <span class="text-xs text-slate-500">Academic Year 2025–2026</span>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">Welcome back, Prof. Ramirez!</h1>
-          <p class="text-sm text-slate-500">College of Computer Studies • Information Technology Department</p>
+          <h1 class="text-2xl font-bold text-slate-800" id="header-teacher-greeting">Welcome back, <?php echo htmlspecialchars($teacher['name']); ?>!</h1>
+          <p class="text-sm text-slate-500" id="header-teacher-department"><?php echo htmlspecialchars($teacher['department']); ?></p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -36,6 +51,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
       <!-- Quick Metrics Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Metric 1: Assigned Classes -->
         <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Classes</span>
@@ -43,10 +59,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             </span>
           </div>
-          <div class="text-2xl font-bold text-slate-800 mt-2">4 Classes</div>
-          <p class="text-xs text-slate-500 mt-1">3 Sections • 148 Total Students</p>
+          <div class="text-2xl font-bold text-slate-800 mt-2" id="kpi-total-classes">
+            <?php echo $classesMetric['total_classes'] > 0 ? "{$classesMetric['total_classes']} Classes" : '0 Classes'; ?>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" id="kpi-classes-sub">
+            <?php echo "{$classesMetric['total_sections']} Sections • {$classesMetric['total_students']} Total Students"; ?>
+          </p>
         </div>
 
+        <!-- Metric 2: Today's Attendance -->
         <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Attendance</span>
@@ -54,21 +75,41 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </span>
           </div>
-          <div class="text-2xl font-bold text-emerald-600 mt-2">94.8%</div>
-          <p class="text-xs text-slate-500 mt-1">140 Present • 5 Late • 3 Absent</p>
+          <div class="text-2xl font-bold text-emerald-600 mt-2" id="kpi-attendance-rate">
+            <?php echo $attendanceMetric['total_records'] > 0 ? "{$attendanceMetric['rate_percentage']}%" : ($attendanceMetric['rate_percentage'] > 0 ? "{$attendanceMetric['rate_percentage']}%" : '0.0%'); ?>
+          </div>
+          <p class="text-xs text-slate-500 mt-1" id="kpi-attendance-sub">
+            <?php 
+            if ($attendanceMetric['total_records'] > 0) {
+              echo "{$attendanceMetric['present_count']} Present • {$attendanceMetric['tardy_count']} Late • {$attendanceMetric['absent_count']} Absent";
+            } else {
+              echo 'No attendance recorded today';
+            }
+            ?>
+          </p>
         </div>
 
+        <!-- Metric 3: Active Sessions -->
         <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Sessions</span>
-            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+            <span class="w-8 h-8 rounded-lg <?php echo $activeSession['is_active'] ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'; ?> flex items-center justify-center">
+              <?php if ($activeSession['is_active']): ?>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+              <?php else: ?>
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+              <?php endif; ?>
             </span>
           </div>
-          <div class="text-2xl font-bold text-slate-800 mt-2">1 Active</div>
-          <p class="text-xs text-amber-600 font-medium mt-1">Web Dev 2 (BSIT 3-A)</p>
+          <div class="text-2xl font-bold text-slate-800 mt-2" id="kpi-active-sessions">
+            <?php echo $activeSession['is_active'] ? '1 Active' : '0 Active'; ?>
+          </div>
+          <p class="text-xs <?php echo $activeSession['is_active'] ? 'text-amber-600 font-medium' : 'text-slate-400'; ?> mt-1 truncate" id="kpi-active-sub">
+            <?php echo htmlspecialchars($activeSession['description']); ?>
+          </p>
         </div>
 
+        <!-- Metric 4: At-Risk Alerts -->
         <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">At-Risk Alerts</span>
@@ -76,8 +117,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </span>
           </div>
-          <div class="text-2xl font-bold text-rose-600 mt-2">2 Students</div>
-          <p class="text-xs text-slate-500 mt-1">> 3 consecutive absences</p>
+          <div class="text-2xl font-bold <?php echo $atRiskCount > 0 ? 'text-rose-600' : 'text-slate-800'; ?> mt-2" id="kpi-risk-count">
+            <?php echo "{$atRiskCount} " . ($atRiskCount === 1 ? 'Student' : 'Students'); ?>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">≥ 3 recorded absences</p>
         </div>
       </div>
 
@@ -90,90 +133,79 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 class="font-bold text-slate-800 text-base">Today's Class Schedule</h2>
-                <p class="text-xs text-slate-400">Tuesday, September 8, 2026</p>
+                <p class="text-xs text-slate-400"><?php echo htmlspecialchars($currentDay); ?></p>
               </div>
-              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">3 Sessions Scheduled</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                <?php echo count($schedule); ?> <?php echo count($schedule) === 1 ? 'Session' : 'Sessions'; ?> Scheduled
+              </span>
             </div>
 
-            <div class="divide-y divide-slate-100">
-              <!-- Item 1: Active now -->
-              <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-emerald-50/40 border-l-4 border-emerald-500">
-                <div class="flex items-start gap-4">
-                  <div class="text-center p-2 rounded-lg bg-emerald-100 text-emerald-800 min-w-[70px]">
-                    <div class="text-xs font-bold uppercase">08:00 AM</div>
-                    <div class="text-[10px]">10:00 AM</div>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-slate-800">IT301 — Web Development 2</h3>
-                      <span class="badge badge-present">● Session Active</span>
+            <div class="divide-y divide-slate-100" id="schedule-container">
+              <?php if (!empty($schedule)): ?>
+                <?php foreach ($schedule as $idx => $item): 
+                  $isActive = ($item['status'] === 'active');
+                  $startTime = !empty($item['scheduled_time']) ? date('h:i A', strtotime($item['scheduled_time'])) : '08:00 AM';
+                  $endTime = !empty($item['scheduled_time']) ? date('h:i A', strtotime($item['scheduled_time'] . ' +2 hours')) : '10:00 AM';
+                  $enrolled = (int)($item['enrolled_count'] ?? 0);
+                  $scanned = (int)($item['scanned_today'] ?? 0);
+                  $scanPct = $enrolled > 0 ? round(($scanned / $enrolled) * 100, 1) : 0;
+                ?>
+                  <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 <?php echo $isActive ? 'bg-emerald-50/40 border-l-4 border-emerald-500' : 'hover:bg-slate-50 transition'; ?>">
+                    <div class="flex items-start gap-4">
+                      <div class="text-center p-2 rounded-lg <?php echo $isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'; ?> min-w-[70px]">
+                        <div class="text-xs font-bold uppercase"><?php echo htmlspecialchars($startTime); ?></div>
+                        <div class="text-[10px]"><?php echo htmlspecialchars($endTime); ?></div>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h3 class="font-bold text-slate-800"><?php echo htmlspecialchars($item['course_code'] . ' — ' . $item['course_title']); ?></h3>
+                          <?php if ($isActive): ?>
+                            <span class="badge badge-present">● Session Active</span>
+                          <?php else: ?>
+                            <span class="badge badge-pending">Upcoming</span>
+                          <?php endif; ?>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Section: <span class="font-semibold text-slate-700"><?php echo htmlspecialchars($item['section']); ?></span> • 
+                          Room <?php echo htmlspecialchars($item['room_number']); ?> • 
+                          <?php echo $enrolled; ?> Enrolled
+                        </p>
+                        <?php if ($scanned > 0): ?>
+                          <div class="text-xs text-emerald-700 font-medium mt-1">
+                            <?php echo "{$scanned} / {$enrolled} scanned ({$scanPct}%)"; ?>
+                          </div>
+                        <?php endif; ?>
+                      </div>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Section: <span class="font-semibold text-slate-700">BSIT 3-A</span> • Lab 304 • 42 Enrolled</p>
-                    <div class="text-xs text-emerald-700 font-medium mt-1">36 / 42 scanned (85.7%)</div>
-                  </div>
-                </div>
 
-                <div class="flex items-center gap-2">
-                  <a href="<?php echo url('teacher/live-session'); ?>" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold shadow-sm transition">
-                    Open Live Screen
-                  </a>
-                  <a href="<?php echo url('teacher/roster?class_id=1'); ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
-                    Roster
-                  </a>
-                </div>
-              </div>
-
-              <!-- Item 2: Upcoming -->
-              <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
-                <div class="flex items-start gap-4">
-                  <div class="text-center p-2 rounded-lg bg-slate-100 text-slate-700 min-w-[70px]">
-                    <div class="text-xs font-bold uppercase">10:30 AM</div>
-                    <div class="text-[10px]">12:30 PM</div>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-slate-800">IT302 — Database Systems 2</h3>
-                      <span class="badge badge-pending">Upcoming</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <?php if ($isActive): ?>
+                        <a href="<?php echo url('teacher/live-session'); ?>" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold shadow-sm transition">
+                          Open Live Screen
+                        </a>
+                      <?php else: ?>
+                        <a href="<?php echo url('teacher/live-session'); ?>" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-xs font-semibold shadow-sm transition">
+                          Start Attendance
+                        </a>
+                      <?php endif; ?>
+                      <a href="<?php echo url('teacher/classes'); ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
+                        Roster
+                      </a>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Section: <span class="font-semibold text-slate-700">BSIT 3-B</span> • Room 402 • 38 Enrolled</p>
                   </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <a href="<?php echo url('teacher/live-session?class_id=2'); ?>" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-xs font-semibold shadow-sm transition">
-                    Start Attendance
-                  </a>
-                  <a href="<?php echo url('teacher/roster?class_id=2'); ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
-                    Roster
-                  </a>
-                </div>
-              </div>
-
-              <!-- Item 3: Afternoon -->
-              <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
-                <div class="flex items-start gap-4">
-                  <div class="text-center p-2 rounded-lg bg-slate-100 text-slate-700 min-w-[70px]">
-                    <div class="text-xs font-bold uppercase">01:30 PM</div>
-                    <div class="text-[10px]">03:30 PM</div>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <div class="p-8 text-center">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-slate-800">IT303 — Systems Integration</h3>
-                      <span class="badge badge-pending">Upcoming</span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Section: <span class="font-semibold text-slate-700">BSIT 3-C</span> • Lab 301 • 36 Enrolled</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <a href="<?php echo url('teacher/live-session?class_id=3'); ?>" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-xs font-semibold shadow-sm transition">
-                    Start Attendance
-                  </a>
-                  <a href="<?php echo url('teacher/roster?class_id=3'); ?>" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition">
-                    Roster
+                  <h4 class="font-bold text-slate-700 text-sm">No scheduled classes for today</h4>
+                  <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Upload or import your section rosters to populate class schedules automatically.</p>
+                  <a href="<?php echo url('teacher/import-roster'); ?>" class="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-sm transition">
+                    Import Class Roster
                   </a>
                 </div>
-              </div>
+              <?php endif; ?>
             </div>
           </div>
 
@@ -184,35 +216,30 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <a href="<?php echo url('teacher/classes'); ?>" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View All Classes →</a>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition bg-gradient-to-br from-white to-slate-50">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">BSIT 3-A</span>
-                  <span class="text-xs text-emerald-600 font-bold">96.2% avg</span>
-                </div>
-                <h4 class="font-bold text-slate-800 text-sm">IT301 — Web Development 2</h4>
-                <p class="text-xs text-slate-500 mt-1">42 Enrolled • 14 Sessions Held</p>
-                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-                  <a href="<?php echo url('teacher/roster?class_id=1'); ?>" class="text-xs text-blue-600 hover:underline font-medium">View Roster</a>
-                  <span class="text-slate-300">•</span>
-                  <a href="<?php echo url('teacher/attendance-history?class_id=1'); ?>" class="text-xs text-slate-600 hover:underline">History</a>
-                </div>
+            <?php if (!empty($classesOverview)): ?>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="classes-overview-grid">
+                <?php foreach ($classesOverview as $idx => $cls): ?>
+                  <div class="p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition bg-gradient-to-br from-white to-slate-50">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800"><?php echo htmlspecialchars($cls['section']); ?></span>
+                      <span class="text-xs text-emerald-600 font-bold"><?php echo $cls['avg_rate']; ?>% avg</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm"><?php echo htmlspecialchars($cls['course_code'] . ' — ' . $cls['course_title']); ?></h4>
+                    <p class="text-xs text-slate-500 mt-1"><?php echo "{$cls['enrolled_count']} Enrolled • {$cls['sessions_held']} Sessions Held"; ?></p>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                      <a href="<?php echo url('teacher/classes'); ?>" class="text-xs text-blue-600 hover:underline font-medium">View Roster</a>
+                      <span class="text-slate-300">•</span>
+                      <a href="<?php echo url('teacher/attendance-history'); ?>" class="text-xs text-slate-600 hover:underline">History</a>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
               </div>
-
-              <div class="p-4 rounded-xl border border-slate-200 hover:border-blue-400 transition bg-gradient-to-br from-white to-slate-50">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800">BSIT 3-B</span>
-                  <span class="text-xs text-emerald-600 font-bold">93.5% avg</span>
-                </div>
-                <h4 class="font-bold text-slate-800 text-sm">IT302 — Database Systems 2</h4>
-                <p class="text-xs text-slate-500 mt-1">38 Enrolled • 14 Sessions Held</p>
-                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-                  <a href="<?php echo url('teacher/roster?class_id=2'); ?>" class="text-xs text-blue-600 hover:underline font-medium">View Roster</a>
-                  <span class="text-slate-300">•</span>
-                  <a href="<?php echo url('teacher/attendance-history?class_id=2'); ?>" class="text-xs text-slate-600 hover:underline">History</a>
-                </div>
+            <?php else: ?>
+              <div class="p-6 text-center border border-dashed border-slate-200 rounded-xl">
+                <p class="text-xs text-slate-400">No active classes enrolled under your account.</p>
+                <a href="<?php echo url('teacher/import-roster'); ?>" class="text-xs text-blue-600 font-semibold hover:underline mt-1 inline-block">Enroll students via Roster Import →</a>
               </div>
-            </div>
+            <?php endif; ?>
           </div>
         </div>
 
@@ -225,45 +252,37 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <h3 class="font-bold text-slate-800 text-sm">Live Attendance Feed</h3>
               </div>
-              <span class="text-[11px] text-slate-400">Auto-updating</span>
+              <span class="text-[11px] text-slate-400" id="live-feed-sync-status">Auto-updating</span>
             </div>
 
-            <div class="space-y-3">
-              <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold shrink-0">JD</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-slate-800 truncate">Juan Dela Cruz</div>
-                  <div class="text-[11px] text-slate-500">2026-00123 • BSIT 3-A</div>
+            <div class="space-y-3" id="live-feed-container">
+              <?php if (!empty($liveFeed)): ?>
+                <?php foreach ($liveFeed as $item): 
+                  $isLate = ($item['status'] === 'tardy');
+                  $isAbsent = ($item['status'] === 'absent');
+                  $badgeClass = $isLate ? 'badge-tardy' : ($isAbsent ? 'badge-absent' : 'badge-present');
+                  $statusLabel = $isLate ? 'Late' : ($isAbsent ? 'Absent' : 'Present');
+                  $avatarBg = $isLate ? 'bg-amber-100 text-amber-700' : ($isAbsent ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700');
+                ?>
+                  <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                    <div class="w-8 h-8 rounded-full <?php echo $avatarBg; ?> flex items-center justify-center text-xs font-bold shrink-0">
+                      <?php echo htmlspecialchars($item['initials']); ?>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-xs font-bold text-slate-800 truncate"><?php echo htmlspecialchars($item['first_name'] . ' ' . $item['last_name']); ?></div>
+                      <div class="text-[11px] text-slate-500"><?php echo htmlspecialchars($item['student_code'] . ' • ' . $item['section']); ?></div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <span class="badge <?php echo $badgeClass; ?> text-[10px]"><?php echo $statusLabel; ?></span>
+                      <div class="text-[10px] text-slate-400 mt-0.5"><?php echo htmlspecialchars($item['time_formatted']); ?></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <div class="p-6 text-center text-slate-400">
+                  <p class="text-xs">No attendance check-ins logged yet today.</p>
                 </div>
-                <div class="text-right">
-                  <span class="badge badge-present text-[10px]">Present</span>
-                  <div class="text-[10px] text-slate-400 mt-0.5">08:02 AM</div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold shrink-0">MS</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-slate-800 truncate">Maria Santos</div>
-                  <div class="text-[11px] text-slate-500">2026-00124 • BSIT 3-A</div>
-                </div>
-                <div class="text-right">
-                  <span class="badge badge-present text-[10px]">Present</span>
-                  <div class="text-[10px] text-slate-400 mt-0.5">08:04 AM</div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-2.5 rounded-lg bg-amber-50/50 border border-amber-100">
-                <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold shrink-0">PR</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-slate-800 truncate">Pedro Reyes</div>
-                  <div class="text-[11px] text-slate-500">2026-00125 • BSIT 3-A</div>
-                </div>
-                <div class="text-right">
-                  <span class="badge badge-tardy text-[10px]">Late (+16m)</span>
-                  <div class="text-[10px] text-slate-400 mt-0.5">08:16 AM</div>
-                </div>
-              </div>
+              <?php endif; ?>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 text-center">
@@ -287,5 +306,66 @@ require_once dirname(__DIR__) . '/partials/header.php';
     </main>
   </div>
 </div>
+
+<script>
+// Dynamic polling for live attendance stream
+(function() {
+  const syncStatus = document.getElementById('live-feed-sync-status');
+  const feedContainer = document.getElementById('live-feed-container');
+
+  async function pollOverview() {
+    try {
+      const res = await fetch('<?php echo url("api/teacher/dashboard/overview"); ?>');
+      if (!res.ok) return;
+      const json = await res.json();
+      if (!json.success || !json.data) return;
+
+      const d = json.data;
+
+      // Update KPI metrics
+      const kpiRate = document.getElementById('kpi-attendance-rate');
+      const kpiSub = document.getElementById('kpi-attendance-sub');
+      if (kpiRate && d.today_attendance) {
+        kpiRate.textContent = d.today_attendance.rate_percentage + '%';
+        if (kpiSub && d.today_attendance.total_records > 0) {
+          kpiSub.textContent = `${d.today_attendance.present_count} Present • ${d.today_attendance.tardy_count} Late • ${d.today_attendance.absent_count} Absent`;
+        }
+      }
+
+      // Update Live Feed items
+      if (feedContainer && Array.isArray(d.live_feed) && d.live_feed.length > 0) {
+        feedContainer.innerHTML = d.live_feed.map(item => {
+          const isLate = (item.status === 'tardy');
+          const isAbsent = (item.status === 'absent');
+          const badgeClass = isLate ? 'badge-tardy' : (isAbsent ? 'badge-absent' : 'badge-present');
+          const statusLabel = isLate ? 'Late' : (isAbsent ? 'Absent' : 'Present');
+          const avatarBg = isLate ? 'bg-amber-100 text-amber-700' : (isAbsent ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700');
+
+          return `
+            <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+              <div class="w-8 h-8 rounded-full ${avatarBg} flex items-center justify-center text-xs font-bold shrink-0">
+                ${item.initials || 'ST'}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-800 truncate">${item.first_name} ${item.last_name}</div>
+                <div class="text-[11px] text-slate-500">${item.student_code} • ${item.section}</div>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="badge ${badgeClass} text-[10px]">${statusLabel}</span>
+                <div class="text-[10px] text-slate-400 mt-0.5">${item.time_formatted || ''}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch (e) {
+      console.warn('Live overview polling paused:', e);
+    }
+  }
+
+  // Poll every 12 seconds
+  setInterval(pollOverview, 12000);
+})();
+</script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
