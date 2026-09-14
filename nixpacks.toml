@@ -1,0 +1,11 @@
+# Railway / Nixpacks Configuration
+# Forces PHP provider and ensures required extensions are available
+
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo_mysql", "php83Extensions.mbstring", "php83Extensions.openssl"]
+
+[phases.build]
+cmds = ["mkdir -p /tmp/sessions"]
+
+[start]
+cmd = "php -S 0.0.0.0:${PORT:-8080} -t /app index.php"

@@ -11,8 +11,8 @@
 /vendor/
 /node_modules/
 
-# Generated assets
-/assets/css/output.css
+# Generated assets (output.css is committed for Railway deployment)
+# /assets/css/output.css
 
 # Uploads (user-generated content)
 /uploads/excuse-slips/*
