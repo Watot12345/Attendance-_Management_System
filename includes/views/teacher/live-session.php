@@ -13,20 +13,35 @@ if (!empty($_SESSION['teacher_id'])) {
     $teacherId = (int)$_SESSION['user_id'];
 }
 
-$rStmt = $db->prepare("
-    SELECT course_code, course_title, section, room_number, scheduled_time
-    FROM class_roster
-    WHERE teacher_id = ?
-    LIMIT 1
-");
-$rStmt->execute([$teacherId]);
-$rosterInfo = $rStmt->fetch(PDO::FETCH_ASSOC) ?: [
-    'course_code'    => 'IT301',
-    'course_title'   => 'Web Systems and Technologies',
-    'section'        => 'BSIT 3-1',
-    'room_number'    => '402',
-    'scheduled_time' => '08:00:00'
-];
+$targetSection = trim($_GET['section'] ?? '');
+if (!empty($targetSection)) {
+    $rStmt = $db->prepare("
+        SELECT course_code, course_title, section, room_number, scheduled_time
+        FROM class_roster
+        WHERE (teacher_id = ? OR 1=1) AND section = ?
+        LIMIT 1
+    ");
+    $rStmt->execute([$teacherId, $targetSection]);
+    $rosterInfo = $rStmt->fetch(PDO::FETCH_ASSOC);
+}
+
+if (empty($rosterInfo)) {
+    $rStmt = $db->prepare("
+        SELECT course_code, course_title, section, room_number, scheduled_time
+        FROM class_roster
+        WHERE teacher_id = ? AND section IS NOT NULL AND section != ''
+        ORDER BY section ASC
+        LIMIT 1
+    ");
+    $rStmt->execute([$teacherId]);
+    $rosterInfo = $rStmt->fetch(PDO::FETCH_ASSOC) ?: [
+        'course_code'    => 'IT301',
+        'course_title'   => 'Web Systems and Technologies',
+        'section'        => '31001',
+        'room_number'    => '402',
+        'scheduled_time' => '08:00:00'
+    ];
+}
 
 $startTimeFormatted = date('h:i A', strtotime($rosterInfo['scheduled_time']));
 ?>
