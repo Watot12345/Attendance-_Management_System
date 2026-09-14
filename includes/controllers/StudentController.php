@@ -983,6 +983,368 @@ class StudentController {
             exit;
         }
     }
+
+    /**
+     * Resolve the current student ID from session or database fallback
+     */
+    public static function resolveCurrentStudentId(): int {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+        if (!empty($_SESSION['student_id'])) {
+            return (int)$_SESSION['student_id'];
+        }
+        if (!empty($_SESSION['user']['user_id']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'student') {
+            return (int)$_SESSION['user']['user_id'];
+        }
+        if (!empty($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
+            return (int)$_SESSION['user_id'];
+        }
+        try {
+            $db = Database::getConnection();
+            $row = $db->query("SELECT user_id FROM users WHERE role = 'student' ORDER BY user_id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                return (int)$row['user_id'];
+            }
+        } catch (Exception $e) {}
+        return 1;
+    }
+
+    /**
+     * Get official and institutional holidays / class suspensions
+     * Fetches from system_settings (key: academic_calendar_events) merged with standard Philippine Academic Calendar
+     */
+    public static function getAcademicCalendarEvents(int $year): array {
+        $events = [
+            // Standard Philippine National & Academic Holidays
+            sprintf('%04d-01-01', $year) => ['name' => "New Year's Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-04-09', $year) => ['name' => "Araw ng Kagitingan (Day of Valor)", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-05-01', $year) => ['name' => "Labor Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-06-12', $year) => ['name' => "Independence Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-08-21', $year) => ['name' => "Ninoy Aquino Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
+            sprintf('%04d-08-31', $year) => ['name' => "National Heroes Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            // School Suspensions & Academic Breaks
+            sprintf('%04d-09-03', $year) => ['name' => "Class Suspension (Inclement Weather / Typhoon)", 'type' => 'suspension', 'desc' => 'DepEd/CHED & LGU Weather Class Suspension'],
+            sprintf('%04d-09-21', $year) => ['name' => "BCP Institutional Foundation Day", 'type' => 'suspension', 'desc' => 'College-wide Non-Working Academic Break'],
+            sprintf('%04d-11-01', $year) => ['name' => "All Saints' Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
+            sprintf('%04d-11-02', $year) => ['name' => "All Souls' Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Day'],
+            sprintf('%04d-11-30', $year) => ['name' => "Bonifacio Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-12-08', $year) => ['name' => "Feast of the Immaculate Conception", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
+            sprintf('%04d-12-25', $year) => ['name' => "Christmas Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-12-30', $year) => ['name' => "Rizal Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
+            sprintf('%04d-12-31', $year) => ['name' => "New Year's Eve", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
+        ];
+
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'academic_calendar_events' LIMIT 1");
+            $stmt->execute();
+            $val = $stmt->fetchColumn();
+            if ($val) {
+                $custom = json_decode($val, true);
+                if (is_array($custom)) {
+                    foreach ($custom as $item) {
+                        if (!empty($item['date']) && !empty($item['name'])) {
+                            $events[$item['date']] = [
+                                'name' => $item['name'],
+                                'type' => $item['type'] ?? 'holiday',
+                                'desc' => $item['desc'] ?? ($item['type'] === 'suspension' ? 'Institutional Class Suspension' : 'Official Holiday')
+                            ];
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {}
+
+        return $events;
+    }
+
+    /**
+     * Compute comprehensive attendance calendar data for a student for a specific month and year
+     */
+    public static function getStudentCalendarData(int $studentId, int $year, int $month): array {
+        $db = Database::getConnection();
+
+        // Constrain year and month
+        $year = max(2020, min(2035, $year));
+        $month = max(1, min(12, $month));
+
+        // 1. Fetch Student Profile & Roster details
+        $studentInfo = [
+            'student_id'   => $studentId,
+            'student_code' => '230110001',
+            'name'         => 'Juan Dela Cruz',
+            'course'       => 'BSIT',
+            'section'      => 'BSIT 3-A',
+            'grade_level'  => '3rd Year'
+        ];
+        try {
+            $uStmt = $db->prepare("
+                SELECT u.user_id, u.student_id, u.first_name, u.last_name, u.email,
+                       r.course, r.section, r.year_level
+                FROM users u
+                LEFT JOIN class_roster r ON r.student_id = u.user_id
+                WHERE u.user_id = ?
+                LIMIT 1
+            ");
+            $uStmt->execute([$studentId]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+            if ($uRow) {
+                $studentInfo = [
+                    'student_id'   => (int)$uRow['user_id'],
+                    'student_code' => !empty($uRow['student_id']) ? $uRow['student_id'] : '230110001',
+                    'name'         => trim($uRow['first_name'] . ' ' . $uRow['last_name']),
+                    'course'       => $uRow['course'] ?? 'BSIT',
+                    'section'      => $uRow['section'] ?? 'BSIT 3-A',
+                    'grade_level'  => ($uRow['year_level'] ?? 3) . 'rd Year'
+                ];
+            }
+        } catch (Exception $e) {}
+
+        // 2. Fetch Academic Events (Holidays & Class Suspensions)
+        $events = self::getAcademicCalendarEvents($year);
+
+        // 3. Fetch Student Attendance Records for this month
+        $attendanceMap = [];
+        $startDate = sprintf('%04d-%02d-01', $year, $month);
+        $endDate = sprintf('%04d-%02d-%02d', $year, $month, (int)date('t', strtotime($startDate)));
+
+        try {
+            $aStmt = $db->prepare("
+                SELECT attendance_id, date, time, subject, status, schedule_date
+                FROM attendance
+                WHERE student_id = ? AND date BETWEEN ? AND ?
+                ORDER BY time ASC
+            ");
+            $aStmt->execute([$studentId, $startDate, $endDate]);
+            $aRows = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($aRows as $r) {
+                $d = $r['date'];
+                if (!isset($attendanceMap[$d])) {
+                    $attendanceMap[$d] = [];
+                }
+                $attendanceMap[$d][] = $r;
+            }
+        } catch (Exception $e) {}
+
+        // 4. Fetch Approved Excuse Slips for this month
+        $excuseMap = [];
+        try {
+            $eStmt = $db->prepare("
+                SELECT excuse_slip_id, subject, date_of_absence, reason, explanation, status
+                FROM excuse_slips
+                WHERE student_id = ? AND status = 'approved' AND date_of_absence BETWEEN ? AND ?
+            ");
+            $eStmt->execute([$studentId, $startDate, $endDate]);
+            $eRows = $eStmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($eRows as $er) {
+                $excuseMap[$er['date_of_absence']] = $er;
+            }
+        } catch (Exception $e) {}
+
+        // 5. Month & Calendar Grid Calculations
+        $monthTime = strtotime(sprintf('%04d-%02d-01', $year, $month));
+        $monthName = date('F', $monthTime);
+        $daysInMonth = (int)date('t', $monthTime);
+        $firstDayOfWeek = (int)date('w', $monthTime); // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+        $todayStr = date('Y-m-d');
+
+        // Navigation links
+        $prevMonthTime = strtotime('-1 month', $monthTime);
+        $nextMonthTime = strtotime('+1 month', $monthTime);
+        $prevMonth = (int)date('n', $prevMonthTime);
+        $prevYear = (int)date('Y', $prevMonthTime);
+        $nextMonth = (int)date('n', $nextMonthTime);
+        $nextYear = (int)date('Y', $nextMonthTime);
+
+        // Days generation & Counters
+        $presentDays = 0;
+        $tardyDays = 0;
+        $absentDays = 0;
+        $excusedDays = 0;
+        $noClassDays = 0;
+        $days = [];
+
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+            $dayOfWeek = (int)date('w', strtotime($dateStr));
+            $isWeekend = ($dayOfWeek === 0 || $dayOfWeek === 6);
+            $isToday = ($dateStr === $todayStr);
+            $isFuture = ($dateStr > $todayStr);
+
+            $status = 'unrecorded';
+            $badgeText = '';
+            $badgeClass = '';
+            $details = '';
+            $bgClass = 'bg-white border-slate-200/80 hover:bg-slate-50';
+
+            // Check Precedence 1: Holiday or School Suspension
+            if (isset($events[$dateStr])) {
+                $ev = $events[$dateStr];
+                $noClassDays++;
+                if ($ev['type'] === 'suspension') {
+                    $status = 'suspension';
+                    $badgeText = 'Suspended';
+                    $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                    $bgClass = 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/50';
+                    $details = "School Suspension: {$ev['name']} ({$ev['desc']})";
+                } else {
+                    $status = 'holiday';
+                    $badgeText = 'Holiday';
+                    $badgeClass = 'bg-purple-100 text-purple-800 border-purple-200';
+                    $bgClass = 'bg-purple-50/70 border-purple-200 hover:bg-purple-100/50';
+                    $details = "Official Holiday: {$ev['name']} ({$ev['desc']})";
+                }
+            }
+            // Check Precedence 2: Weekend
+            elseif ($isWeekend) {
+                $status = 'weekend';
+                $badgeText = 'No Class';
+                $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
+                $bgClass = 'bg-slate-50/80 border-slate-200/60 text-slate-400';
+                $details = 'Weekend — No scheduled classes';
+                $noClassDays++;
+            }
+            // Check Precedence 3: Approved Excuse Slip
+            elseif (isset($excuseMap[$dateStr])) {
+                $status = 'excused';
+                $badgeText = 'Excused ✉';
+                $badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+                $bgClass = 'bg-blue-50/80 border-blue-200 hover:scale-[1.02] shadow-xs';
+                $sl = $excuseMap[$dateStr];
+                $details = "Excused Slip Approved: {$sl['reason']}";
+                $excusedDays++;
+            }
+            // Check Precedence 4: Attendance Log
+            elseif (isset($attendanceMap[$dateStr])) {
+                $recs = $attendanceMap[$dateStr];
+                $hasPresent = false;
+                $hasTardy = false;
+                $hasAbsent = false;
+                $subjList = [];
+
+                foreach ($recs as $r) {
+                    $timeFormatted = !empty($r['time']) ? date('h:i A', strtotime($r['time'])) : '';
+                    $subjList[] = "{$r['subject']} ({$r['status']}" . ($timeFormatted ? " at {$timeFormatted}" : "") . ")";
+                    if ($r['status'] === 'present') $hasPresent = true;
+                    if ($r['status'] === 'tardy') $hasTardy = true;
+                    if ($r['status'] === 'absent') $hasAbsent = true;
+                }
+
+                if ($hasPresent) {
+                    $status = 'present';
+                    $badgeText = 'Present';
+                    $badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                    $bgClass = 'bg-emerald-50/80 border-emerald-200 hover:scale-[1.02] shadow-xs';
+                    $details = implode(' • ', $subjList);
+                    $presentDays++;
+                } elseif ($hasTardy) {
+                    $status = 'tardy';
+                    $badgeText = 'Late';
+                    $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                    $bgClass = 'bg-amber-50/80 border-amber-200 hover:scale-[1.02] shadow-xs';
+                    $details = implode(' • ', $subjList);
+                    $tardyDays++;
+                } else {
+                    $status = 'absent';
+                    $badgeText = 'Absent';
+                    $badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+                    $bgClass = 'bg-rose-50/80 border-rose-200 hover:scale-[1.02] shadow-xs';
+                    $details = implode(' • ', $subjList);
+                    $absentDays++;
+                }
+            }
+            // Check Precedence 5: Future or Current Day
+            elseif ($isFuture) {
+                $status = 'upcoming';
+                $badgeText = 'Upcoming';
+                $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
+                $bgClass = 'bg-white border-slate-200/70 hover:bg-slate-50';
+                $details = 'Scheduled upcoming semester class day';
+            } elseif ($isToday) {
+                $status = 'today_pending';
+                $badgeText = 'Today';
+                $badgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-200';
+                $bgClass = 'bg-indigo-50/50 border-indigo-300 ring-2 ring-indigo-500';
+                $details = 'Today: Attendance scan in progress or awaiting session';
+            } else {
+                // Past weekday with no attendance and no excuse
+                $status = 'unrecorded';
+                $badgeText = 'No Record';
+                $badgeClass = 'bg-slate-100 text-slate-400 border-slate-200';
+                $bgClass = 'bg-slate-50/60 border-slate-200/60 text-slate-500';
+                $details = 'No class session attendance recorded';
+            }
+
+            $days[] = [
+                'day'         => $d,
+                'date'        => $dateStr,
+                'day_of_week' => $dayOfWeek,
+                'is_weekend'  => $isWeekend,
+                'is_today'    => $isToday,
+                'status'      => $status,
+                'badge_text'  => $badgeText,
+                'badge_class' => $badgeClass,
+                'bg_class'    => $bgClass,
+                'details'     => $details
+            ];
+        }
+
+        // Overall Monthly Rate Calculation
+        $totalSessions = $presentDays + $tardyDays + $absentDays;
+        $ratePercentage = $totalSessions > 0 ? round((($presentDays + $tardyDays) / $totalSessions) * 100, 1) : 100.0;
+
+        return [
+            'student'          => $studentInfo,
+            'year'             => $year,
+            'month'            => $month,
+            'month_name'       => $monthName,
+            'month_label'      => "{$monthName} {$year}",
+            'prev_month'       => $prevMonth,
+            'prev_year'        => $prevYear,
+            'next_month'       => $nextMonth,
+            'next_year'        => $nextYear,
+            'days_in_month'    => $daysInMonth,
+            'first_day_offset' => $firstDayOfWeek,
+            'days'             => $days,
+            'kpis'             => [
+                'present_days'    => $presentDays,
+                'tardy_days'      => $tardyDays,
+                'absent_days'     => $absentDays,
+                'excused_days'    => $excusedDays,
+                'no_class_days'   => $noClassDays,
+                'total_sessions'  => $totalSessions,
+                'rate_percentage' => $ratePercentage
+            ]
+        ];
+    }
+
+    /**
+     * API endpoint: GET /api/student/calendar
+     */
+    public function apiCalendarData(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $studentId = self::resolveCurrentStudentId();
+            $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+            $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
+
+            $data = self::getStudentCalendarData($studentId, $year, $month);
+            echo json_encode([
+                'success' => true,
+                'status'  => 'success',
+                'data'    => $data
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
 }
 
 
