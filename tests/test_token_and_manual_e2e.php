@@ -5,7 +5,7 @@
 
 require_once __DIR__ . '/../includes/core/Database.php';
 
-$baseUrl = 'http://127.0.0.1:8000';
+$baseUrl = 'http://localhost:8000';
 $passed = 0;
 $failed = 0;
 
@@ -54,8 +54,8 @@ $db = Database::getConnection();
 $testToken = '998877';
 $db->exec("DELETE FROM qr_sessions WHERE qr_code = '$testToken'");
 $db->exec("
-    INSERT INTO qr_sessions (teacher_id, qr_code, start, `end`, created_at)
-    VALUES (2, '$testToken', NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())
+    INSERT INTO qr_sessions (teacher_id, section, qr_code, start, `end`, created_at)
+    VALUES (2, '31001', '$testToken', NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())
 ");
 $sessionId = (int)$db->lastInsertId();
 assertTest($sessionId > 0, "Created active test QR session with token $testToken");

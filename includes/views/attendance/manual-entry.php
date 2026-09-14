@@ -207,7 +207,9 @@ include __DIR__ . '/../partials/header.php';
       }
 
       const submitBtn = document.querySelector('#standalone-manual-form button[type="submit"]');
-      if (submitBtn) {
+      if (submitBtn && window.APP && typeof APP.setLoading === 'function') {
+        APP.setLoading(submitBtn, true, 'Saving Attendance Record...');
+      } else if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Saving...';
       }
@@ -238,14 +240,18 @@ include __DIR__ . '/../partials/header.php';
           }, 1000);
         } else {
           APP.showToast(res.message || 'Failed to save record.', 'error');
-          if (submitBtn) {
+          if (submitBtn && window.APP && typeof APP.setLoading === 'function') {
+            APP.setLoading(submitBtn, false);
+          } else if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Save Attendance Record';
           }
         }
       } catch (err) {
         APP.showToast('Network error while saving record.', 'error');
-        if (submitBtn) {
+        if (submitBtn && window.APP && typeof APP.setLoading === 'function') {
+          APP.setLoading(submitBtn, false);
+        } else if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Save Attendance Record';
         }

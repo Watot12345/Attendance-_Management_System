@@ -182,9 +182,15 @@
 
         if (res.ok && data.status === 'success') {
           showAlert(data.message || 'Login successful! Redirecting...', false);
+          if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+            APP.showLoadingScreen({
+              title: 'Authenticating Account...',
+              subtitle: 'Redirecting to your personalized workspace...'
+            });
+          }
           setTimeout(() => {
             window.location.href = data.redirect_url;
-          }, 400);
+          }, 350);
         } else {
           showAlert(data.message || 'Invalid username/email or password.');
           btn.disabled = false;
@@ -205,5 +211,8 @@
       }
     }
   </script>
+  <!-- Global App JS for Preloader and Utilities -->
+  <script src="<?php echo url('assets/js/app.js'); ?>"></script>
 </body>
 </html>
+

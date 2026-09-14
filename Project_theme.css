@@ -220,7 +220,7 @@ h1, h2, h3, h4, h5, h6,
 .badge-sent    { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
 .badge-failed  { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
 
-/* ── Modern Buttons ──────────────────────────────────────── */
+/* ── Modern Buttons & Loading Effects ─────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -235,10 +235,62 @@ h1, h2, h3, h4, h5, h6,
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
 }
 
-.btn:active {
-  transform: scale(0.98);
+.btn:active:not(:disabled):not(.is-loading) {
+  transform: scale(0.97);
+}
+
+.btn:disabled,
+.btn[disabled],
+.btn.is-loading,
+.btn[data-loading="true"] {
+  opacity: 0.72;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Spinner Icon */
+.btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.65s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Ripple Click Wave Effect */
+.btn-ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: btn-ripple-anim 0.55s ease-out;
+  background-color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.btn-secondary .btn-ripple-wave,
+.btn-ghost .btn-ripple-wave {
+  background-color: rgba(15, 23, 42, 0.12);
+}
+
+@keyframes btn-ripple-anim {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 .btn-primary {
@@ -523,4 +575,47 @@ body.confirm-modal-open .page-body {
 #sonner-toast-container * {
   filter: none !important;
   -webkit-filter: none !important;
+}
+
+/* ── Global Loading Screen (Preloader & Screen Transitions) ──── */
+.global-preloader {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease-out;
+  background-color: #090e17 !important;
+}
+
+.global-preloader.preloader-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.loader-progress-bar-shimmer {
+  width: 50%;
+  animation: loaderShimmer 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes loaderShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+/* ── Dynamic Anti-Screenshot QR Blurry Loading Overlay ─────── */
+.qr-card-blur-overlay {
+  background-color: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s ease;
+  pointer-events: auto;
+}
+
+.qr-card-blur-overlay.is-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

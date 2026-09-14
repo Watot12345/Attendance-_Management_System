@@ -42,6 +42,17 @@ class AttendanceController {
             $db = Database::getConnection();
             $teacherId = $this->resolveTeacherId($db);
 
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+            $requestedSection = trim($input['section'] ?? '');
+
+            // If section not provided, get default section for this teacher from class_roster
+            if (empty($requestedSection)) {
+                $rDefault = $db->prepare("SELECT section FROM class_roster WHERE teacher_id = ? ORDER BY section ASC LIMIT 1");
+                $rDefault->execute([$teacherId]);
+                $requestedSection = $rDefault->fetchColumn() ?: '31001';
+            }
+
             // Generate a random 6-digit numeric QR code
             $codeNum = mt_rand(100000, 999999);
             $qrCode = (string)$codeNum;
@@ -60,17 +71,17 @@ class AttendanceController {
             $closeOld = $db->prepare("UPDATE qr_sessions SET end = NOW() WHERE teacher_id = ? AND end > NOW()");
             $closeOld->execute([$teacherId]);
 
-            // Insert new 30-minute QR session
+            // Insert new 30-minute QR session with section
             $stmt = $db->prepare("
-                INSERT INTO qr_sessions (teacher_id, qr_code, start, `end`, created_at)
-                VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())
+                INSERT INTO qr_sessions (teacher_id, section, qr_code, start, `end`, created_at)
+                VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())
             ");
-            $stmt->execute([$teacherId, $qrCode]);
+            $stmt->execute([$teacherId, $requestedSection, $qrCode]);
             $sessionId = (int)$db->lastInsertId();
 
             // Fetch created session details
             $sStmt = $db->prepare("
-                SELECT qr_session_id, teacher_id, qr_code, start, `end`, created_at,
+                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
                        TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
                 FROM qr_sessions
                 WHERE qr_session_id = ?
@@ -78,20 +89,34 @@ class AttendanceController {
             $sStmt->execute([$sessionId]);
             $session = $sStmt->fetch(PDO::FETCH_ASSOC);
 
-            // Get class/roster info for this teacher
+            // Get class/roster info for this teacher and section
             $rStmt = $db->prepare("
-                SELECT course_code, course_title, section, room_number
+                SELECT course_code, course_title, section, room_number, scheduled_time, schedule_day
                 FROM class_roster
-                WHERE teacher_id = ?
+                WHERE teacher_id = ? AND section = ?
                 LIMIT 1
             ");
-            $rStmt->execute([$teacherId]);
-            $roster = $rStmt->fetch(PDO::FETCH_ASSOC) ?: [
-                'course_code'  => 'IT301',
-                'course_title' => 'Web Systems and Technologies',
-                'section'      => 'BSIT 3-1',
-                'room_number'  => '402'
-            ];
+            $rStmt->execute([$teacherId, $requestedSection]);
+            $roster = $rStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$roster) {
+                // Fallback to any row for this teacher
+                $rStmt2 = $db->prepare("
+                    SELECT course_code, course_title, section, room_number, scheduled_time, schedule_day
+                    FROM class_roster
+                    WHERE teacher_id = ?
+                    LIMIT 1
+                ");
+                $rStmt2->execute([$teacherId]);
+                $roster = $rStmt2->fetch(PDO::FETCH_ASSOC) ?: [
+                    'course_code'    => 'IT301',
+                    'course_title'   => 'Web Systems and Technologies',
+                    'section'        => $requestedSection ?: '31001',
+                    'room_number'    => '402',
+                    'scheduled_time' => '08:00:00',
+                    'schedule_day'   => 'Monday'
+                ];
+                $roster['section'] = $requestedSection;
+            }
 
             echo json_encode([
                 'status'  => 'success',
@@ -105,7 +130,9 @@ class AttendanceController {
                     'course_code'        => $roster['course_code'],
                     'course_title'       => $roster['course_title'],
                     'section'            => $roster['section'],
-                    'room_number'        => $roster['room_number']
+                    'room_number'        => $roster['room_number'] ?? '402',
+                    'scheduled_time'     => $roster['scheduled_time'] ?? '08:00:00',
+                    'schedule_day'       => $roster['schedule_day'] ?? 'Monday'
                 ]
             ]);
             exit;
@@ -132,37 +159,64 @@ class AttendanceController {
         try {
             $db = Database::getConnection();
             $teacherId = $this->resolveTeacherId($db);
+            $reqSection = trim($_GET['section'] ?? '');
 
-            $stmt = $db->prepare("
-                SELECT qr_session_id, teacher_id, qr_code, start, `end`, created_at,
-                       TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
+            if (!empty($reqSection)) {
+                $stmt = $db->prepare("
+                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
+                           TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
+                    FROM qr_sessions
+                    WHERE teacher_id = ? AND section = ? AND `end` > NOW()
+                    ORDER BY qr_session_id DESC
+                    LIMIT 1
+                ");
+                $stmt->execute([$teacherId, $reqSection]);
+            } else {
+                $stmt = $db->prepare("
+                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
+                           TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
+                    FROM qr_sessions
+                    WHERE teacher_id = ? AND `end` > NOW()
+                    ORDER BY qr_session_id DESC
+                    LIMIT 1
+                ");
+                $stmt->execute([$teacherId]);
+            }
+            // Fetch all sections with an active QR session for this teacher
+            $allActStmt = $db->prepare("
+                SELECT DISTINCT section
                 FROM qr_sessions
                 WHERE teacher_id = ? AND `end` > NOW()
-                ORDER BY qr_session_id DESC
-                LIMIT 1
             ");
-            $stmt->execute([$teacherId]);
+            $allActStmt->execute([$teacherId]);
+            $activeSectionsList = $allActStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
             $session = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($session && (int)$session['expires_in_seconds'] > 0) {
-                // Get class info
+                $activeSection = $session['section'] ?: '31001';
+                // Get class info for this section
                 $rStmt = $db->prepare("
-                    SELECT course_code, course_title, section, room_number
+                    SELECT course_code, course_title, section, room_number, scheduled_time, schedule_day
                     FROM class_roster
-                    WHERE teacher_id = ?
+                    WHERE teacher_id = ? AND (section = ? OR ? = '')
+                    ORDER BY (section = ?) DESC
                     LIMIT 1
                 ");
-                $rStmt->execute([$teacherId]);
+                $rStmt->execute([$teacherId, $activeSection, $activeSection, $activeSection]);
                 $roster = $rStmt->fetch(PDO::FETCH_ASSOC) ?: [
-                    'course_code'  => 'IT301',
-                    'course_title' => 'Web Systems and Technologies',
-                    'section'      => 'BSIT 3-1',
-                    'room_number'  => '402'
+                    'course_code'    => 'IT301',
+                    'course_title'   => 'Web Systems and Technologies',
+                    'section'        => $activeSection,
+                    'room_number'    => '402',
+                    'scheduled_time' => '08:00:00',
+                    'schedule_day'   => 'Monday'
                 ];
 
                 echo json_encode([
                     'status'             => 'success',
                     'has_active_session' => true,
+                    'active_sections'    => $activeSectionsList,
                     'session'            => [
                         'qr_session_id'      => (int)$session['qr_session_id'],
                         'qr_code'            => $session['qr_code'],
@@ -171,14 +225,17 @@ class AttendanceController {
                         'expires_in_seconds' => (int)$session['expires_in_seconds'],
                         'course_code'        => $roster['course_code'],
                         'course_title'       => $roster['course_title'],
-                        'section'            => $roster['section'],
-                        'room_number'        => $roster['room_number']
+                        'section'            => $session['section'] ?: $roster['section'],
+                        'room_number'        => $roster['room_number'] ?? '402',
+                        'scheduled_time'     => $roster['scheduled_time'] ?? '08:00:00',
+                        'schedule_day'       => $roster['schedule_day'] ?? 'Monday'
                     ]
                 ]);
             } else {
                 echo json_encode([
                     'status'             => 'success',
                     'has_active_session' => false,
+                    'active_sections'    => $activeSectionsList,
                     'session'            => null
                 ]);
             }
@@ -210,23 +267,44 @@ class AttendanceController {
             $raw = file_get_contents('php://input');
             $input = !empty($raw) ? json_decode($raw, true) : $_POST;
             $sessionId = !empty($input['qr_session_id']) ? (int)$input['qr_session_id'] : null;
+            $sessionSection = trim($input['section'] ?? '');
 
-            // Close session(s)
+            // Close session(s) and resolve section
             if ($sessionId) {
+                $sessInfo = $db->prepare("SELECT section FROM qr_sessions WHERE qr_session_id = ? AND teacher_id = ?");
+                $sessInfo->execute([$sessionId, $teacherId]);
+                $sessRow = $sessInfo->fetch(PDO::FETCH_ASSOC);
+                if ($sessRow && !empty($sessRow['section'])) {
+                    $sessionSection = $sessRow['section'];
+                }
                 $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE qr_session_id = ? AND teacher_id = ?");
                 $closeStmt->execute([$sessionId, $teacherId]);
             } else {
-                $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE teacher_id = ? AND `end` > NOW()");
-                $closeStmt->execute([$teacherId]);
+                if (!empty($sessionSection)) {
+                    $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE teacher_id = ? AND section = ? AND `end` > NOW()");
+                    $closeStmt->execute([$teacherId, $sessionSection]);
+                } else {
+                    $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE teacher_id = ? AND `end` > NOW()");
+                    $closeStmt->execute([$teacherId]);
+                }
             }
 
-            // Find enrolled students who do not have an attendance record for today
-            $rosterStmt = $db->prepare("
-                SELECT cr.student_id, cr.course_title
-                FROM class_roster cr
-                WHERE cr.teacher_id = ?
-            ");
-            $rosterStmt->execute([$teacherId]);
+            // Find enrolled students in this section who do not have an attendance record for today
+            if (!empty($sessionSection)) {
+                $rosterStmt = $db->prepare("
+                    SELECT cr.student_id, cr.course_title
+                    FROM class_roster cr
+                    WHERE cr.teacher_id = ? AND cr.section = ?
+                ");
+                $rosterStmt->execute([$teacherId, $sessionSection]);
+            } else {
+                $rosterStmt = $db->prepare("
+                    SELECT cr.student_id, cr.course_title
+                    FROM class_roster cr
+                    WHERE cr.teacher_id = ?
+                ");
+                $rosterStmt->execute([$teacherId]);
+            }
             $enrolled = $rosterStmt->fetchAll(PDO::FETCH_ASSOC);
 
             $markedAbsentCount = 0;
@@ -281,53 +359,87 @@ class AttendanceController {
             $db = Database::getConnection();
             $teacherId = $this->resolveTeacherId($db);
             $today = date('Y-m-d');
+            $reqSection = trim($_GET['section'] ?? '');
 
-            // 1. Check if teacher currently has an active QR session
-            $reqSessionId = !empty($_GET['session_id']) ? (int)$_GET['session_id'] : null;
+            // 1. Check if teacher currently has an active QR session for this section
             $activeSession = null;
-
-            if ($reqSessionId) {
-                $sessStmt = $db->prepare("SELECT qr_session_id, qr_code, `end` > NOW() AS is_active FROM qr_sessions WHERE qr_session_id = ? AND teacher_id = ?");
-                $sessStmt->execute([$reqSessionId, $teacherId]);
+            if (!empty($reqSection)) {
+                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, 1 AS is_active FROM qr_sessions WHERE teacher_id = ? AND section = ? AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt->execute([$teacherId, $reqSection]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             } else {
-                $sessStmt = $db->prepare("SELECT qr_session_id, qr_code, 1 AS is_active FROM qr_sessions WHERE teacher_id = ? AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, 1 AS is_active FROM qr_sessions WHERE teacher_id = ? AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
                 $sessStmt->execute([$teacherId]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             }
 
             $hasActiveSession = $activeSession && !empty($activeSession['is_active']);
             $currentSessionId = $activeSession ? (int)$activeSession['qr_session_id'] : null;
+            $activeSection = !empty($reqSection) ? $reqSection : ($activeSession['section'] ?? '31001');
 
-            // 2. Fetch all check-in records for today (for modal and caching)
-            $feedStmt = $db->prepare("
-                SELECT 
-                    a.attendance_id,
-                    a.student_id,
-                    a.teacher_id,
-                    a.qr_session_id,
-                    a.date,
-                    a.time,
-                    a.subject,
-                    a.status,
-                    u.first_name,
-                    u.last_name,
-                    COALESCE(u.student_id, '2026-00000') AS student_number,
-                    u.email,
-                    u.avatar_path
-                FROM attendance a
-                JOIN users u ON u.user_id = a.student_id
-                WHERE a.teacher_id = ? AND a.date = ?
-                ORDER BY a.time DESC, a.attendance_id DESC
-            ");
-            $feedStmt->execute([$teacherId, $today]);
+            // 2. Fetch all check-in records for today strictly filtered by section
+            if (!empty($reqSection)) {
+                $feedStmt = $db->prepare("
+                    SELECT 
+                        a.attendance_id,
+                        a.student_id,
+                        a.teacher_id,
+                        a.qr_session_id,
+                        a.date,
+                        a.time,
+                        a.subject,
+                        a.status,
+                        u.first_name,
+                        u.last_name,
+                        COALESCE(u.student_id, '2026-00000') AS student_number,
+                        u.email,
+                        u.avatar_path,
+                        cr.section AS roster_section,
+                        qs.section AS session_section
+                    FROM attendance a
+                    JOIN users u ON u.user_id = a.student_id
+                    JOIN class_roster cr ON cr.student_id = a.student_id AND cr.teacher_id = a.teacher_id AND cr.section = ?
+                    LEFT JOIN qr_sessions qs ON qs.qr_session_id = a.qr_session_id
+                    WHERE a.teacher_id = ? AND a.date = ?
+                    ORDER BY a.time DESC, a.attendance_id DESC
+                ");
+                $feedStmt->execute([$reqSection, $teacherId, $today]);
+            } else {
+                $feedStmt = $db->prepare("
+                    SELECT 
+                        a.attendance_id,
+                        a.student_id,
+                        a.teacher_id,
+                        a.qr_session_id,
+                        a.date,
+                        a.time,
+                        a.subject,
+                        a.status,
+                        u.first_name,
+                        u.last_name,
+                        COALESCE(u.student_id, '2026-00000') AS student_number,
+                        u.email,
+                        u.avatar_path,
+                        cr.section AS roster_section,
+                        qs.section AS session_section
+                    FROM attendance a
+                    JOIN users u ON u.user_id = a.student_id
+                    LEFT JOIN class_roster cr ON cr.student_id = a.student_id AND cr.teacher_id = a.teacher_id
+                    LEFT JOIN qr_sessions qs ON qs.qr_session_id = a.qr_session_id
+                    WHERE a.teacher_id = ? AND a.date = ?
+                    ORDER BY a.time DESC, a.attendance_id DESC
+                ");
+                $feedStmt->execute([$teacherId, $today]);
+            }
             $allRows = $feedStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Format all check-in rows
+            // Format check-in rows
             $allFormatted = [];
             $activeFormatted = [];
 
             foreach ($allRows as $row) {
+                $itemSection = $row['roster_section'] ?: $row['session_section'];
+
                 $fullName = trim("{$row['first_name']} {$row['last_name']}");
                 $timeFormatted = date('h:i:s A', strtotime($row['time']));
                 $initials = '';
@@ -347,7 +459,8 @@ class AttendanceController {
                     'time'           => $timeFormatted,
                     'subject'        => $row['subject'],
                     'status'         => $row['status'],
-                    'avatar_path'    => $row['avatar_path']
+                    'avatar_path'    => $row['avatar_path'],
+                    'section'        => $itemSection
                 ];
 
                 $allFormatted[] = $item;
@@ -358,19 +471,24 @@ class AttendanceController {
                 }
             }
 
-            // 3. Count total enrolled students in class_roster for this teacher
-            $enrolledStmt = $db->prepare("
-                SELECT COUNT(DISTINCT student_id) AS total_enrolled
-                FROM class_roster
-                WHERE teacher_id = ?
-            ");
-            $enrolledStmt->execute([$teacherId]);
+            // 3. Count total enrolled students in class_roster for this teacher and section (NO FALLBACKS - Real Data Only)
+            if (!empty($reqSection)) {
+                $enrolledStmt = $db->prepare("
+                    SELECT COUNT(DISTINCT student_id) AS total_enrolled
+                    FROM class_roster
+                    WHERE teacher_id = ? AND section = ?
+                ");
+                $enrolledStmt->execute([$teacherId, $reqSection]);
+            } else {
+                $enrolledStmt = $db->prepare("
+                    SELECT COUNT(DISTINCT student_id) AS total_enrolled
+                    FROM class_roster
+                    WHERE teacher_id = ?
+                ");
+                $enrolledStmt->execute([$teacherId]);
+            }
             $enrolledRow = $enrolledStmt->fetch(PDO::FETCH_ASSOC);
             $totalEnrolled = $enrolledRow ? (int)$enrolledRow['total_enrolled'] : 0;
-            if ($totalEnrolled === 0) {
-                $fallbackEnrolled = $db->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn();
-                $totalEnrolled = max(1, (int)$fallbackEnrolled);
-            }
 
             // 4. Aggregate metrics
             $presentCount = 0;
@@ -397,6 +515,7 @@ class AttendanceController {
                 'status'             => 'success',
                 'has_active_session' => $hasActiveSession,
                 'current_session_id' => $currentSessionId,
+                'section'            => $activeSection,
                 'checkins'           => $hasActiveSession ? $activeFormatted : [], // Cleared on screen when no active session
                 'all_today_checkins' => $allFormatted, // Persisted for modal and historical view
                 'metrics'  => [
@@ -423,7 +542,7 @@ class AttendanceController {
 
     /**
      * POST /api/attendance/check-in
-     * Records an attendance scan (validates 6-digit QR session and inserts into `attendance` table).
+     * Records an attendance scan (validates 6-digit QR session, checks student enrollment in section via `class_roster`, and inserts into `attendance` table).
      */
     public function recordCheckIn(): void {
         if (!headers_sent()) {
@@ -447,7 +566,7 @@ class AttendanceController {
 
             // 1. Verify active QR session
             $sessStmt = $db->prepare("
-                SELECT qr_session_id, teacher_id, qr_code, start, `end`
+                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`
                 FROM qr_sessions
                 WHERE qr_code = ? AND `end` > NOW()
                 ORDER BY qr_session_id DESC
@@ -468,6 +587,7 @@ class AttendanceController {
 
             $teacherId = (int)$session['teacher_id'];
             $sessionId = (int)$session['qr_session_id'];
+            $sessionSection = trim($session['section'] ?? '');
 
             // 2. Resolve student
             $student = null;
@@ -485,6 +605,16 @@ class AttendanceController {
                     ':email'  => $studentIdentifier
                 ]);
                 $student = $stStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$student) {
+                    http_response_code(404);
+                    echo json_encode([
+                        'status'    => 'error',
+                        'scan_code' => 'STUDENT_NOT_FOUND',
+                        'message'   => 'Student record not found.'
+                    ]);
+                    exit;
+                }
             } else {
                 // Fallback to logged in student
                 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -493,19 +623,30 @@ class AttendanceController {
                     $stStmt->execute([(int)$_SESSION['user_id']]);
                     $student = $stStmt->fetch(PDO::FETCH_ASSOC);
                 }
-            }
 
-            if (!$student) {
-                // Pick a default student from roster for testing if not provided
-                $pick = $db->prepare("
-                    SELECT u.user_id, u.student_id, u.first_name, u.last_name, u.email
-                    FROM class_roster cr
-                    JOIN users u ON u.user_id = cr.student_id
-                    WHERE cr.teacher_id = ?
-                    LIMIT 1
-                ");
-                $pick->execute([$teacherId]);
-                $student = $pick->fetch(PDO::FETCH_ASSOC);
+                if (!$student) {
+                    // Pick a default student from roster for testing if no student specified or logged in
+                    if (!empty($sessionSection)) {
+                        $pick = $db->prepare("
+                            SELECT u.user_id, u.student_id, u.first_name, u.last_name, u.email
+                            FROM class_roster cr
+                            JOIN users u ON u.user_id = cr.student_id
+                            WHERE cr.teacher_id = ? AND cr.section = ?
+                            LIMIT 1
+                        ");
+                        $pick->execute([$teacherId, $sessionSection]);
+                    } else {
+                        $pick = $db->prepare("
+                            SELECT u.user_id, u.student_id, u.first_name, u.last_name, u.email
+                            FROM class_roster cr
+                            JOIN users u ON u.user_id = cr.student_id
+                            WHERE cr.teacher_id = ?
+                            LIMIT 1
+                        ");
+                        $pick->execute([$teacherId]);
+                    }
+                    $student = $pick->fetch(PDO::FETCH_ASSOC);
+                }
             }
 
             if (!$student) {
@@ -518,11 +659,63 @@ class AttendanceController {
             $today = date('Y-m-d');
             $nowTime = date('H:i:s');
 
-            // 3. Get Course/Subject Title
-            $cStmt = $db->prepare("SELECT course_title FROM class_roster WHERE teacher_id = ? LIMIT 1");
-            $cStmt->execute([$teacherId]);
-            $cRow = $cStmt->fetch(PDO::FETCH_ASSOC);
-            $subject = $cRow['course_title'] ?? 'Web Systems and Technologies';
+            // 3. CHECK CLASS_ROSTER TABLE: Validate student is part of the section
+            $subject = 'Web Systems and Technologies';
+
+            if (!empty($sessionSection)) {
+                $rosterCheck = $db->prepare("
+                    SELECT roster_id, course_code, course_title, section
+                    FROM class_roster
+                    WHERE student_id = ? AND teacher_id = ? AND section = ?
+                    LIMIT 1
+                ");
+                $rosterCheck->execute([$studentUserId, $teacherId, $sessionSection]);
+                $rosterMatch = $rosterCheck->fetch(PDO::FETCH_ASSOC);
+
+                // Fallback check if student_id is user_id or vice versa
+                if (!$rosterMatch && !empty($student['student_id'])) {
+                    $rosterCheck2 = $db->prepare("
+                        SELECT cr.roster_id, cr.course_code, cr.course_title, cr.section
+                        FROM class_roster cr
+                        JOIN users u ON u.user_id = cr.student_id
+                        WHERE (u.student_id = :st_num OR cr.student_id = :st_uid) AND cr.teacher_id = :t_id AND cr.section = :sec
+                        LIMIT 1
+                    ");
+                    $rosterCheck2->execute([
+                        ':st_num' => $student['student_id'],
+                        ':st_uid' => $studentUserId,
+                        ':t_id'   => $teacherId,
+                        ':sec'    => $sessionSection
+                    ]);
+                    $rosterMatch = $rosterCheck2->fetch(PDO::FETCH_ASSOC);
+                }
+
+                if (!$rosterMatch) {
+                    http_response_code(403);
+                    echo json_encode([
+                        'status'    => 'error',
+                        'scan_code' => 'WRONG_SECTION',
+                        'message'   => "Access Denied: Student {$student['first_name']} {$student['last_name']} is not enrolled in section {$sessionSection} for this class."
+                    ]);
+                    exit;
+                }
+                $subject = $rosterMatch['course_title'] ?: $subject;
+            } else {
+                // If session had no section specified, check teacher roster
+                $cStmt = $db->prepare("SELECT course_title FROM class_roster WHERE teacher_id = ? AND student_id = ? LIMIT 1");
+                $cStmt->execute([$teacherId, $studentUserId]);
+                $cRow = $cStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$cRow) {
+                    http_response_code(403);
+                    echo json_encode([
+                        'status'    => 'error',
+                        'scan_code' => 'WRONG_SECTION',
+                        'message'   => "Access Denied: Student {$student['first_name']} {$student['last_name']} is not in this teacher's class roster."
+                    ]);
+                    exit;
+                }
+                $subject = $cRow['course_title'] ?: $subject;
+            }
 
             // 4. Check for Duplicate scan today
             $dupStmt = $db->prepare("
@@ -563,7 +756,7 @@ class AttendanceController {
                 ");
                 $auditStmt->execute([
                     $studentUserId,
-                    "Student marked $status via Dynamic 6-digit QR (Token: $qrCode)",
+                    "Student marked $status in section " . ($sessionSection ?: 'N/A') . " via Dynamic 6-digit QR (Token: $qrCode)",
                     $attendanceId
                 ]);
             } catch (Exception $e) {}
@@ -578,7 +771,8 @@ class AttendanceController {
                     'student_number' => $student['student_id'],
                     'status'         => $status,
                     'time'           => date('h:i:s A', strtotime($nowTime)),
-                    'subject'        => $subject
+                    'subject'        => $subject,
+                    'section'        => $sessionSection
                 ]
             ]);
             exit;

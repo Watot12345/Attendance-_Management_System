@@ -2,7 +2,7 @@
  * AI-Supported Attendance Management System
  * Global JS — app.js
  * Sidebar toggle, toast notifications, modal, confirm dialog,
- * tab switching, notification dropdown, user menu
+ * tab switching, notification dropdown, user menu, loading screen, ripple effects
  */
 
 const APP = {
@@ -41,6 +41,38 @@ const APP = {
   },
   showToast(message, type = 'info', duration = 4000) {
     return this.toast(message, type, duration);
+  },
+
+  /* ── Button Loading State Manager ─────────────────────────── */
+  setLoading(btn, isLoading = true, loadingText = null) {
+    const el = typeof btn === 'string' ? document.querySelector(btn) : btn;
+    if (!el) return;
+
+    if (isLoading) {
+      if (!el.dataset.origHtml) {
+        el.dataset.origHtml = el.innerHTML;
+      }
+      el.disabled = true;
+      el.classList.add('is-loading');
+      el.setAttribute('data-loading', 'true');
+      
+      const spinner = '<span class="btn-spinner"></span>';
+      if (loadingText) {
+        el.innerHTML = `${spinner}<span>${loadingText}</span>`;
+      } else {
+        const textSpan = el.querySelector('span:not(.btn-spinner)');
+        const currentText = textSpan ? textSpan.textContent.trim() : (el.textContent.trim() || 'Loading...');
+        el.innerHTML = `${spinner}<span>${currentText}</span>`;
+      }
+    } else {
+      if (el.dataset.origHtml) {
+        el.innerHTML = el.dataset.origHtml;
+        delete el.dataset.origHtml;
+      }
+      el.disabled = false;
+      el.classList.remove('is-loading');
+      el.removeAttribute('data-loading');
+    }
   },
 
   /* ── Modal ────────────────────────────────────────────────── */
@@ -175,7 +207,7 @@ const APP = {
       document.body.classList.add('confirm-modal-open');
       modal.classList.remove('hidden');
       requestAnimationFrame(() => {
-        modal.classList.remove('opacity-0');
+        modal.classList.remove('opacity-100');
         modal.classList.add('opacity-100');
         if (box) {
           box.classList.remove('scale-95');
@@ -528,6 +560,23 @@ const APP = {
     if (dropdown) dropdown.classList.toggle('hidden');
   },
 
+  /* ── Fullscreen Loading Screen Manager ────────────────────── */
+  showLoadingScreen(opts = {}) {
+    const preloader = document.getElementById('global-app-preloader');
+    if (!preloader) return;
+    const titleEl = document.getElementById('global-loader-title');
+    const subEl = document.getElementById('global-loader-subtitle');
+    if (titleEl && opts.title) titleEl.textContent = opts.title;
+    if (subEl && opts.subtitle) subEl.textContent = opts.subtitle;
+    preloader.classList.remove('preloader-hidden');
+  },
+
+  hideLoadingScreen() {
+    const preloader = document.getElementById('global-app-preloader');
+    if (!preloader) return;
+    preloader.classList.add('preloader-hidden');
+  },
+
   /* ── Highlight Active Nav ─────────────────────────────────── */
   highlightNav(pageId) {
     document.querySelectorAll('#sidebar .nav-item').forEach(item => {
@@ -587,6 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+
 /* ── Declarative [data-confirm] Attribute Delegation ───────── */
 document.addEventListener('click', async function(e) {
   const trigger = e.target.closest('[data-confirm]');
@@ -624,5 +674,47 @@ document.addEventListener('click', async function(e) {
   }
 }, true);
 
+/* ── Modern Button Ripple Effect & Global Handlers ───────── */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn || btn.disabled || btn.classList.contains('is-loading')) return;
 
+  const rect = btn.getBoundingClientRect();
+  const circle = document.createElement('span');
+  const diameter = Math.max(rect.width, rect.height);
+  const radius = diameter / 2;
 
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${e.clientX - rect.left - radius}px`;
+  circle.style.top = `${e.clientY - rect.top - radius}px`;
+  circle.classList.add('btn-ripple-wave');
+
+  const existingRipple = btn.querySelector('.btn-ripple-wave');
+  if (existingRipple) {
+    existingRipple.remove();
+  }
+
+  btn.appendChild(circle);
+  setTimeout(() => {
+    if (circle.parentNode === btn) {
+      circle.remove();
+    }
+  }, 600);
+});
+
+// Expose globally for inline and view scripts
+window.setButtonLoading = function(btn, isLoading, loadingText) {
+  if (window.APP && typeof APP.setLoading === 'function') {
+    APP.setLoading(btn, isLoading, loadingText);
+  }
+};
+window.showLoadingScreen = function(opts) {
+  if (window.APP && typeof APP.showLoadingScreen === 'function') {
+    APP.showLoadingScreen(opts);
+  }
+};
+window.hideLoadingScreen = function() {
+  if (window.APP && typeof APP.hideLoadingScreen === 'function') {
+    APP.hideLoadingScreen();
+  }
+};

@@ -29,16 +29,16 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
         <!-- Main Scanner Viewfinder (7 cols) -->
         <div class="md:col-span-7 space-y-4">
           <div class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800 text-white relative overflow-hidden">
-            <!-- Camera Viewfinder Mockup -->
-            <div class="relative w-full aspect-square max-w-[340px] mx-auto rounded-xl bg-slate-950 border-2 border-slate-700 flex flex-col items-center justify-center overflow-hidden">
+            <!-- Camera Viewfinder with Live Stream -->
+            <div id="camera-stream-box" class="relative w-full aspect-square max-w-[340px] mx-auto rounded-xl bg-slate-950 border-2 border-slate-700 flex flex-col items-center justify-center overflow-hidden">
               <!-- Grid background simulation -->
               <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
 
               <!-- Animated Scan Laser line -->
-              <div class="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-indigo-500 via-emerald-400 to-indigo-500 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-bounce"></div>
+              <div class="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-indigo-500 via-emerald-400 to-indigo-500 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-bounce pointer-events-none z-20"></div>
 
               <!-- Reticle Corners -->
-              <div class="w-48 h-48 relative z-10 flex flex-col justify-between">
+              <div class="w-48 h-48 relative z-10 flex flex-col justify-between pointer-events-none">
                 <div class="flex justify-between">
                   <div class="w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg"></div>
                   <div class="w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg"></div>
@@ -57,9 +57,9 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
             <div class="flex items-center justify-between mt-5 pt-4 border-t border-slate-800 text-xs text-slate-400">
               <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Camera: <strong class="text-white">Active (Back)</strong></span>
+                <span>Camera: <strong id="camera-status-text" class="text-white">Active (Back)</strong></span>
               </div>
-              <button type="button" class="text-indigo-400 hover:text-indigo-300 transition" onclick="toggleCamera()">Switch Camera</button>
+              <button type="button" class="text-indigo-400 hover:text-indigo-300 transition cursor-pointer" onclick="toggleCamera()">Switch Camera</button>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
 
               <div id="token-error-msg" class="hidden text-xs text-rose-600 font-medium bg-rose-50 border border-rose-200 p-2.5 rounded-lg text-center"></div>
 
-              <button type="submit" id="submit-token-btn" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer">
+              <button type="submit" id="submit-token-btn" class="btn btn-primary w-full py-2.5 px-4 rounded-lg font-semibold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer">
                 <span>Submit Attendance Token</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </button>
@@ -98,33 +98,33 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
               <a href="<?php echo url('student/scan-result?status=success'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition text-xs group">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-semibold text-slate-700 group-hover:text-emerald-800">1. Valid Scan (Success)</span>
+                  <span class="font-semibold text-slate-700">Test Success Check-in</span>
                 </div>
-                <span class="text-[11px] text-emerald-600 font-medium">Marked Present →</span>
+                <span class="text-[11px] text-emerald-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
 
-              <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition text-xs group">
+              <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition text-xs group">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span class="font-semibold text-slate-700 group-hover:text-amber-800">2. Wrong Section</span>
+                  <span class="font-semibold text-slate-700">Test Duplicate Check-in</span>
                 </div>
-                <span class="text-[11px] text-amber-600 font-medium">Not Enrolled →</span>
+                <span class="text-[11px] text-amber-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
+              </a>
+
+              <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition text-xs group">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                  <span class="font-semibold text-slate-700">Test Wrong Section Reject</span>
+                </div>
+                <span class="text-[11px] text-rose-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
 
               <a href="<?php echo url('student/scan-result?status=expired'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition text-xs group">
                 <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span class="font-semibold text-slate-700 group-hover:text-rose-800">3. Expired QR Token</span>
+                  <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <span class="font-semibold text-slate-700">Test Expired QR Token</span>
                 </div>
-                <span class="text-[11px] text-rose-600 font-medium">Expired →</span>
-              </a>
-
-              <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span class="font-semibold text-slate-700 group-hover:text-blue-800">4. Already Recorded</span>
-                </div>
-                <span class="text-[11px] text-blue-600 font-medium">Duplicate →</span>
+                <span class="text-[11px] text-slate-500 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
             </div>
           </div>
@@ -134,21 +134,95 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
-function toggleCamera() {
-  alert('Camera switched (simulated front/back sensor).');
+let html5QrScanner = null;
+let currentCameraFacingMode = "environment";
+let isScanningActive = false;
+
+async function initLiveScanner() {
+  const readerElement = document.getElementById('camera-stream-box');
+  if (!readerElement || typeof Html5Qrcode === 'undefined') return;
+
+  try {
+    html5QrScanner = new Html5Qrcode("camera-stream-box");
+    const config = { 
+      fps: 10, 
+      qrbox: { width: 220, height: 220 },
+      aspectRatio: 1.0
+    };
+
+    await html5QrScanner.start(
+      { facingMode: currentCameraFacingMode },
+      config,
+      onQrCodeSuccess,
+      onQrCodeError
+    );
+    isScanningActive = true;
+    const statusText = document.getElementById('camera-status-text');
+    if (statusText) statusText.textContent = `Active (${currentCameraFacingMode === 'environment' ? 'Back' : 'Front'})`;
+  } catch (err) {
+    console.warn('Camera access unavailable or denied:', err);
+    const statusText = document.getElementById('camera-status-text');
+    if (statusText) statusText.textContent = 'Manual Entry Ready';
+  }
+}
+
+function onQrCodeSuccess(decodedText) {
+  if (!decodedText) return;
+  // Stop scanning once code detected to prevent multiple submissions
+  if (html5QrScanner && isScanningActive) {
+    html5QrScanner.stop().catch(() => {});
+    isScanningActive = false;
+  }
+  
+  // Extract 6-digit code if full URL or token
+  let token = decodedText.trim();
+  const match = token.match(/\b\d{6}\b/);
+  if (match) {
+    token = match[0];
+  }
+
+  const tokenInput = document.getElementById('manual-token');
+  if (tokenInput) tokenInput.value = token;
+  
+  processAttendanceCheckIn(token);
+}
+
+function onQrCodeError(errorMessage) {
+  // Silent scan frame tick
+}
+
+async function toggleCamera() {
+  if (!html5QrScanner) return;
+  try {
+    if (isScanningActive) {
+      await html5QrScanner.stop();
+      isScanningActive = false;
+    }
+    currentCameraFacingMode = (currentCameraFacingMode === "environment") ? "user" : "environment";
+    await initLiveScanner();
+  } catch (e) {
+    console.error('Failed to switch camera:', e);
+  }
 }
 
 async function submitTokenAttendance(e) {
   if (e) e.preventDefault();
   const tokenInput = document.getElementById('manual-token');
   const token = tokenInput ? tokenInput.value.trim() : '';
+  if (!token) return;
+  processAttendanceCheckIn(token);
+}
+
+async function processAttendanceCheckIn(token) {
   const errBox = document.getElementById('token-error-msg');
   const btn = document.getElementById('submit-token-btn');
-  if (!token) return;
 
   if (errBox) errBox.classList.add('hidden');
-  if (btn) {
+  if (btn && window.APP && typeof APP.setLoading === 'function') {
+    APP.setLoading(btn, true, 'Verifying...');
+  } else if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<span>Verifying Token...</span>';
   }
@@ -197,12 +271,18 @@ async function submitTokenAttendance(e) {
       errBox.textContent = 'Network error while contacting attendance service. Please check connection.';
       errBox.classList.remove('hidden');
     }
-    if (btn) {
+    if (btn && window.APP && typeof APP.setLoading === 'function') {
+      APP.setLoading(btn, false);
+    } else if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<span>Submit Attendance Token</span>';
     }
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  initLiveScanner();
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
