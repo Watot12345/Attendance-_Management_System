@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Scan Feedback Result';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
 require_once dirname(__DIR__) . '/partials/header.php';
 
 // Get status from query string, default to success
@@ -8,6 +9,40 @@ $status = $_GET['status'] ?? 'success';
 if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
     $status = 'success';
 }
+
+$customMsg = trim($_GET['msg'] ?? '');
+
+// Resolve current student session or default
+$studentName = $_SESSION['user']['full_name'] ?? 'Juan Dela Cruz';
+$studentNumber = $_SESSION['user']['student_id'] ?? '230110001';
+$studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?? 1);
+
+// Fetch latest attendance record for this student from DB
+$latestAtt = null;
+try {
+    $db = Database::getConnection();
+    $stmt = $db->prepare("
+        SELECT a.attendance_id, a.date, a.time, a.status, a.subject, 
+               COALESCE(cr.section, '31001') AS section,
+               COALESCE(u.student_id, '230110001') AS student_number,
+               CONCAT(u.first_name, ' ', u.last_name) AS student_name
+        FROM attendance a
+        JOIN users u ON u.user_id = a.student_id
+        LEFT JOIN class_roster cr ON cr.student_id = a.student_id AND cr.teacher_id = a.teacher_id
+        WHERE a.student_id = ?
+        ORDER BY a.attendance_id DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$studentUserId]);
+    $latestAtt = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {}
+
+$dispName = $latestAtt['student_name'] ?? $studentName;
+$dispNumber = $latestAtt['student_number'] ?? $studentNumber;
+$dispSubject = $latestAtt['subject'] ?? 'Web Systems and Technologies';
+$dispSection = $latestAtt['section'] ?? '31001';
+$dispTime = !empty($latestAtt['time']) ? date('h:i:s A', strtotime($latestAtt['time'])) : date('h:i:s A');
+$dispStatus = ucfirst($latestAtt['status'] ?? 'Present');
 ?>
 
 <div class="app-layout">
@@ -19,7 +54,7 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
     <main class="page-body max-w-2xl mx-auto">
       <!-- Quick State Switcher for Review/Demo -->
       <div class="mb-6 p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-1 pb-2">Demo: View All 4 Feedback States</div>
+        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-1 pb-2">Feedback Status Preview</div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           <a href="<?php echo url('student/scan-result?status=success'); ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition <?php echo $status === 'success' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'; ?>">
             1. Success
@@ -45,7 +80,7 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
             <svg class="w-10 h-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
           </div>
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">
-            <span>● Verified &amp; Recorded</span>
+            <span>● Verified &amp; Recorded in Database</span>
           </span>
           <h1 class="text-2xl font-bold text-slate-800 mb-2">Attendance Logged Successfully!</h1>
           <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">Your attendance has been officially confirmed and written to the class session log.</p>
@@ -54,23 +89,23 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
           <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left text-xs space-y-2.5 mb-6">
             <div class="flex justify-between pb-2 border-b border-slate-200/60">
               <span class="text-slate-500 font-medium">Student Name</span>
-              <span class="font-bold text-slate-800">Juan Dela Cruz (2026-00123)</span>
+              <span id="res-student-name" class="font-bold text-slate-800"><?= htmlspecialchars($dispName, ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string)$dispNumber, ENT_QUOTES, 'UTF-8') ?>)</span>
             </div>
             <div class="flex justify-between pb-2 border-b border-slate-200/60">
               <span class="text-slate-500 font-medium">Course &amp; Subject</span>
-              <span class="font-bold text-slate-800">IT301 — Web Development 2</span>
+              <span id="res-subject" class="font-bold text-slate-800"><?= htmlspecialchars($dispSubject, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <div class="flex justify-between pb-2 border-b border-slate-200/60">
               <span class="text-slate-500 font-medium">Enrolled Section</span>
-              <span class="font-bold text-blue-700">BSIT 3-A</span>
+              <span id="res-section" class="font-bold text-blue-700"><?= htmlspecialchars($dispSection, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <div class="flex justify-between pb-2 border-b border-slate-200/60">
               <span class="text-slate-500 font-medium">Timestamp</span>
-              <span class="font-bold text-slate-800">Today, 08:05:12 AM</span>
+              <span id="res-timestamp" class="font-bold text-slate-800">Today, <?= htmlspecialchars($dispTime, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500 font-medium">Status Assigned</span>
-              <span class="badge badge-present font-bold">Present (On-Time)</span>
+              <span id="res-status" class="badge badge-present font-bold"><?= htmlspecialchars($dispStatus, ENT_QUOTES, 'UTF-8') ?> (Recorded)</span>
             </div>
           </div>
 
@@ -83,7 +118,7 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
             <span>● Section Mismatch</span>
           </span>
           <h1 class="text-2xl font-bold text-slate-800 mb-2">Not Enrolled in this Section</h1>
-          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">You scanned the attendance code for <strong class="text-slate-700">BSIT 3-A</strong>, but your official enrollment record is in <strong class="text-slate-700">BSIT 3-C</strong>.</p>
+          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto"><?= $customMsg !== '' ? htmlspecialchars($customMsg, ENT_QUOTES, 'UTF-8') : 'You scanned the attendance code for an active session, but your official enrollment record belongs to a different section.' ?></p>
 
           <div class="bg-amber-50 rounded-xl p-4 border border-amber-200 text-left text-xs space-y-2 mb-6 text-amber-900">
             <p class="font-semibold">Security Rule Enforced:</p>
@@ -98,12 +133,12 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider mb-2">
             <span>● Dynamic Token Expired</span>
           </span>
-          <h1 class="text-2xl font-bold text-slate-800 mb-2">QR Code Has Expired</h1>
-          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">The projected QR code rotates every 15 seconds to prevent screenshots. Please look at the classroom screen and scan the active code.</p>
+          <h1 class="text-2xl font-bold text-slate-800 mb-2">QR Code / Token Expired or Invalid</h1>
+          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto"><?= $customMsg !== '' ? htmlspecialchars($customMsg, ENT_QUOTES, 'UTF-8') : 'The entered 6-digit token is expired or invalid. Please check the screen and enter the current code.' ?></p>
 
           <div class="bg-rose-50 rounded-xl p-4 border border-rose-200 text-left text-xs space-y-2 mb-6 text-rose-900">
-            <p class="font-semibold">Anti-Screenshot Protection:</p>
-            <p>Static photos or screenshots taken earlier cannot be submitted after the rotation window. Point your camera directly at the live projector screen.</p>
+            <p class="font-semibold">Live Security Protection:</p>
+            <p>Static codes or old tokens cannot be submitted after the rotation window expires. Look directly at the teacher\'s screen for the live 6-digit code.</p>
           </div>
 
         <?php elseif ($status === 'duplicate'): ?>
@@ -115,11 +150,11 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
             <span>● Already Logged</span>
           </span>
           <h1 class="text-2xl font-bold text-slate-800 mb-2">Attendance Already Recorded</h1>
-          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto">Your check-in for this class session was already captured at <strong class="text-slate-700">08:02 AM today</strong>. No duplicate entry is necessary.</p>
+          <p class="text-sm text-slate-500 mb-6 max-w-md mx-auto"><?= $customMsg !== '' ? htmlspecialchars($customMsg, ENT_QUOTES, 'UTF-8') : 'Your check-in for this class session was already captured today. No duplicate entry is necessary.' ?></p>
 
           <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 text-left text-xs space-y-2 mb-6 text-blue-900">
             <p class="font-semibold">Database Integrity:</p>
-            <p>The system enforces a single unique attendance record per student per session to prevent accidental double-logging.</p>
+            <p>The system enforces a composite unique constraint on (student_id, date, subject) to prevent accidental double-logging.</p>
           </div>
         <?php endif; ?>
 
@@ -140,5 +175,28 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'])) {
     </main>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const raw = sessionStorage.getItem('last_attendance_record');
+    if (raw) {
+      const rec = JSON.parse(raw);
+      if (rec.student_name && document.getElementById('res-student-name')) {
+        document.getElementById('res-student-name').textContent = `${rec.student_name} (${rec.student_number || ''})`;
+      }
+      if (rec.subject && document.getElementById('res-subject')) {
+        document.getElementById('res-subject').textContent = rec.subject;
+      }
+      if (rec.time && document.getElementById('res-timestamp')) {
+        document.getElementById('res-timestamp').textContent = `Today, ${rec.time}`;
+      }
+      if (rec.status && document.getElementById('res-status')) {
+        document.getElementById('res-status').textContent = `${rec.status.toUpperCase()} (Recorded)`;
+      }
+    }
+  } catch (e) {}
+});
+</script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>

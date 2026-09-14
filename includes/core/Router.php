@@ -144,6 +144,9 @@ class Router {
         '/api/teacher/qr-session/close'    => 'AttendanceController@closeQrSession',
         '/api/teacher/attendance/live-feed'=> 'AttendanceController@getLiveAttendanceFeed',
         '/api/attendance/check-in'         => 'AttendanceController@recordCheckIn',
+        '/api/attendance/daily'            => 'AttendanceController@apiDailyAttendance',
+        '/api/attendance/manual-entry'     => 'AttendanceController@apiManualEntry',
+        '/api/teacher/roster/students'     => 'AttendanceController@apiGetRosterStudents',
 
         // Teachers Master & Bulk Import API
         '/api/teachers'                 => 'TeacherController@handleRoot',
@@ -152,6 +155,7 @@ class Router {
         '/api/teachers/delete'          => 'TeacherController@apiDelete',
         '/api/teachers/reset-password'  => 'TeacherController@apiResetPassword',
         '/api/teachers/import'          => 'TeacherController@apiImport',
+        '/api/teachers/export'          => 'TeacherController@apiExport',
 
         // System Settings API
         '/api/settings'                 => 'SettingsController@apiIndex',

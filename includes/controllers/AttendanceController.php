@@ -592,4 +592,565 @@ class AttendanceController {
             exit;
         }
     }
+
+    /**
+     * Escapes cell values to prevent CSV Formula Injection (CWE-1236).
+     * Any cell starting with =, +, -, or @ is prefixed with a single quote (').
+     */
+    private function escapeCsvCell(string $value): string {
+        $trimmed = ltrim($value);
+        if ($trimmed !== '' && in_array($trimmed[0], ['=', '+', '-', '@'], true)) {
+            return "'" . $value;
+        }
+        return $value;
+    }
+
+    /**
+     * GET /api/teacher/roster/students
+     * Returns enrolled students for the authenticated teacher's class roster.
+     * Enforces teacher_id filtering at the SQL level.
+     */
+    public function apiGetRosterStudents(): void {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            // Filter class_roster by resolved teacher_id at SQL level
+            $stmt = $db->prepare("
+                SELECT 
+                    cr.roster_id,
+                    cr.student_id,
+                    COALESCE(u.student_id, '2026-00000') AS student_number,
+                    cr.first_name,
+                    cr.last_name,
+                    CONCAT(cr.last_name, ', ', cr.first_name) AS full_name,
+                    cr.section,
+                    cr.course_code,
+                    cr.course_title,
+                    cr.room_number,
+                    cr.scheduled_time,
+                    cr.schedule_day,
+                    cr.year_level,
+                    u.email,
+                    u.avatar_path
+                FROM class_roster cr
+                LEFT JOIN users u ON u.user_id = cr.student_id
+                WHERE cr.teacher_id = :teacher_id
+                ORDER BY cr.last_name ASC, cr.first_name ASC
+            ");
+            $stmt->execute([':teacher_id' => $teacherId]);
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'status'     => 'success',
+                'teacher_id' => $teacherId,
+                'count'      => count($students),
+                'students'   => $students
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to retrieve roster students: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    /**
+     * GET /api/attendance/daily
+     * Retrieves the daily attendance records, KPI stats, and tardy/absence breakdowns.
+     * Enforces teacher_id filtering at SQL level, scopes minutes_late by (student_id, date, subject),
+     * and supports sanitized CSV export protected against formula injection.
+     */
+    public function apiDailyAttendance(): void {
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            $date = trim($_GET['date'] ?? date('Y-m-d'));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $date = date('Y-m-d');
+            }
+
+            $sectionFilter = trim($_GET['section'] ?? '');
+            $statusFilter  = trim($_GET['status'] ?? '');
+            $searchQuery   = trim($_GET['search'] ?? '');
+            $isExportCsv   = (isset($_GET['export']) && strtolower(trim($_GET['export'])) === 'csv');
+
+            // 1. Fetch distinct sections for this teacher (for dynamic filter dropdown)
+            $secStmt = $db->prepare("
+                SELECT DISTINCT section 
+                FROM class_roster 
+                WHERE teacher_id = :teacher_id 
+                ORDER BY section ASC
+            ");
+            $secStmt->execute([':teacher_id' => $teacherId]);
+            $availableSections = $secStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // 2. Base Query: Enforce cr.teacher_id = :teacher_id at SQL level
+            // Scopes attendance and excuse_slips by student_id, teacher_id, date, and subject (multi-period safe)
+            $sql = "
+                SELECT 
+                    cr.roster_id,
+                    cr.student_id,
+                    COALESCE(u.student_id, '2026-00000') AS student_number,
+                    cr.first_name,
+                    cr.last_name,
+                    CONCAT(cr.last_name, ', ', cr.first_name) AS full_name,
+                    cr.section,
+                    cr.course_code,
+                    cr.course_title,
+                    cr.scheduled_time,
+                    cr.room_number,
+                    u.email,
+                    u.avatar_path,
+                    a.attendance_id,
+                    a.date AS attendance_date,
+                    a.time AS time_in,
+                    a.status AS raw_status,
+                    a.qr_session_id,
+                    es.excuse_slip_id,
+                    es.status AS excuse_status,
+                    es.reason AS excuse_reason,
+                    pa.parent_alert_id,
+                    pa.alert_time
+                FROM class_roster cr
+                LEFT JOIN users u ON u.user_id = cr.student_id
+                LEFT JOIN attendance a ON a.student_id = cr.student_id 
+                                      AND a.teacher_id = cr.teacher_id 
+                                      AND a.date = :att_date 
+                                      AND a.subject = cr.course_title
+                LEFT JOIN excuse_slips es ON es.student_id = cr.student_id 
+                                         AND es.teacher_id = cr.teacher_id 
+                                         AND es.date_of_absence = :exc_date 
+                                         AND es.subject = cr.course_title
+                LEFT JOIN parent_alerts pa ON (pa.attendance_id = a.attendance_id 
+                                            OR (pa.student_id = cr.student_id AND pa.alert_date = :pa_date))
+                WHERE cr.teacher_id = :teacher_id
+            ";
+
+            $params = [
+                ':teacher_id' => $teacherId,
+                ':att_date'   => $date,
+                ':exc_date'   => $date,
+                ':pa_date'    => $date,
+            ];
+
+            if ($sectionFilter !== '' && strtolower($sectionFilter) !== 'all') {
+                $sql .= " AND cr.section = :section";
+                $params[':section'] = $sectionFilter;
+            }
+
+            if ($searchQuery !== '') {
+                $sql .= " AND (cr.first_name LIKE :sq1 OR cr.last_name LIKE :sq2 OR u.student_id LIKE :sq3 OR u.email LIKE :sq4)";
+                $like = "%{$searchQuery}%";
+                $params[':sq1'] = $like;
+                $params[':sq2'] = $like;
+                $params[':sq3'] = $like;
+                $params[':sq4'] = $like;
+            }
+
+            $sql .= " ORDER BY cr.last_name ASC, cr.first_name ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rawRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Process and format rows
+            $processedRecords = [];
+            $kpi = [
+                'total_enrolled' => count($rawRows),
+                'present'        => 0,
+                'tardy'          => 0,
+                'absent'         => 0,
+                'excused'        => 0,
+                'unrecorded'     => 0
+            ];
+
+            foreach ($rawRows as $row) {
+                // Determine method: QR vs Manual vs None
+                $method = '—';
+                if (!empty($row['attendance_id'])) {
+                    $method = !empty($row['qr_session_id']) ? 'QR' : 'Manual';
+                }
+
+                // Determine display status
+                $rawStatus = $row['raw_status']; // 'present', 'tardy', 'absent', or NULL
+                $displayStatus = 'unrecorded';
+
+                if ($rawStatus === 'present') {
+                    $displayStatus = 'present';
+                    $kpi['present']++;
+                } elseif ($rawStatus === 'tardy') {
+                    $displayStatus = 'tardy';
+                    $kpi['tardy']++;
+                } elseif ($rawStatus === 'absent') {
+                    if (!empty($row['excuse_status']) && strtolower($row['excuse_status']) === 'approved') {
+                        $displayStatus = 'excused';
+                        $kpi['excused']++;
+                    } else {
+                        $displayStatus = 'absent';
+                        $kpi['absent']++;
+                    }
+                } else {
+                    $kpi['unrecorded']++;
+                }
+
+                // Calculate minutes_late scoped by (student_id, date, subject)
+                $minutesLate = 0;
+                if ($rawStatus === 'tardy' && !empty($row['time_in']) && !empty($row['scheduled_time'])) {
+                    $scheduledSec = strtotime("1970-01-01 " . $row['scheduled_time']);
+                    $arrivalSec   = strtotime("1970-01-01 " . $row['time_in']);
+                    if ($arrivalSec > $scheduledSec) {
+                        $minutesLate = (int)round(($arrivalSec - $scheduledSec) / 60);
+                    }
+                }
+
+                // Filter by status if requested
+                if ($statusFilter !== '' && strtolower($statusFilter) !== 'all') {
+                    if (strtolower($statusFilter) !== strtolower($displayStatus)) {
+                        continue;
+                    }
+                }
+
+                $timeFormatted = !empty($row['time_in']) ? date('h:i A', strtotime($row['time_in'])) : '—';
+
+                $processedRecords[] = [
+                    'roster_id'          => (int)$row['roster_id'],
+                    'student_id'         => (int)$row['student_id'],
+                    'student_number'     => (string)$row['student_number'],
+                    'full_name'          => $row['full_name'],
+                    'first_name'         => $row['first_name'],
+                    'last_name'          => $row['last_name'],
+                    'section'            => $row['section'],
+                    'course_code'        => $row['course_code'],
+                    'course_title'       => $row['course_title'],
+                    'scheduled_time'     => $row['scheduled_time'],
+                    'attendance_id'      => $row['attendance_id'] ? (int)$row['attendance_id'] : null,
+                    'time_in'            => $row['time_in'],
+                    'time_formatted'     => $timeFormatted,
+                    'status'             => $displayStatus,
+                    'raw_status'         => $rawStatus,
+                    'method'             => $method,
+                    'minutes_late'       => $minutesLate,
+                    'excuse_slip_id'     => $row['excuse_slip_id'] ? (int)$row['excuse_slip_id'] : null,
+                    'excuse_status'      => $row['excuse_status'],
+                    'excuse_reason'      => $row['excuse_reason'],
+                    'parent_alert_sent'  => !empty($row['parent_alert_id']),
+                    'parent_alert_time'  => $row['alert_time'] ? date('h:i A', strtotime($row['alert_time'])) : null
+                ];
+            }
+
+            // 4. If CSV Export requested, stream with formula injection escaping
+            if ($isExportCsv) {
+                if (!headers_sent()) {
+                    header('Content-Type: text/csv; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="attendance_ledger_' . $date . '.csv"');
+                    header('Pragma: no-cache');
+                    header('Expires: 0');
+                }
+
+                $output = fopen('php://output', 'w');
+                // CSV headers
+                fputcsv($output, [
+                    'Student Number',
+                    'Student Name',
+                    'Section',
+                    'Course / Subject',
+                    'Date',
+                    'Time In',
+                    'Status',
+                    'Method',
+                    'Minutes Late',
+                    'Parent Alert'
+                ]);
+
+                foreach ($processedRecords as $r) {
+                    $rowCells = [
+                        $r['student_number'],
+                        $r['full_name'],
+                        $r['section'],
+                        $r['course_title'],
+                        $date,
+                        $r['time_formatted'],
+                        ucfirst($r['status']),
+                        $r['method'],
+                        $r['minutes_late'] > 0 ? "+{$r['minutes_late']} min" : '—',
+                        $r['parent_alert_sent'] ? 'Sent' : 'Pending'
+                    ];
+                    // Escape every cell against CSV Formula Injection (=, +, -, @)
+                    $escaped = array_map([$this, 'escapeCsvCell'], $rowCells);
+                    fputcsv($output, $escaped);
+                }
+
+                fclose($output);
+                exit;
+            }
+
+            // 5. Normal JSON response
+            if (!headers_sent()) {
+                header('Content-Type: application/json; charset=utf-8');
+            }
+
+            echo json_encode([
+                'status'             => 'success',
+                'teacher_id'         => $teacherId,
+                'date'               => $date,
+                'available_sections' => $availableSections,
+                'metrics'            => $kpi,
+                'total_records'      => count($processedRecords),
+                'records'            => $processedRecords
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to load daily attendance: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    /**
+     * POST /api/attendance/manual-entry
+     * Records or updates a manual attendance entry.
+     * Enforces teacher_id filtering and student ownership at SQL level before write.
+     * Detects existing records for (student_id, date, subject); if QR session exists,
+     * manual entry overwrite-wins, and logs old_status and old_method into audit_logs.
+     */
+    public function apiManualEntry(): void {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+            $studentId     = !empty($input['student_id']) ? (int)$input['student_id'] : 0;
+            $date          = trim($input['date'] ?? date('Y-m-d'));
+            $statusInput   = strtolower(trim($input['status'] ?? 'present'));
+            $timeInput     = trim($input['time'] ?? date('H:i:s'));
+            $subjectInput  = trim($input['subject'] ?? '');
+            $notes         = trim($input['notes'] ?? $input['override_reason'] ?? '');
+
+            // Basic validation
+            if ($studentId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Valid student_id is required.']);
+                exit;
+            }
+
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $date = date('Y-m-d');
+            }
+
+            // Normalise status to enum('present','tardy','absent')
+            $status = in_array($statusInput, ['present', 'tardy', 'absent'], true) ? $statusInput : 'present';
+
+            // Ensure time format is valid HH:MM:SS
+            if (strlen($timeInput) === 5 && preg_match('/^\d{2}:\d{2}$/', $timeInput)) {
+                $timeInput .= ':00';
+            } elseif (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $timeInput)) {
+                $timeInput = date('H:i:s');
+            }
+
+            // 1. Enforce student_id belongs to this teacher's class_roster at SQL level
+            $rosterStmt = $db->prepare("
+                SELECT cr.roster_id, cr.student_id, cr.first_name, cr.last_name, cr.section, cr.course_title
+                FROM class_roster cr
+                WHERE cr.student_id = :student_id AND cr.teacher_id = :teacher_id
+                LIMIT 1
+            ");
+            $rosterStmt->execute([
+                ':student_id' => $studentId,
+                ':teacher_id' => $teacherId
+            ]);
+            $rosterRow = $rosterStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$rosterRow) {
+                http_response_code(403);
+                echo json_encode([
+                    'status'  => 'error',
+                    'message' => 'Authorization failed: Student does not belong to your assigned class roster.'
+                ]);
+                exit;
+            }
+
+            // Resolve subject from roster if not provided
+            $subject = !empty($subjectInput) ? $subjectInput : ($rosterRow['course_title'] ?: 'Web Systems and Technologies');
+            $studentName = "{$rosterRow['first_name']} {$rosterRow['last_name']}";
+
+            // 2. Check if row already exists for this (student_id, date, subject)
+            $checkStmt = $db->prepare("
+                SELECT attendance_id, teacher_id, qr_session_id, status, `time`, subject
+                FROM attendance
+                WHERE student_id = :student_id 
+                  AND `date` = :date 
+                  AND subject = :subject
+                LIMIT 1
+            ");
+            $checkStmt->execute([
+                ':student_id' => $studentId,
+                ':date'       => $date,
+                ':subject'    => $subject
+            ]);
+            $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            $action = 'create';
+            $oldStatus = null;
+            $oldMethod = null;
+            $attendanceId = null;
+
+            // Single transaction wrapping status update + audit insert
+            $db->beginTransaction();
+
+            if ($existing) {
+                // OVERWRITE WINS (Manual entry replaces existing QR or earlier manual record)
+                $action = 'update';
+                $attendanceId = (int)$existing['attendance_id'];
+                $oldStatus = $existing['status'];
+                $oldMethod = !empty($existing['qr_session_id']) ? 'QR' : 'manual';
+
+                $updateStmt = $db->prepare("
+                    UPDATE attendance
+                    SET teacher_id = :teacher_id,
+                        qr_session_id = NULL, -- manual entry wins; cleared from QR session
+                        `time` = :time,
+                        status = :status,
+                        schedule_date = :schedule_date,
+                        updated_at = NOW()
+                    WHERE attendance_id = :attendance_id
+                ");
+                $updateStmt->execute([
+                    ':teacher_id'     => $teacherId,
+                    ':time'           => $timeInput,
+                    ':status'         => $status,
+                    ':schedule_date'  => $date,
+                    ':attendance_id'  => $attendanceId
+                ]);
+
+                // Audit Log with explicit old_status and old_method fields
+                $auditDesc = "Manual override by Teacher #{$teacherId} for student {$studentName} (#{$studentId}): "
+                           . "replaced {$oldMethod} (old_status: {$oldStatus}) with manual entry (new_status: {$status}, time: {$timeInput}).";
+                if (!empty($notes)) {
+                    $auditDesc .= " Reason: {$notes}";
+                }
+
+                $auditStmt = $db->prepare("
+                    INSERT INTO audit_logs (user_id, action, description, reference_type, reference_id, created_at)
+                    VALUES (?, 'update', ?, 'attendance', ?, NOW())
+                ");
+                $auditStmt->execute([$teacherId, $auditDesc, $attendanceId]);
+
+                $db->commit();
+
+                echo json_encode([
+                    'status'        => 'success',
+                    'action'        => 'overwrite',
+                    'message'       => "Attendance for {$studentName} successfully updated to " . ucfirst($status) . " (overrode {$oldMethod}: {$oldStatus}).",
+                    'attendance_id' => $attendanceId,
+                    'old_status'    => $oldStatus,
+                    'old_method'    => $oldMethod,
+                    'new_status'    => $status,
+                    'new_method'    => 'manual',
+                    'record'        => [
+                        'student_id'   => $studentId,
+                        'student_name' => $studentName,
+                        'section'      => $rosterRow['section'],
+                        'subject'      => $subject,
+                        'date'         => $date,
+                        'time'         => date('h:i:s A', strtotime($timeInput)),
+                        'status'       => $status,
+                        'method'       => 'Manual'
+                    ]
+                ]);
+                exit;
+
+            } else {
+                // INSERT NEW ROW
+                $insStmt = $db->prepare("
+                    INSERT INTO attendance (
+                        student_id, teacher_id, qr_session_id, `date`, `time`, subject, status, schedule_date, created_at, updated_at
+                    ) VALUES (
+                        :student_id, :teacher_id, NULL, :date, :time, :subject, :status, :schedule_date, NOW(), NOW()
+                    )
+                ");
+                $insStmt->execute([
+                    ':student_id'    => $studentId,
+                    ':teacher_id'    => $teacherId,
+                    ':date'          => $date,
+                    ':time'          => $timeInput,
+                    ':subject'       => $subject,
+                    ':status'        => $status,
+                    ':schedule_date' => $date
+                ]);
+                $attendanceId = (int)$db->lastInsertId();
+
+                // Audit Log
+                $auditDesc = "Manual attendance entry by Teacher #{$teacherId} for student {$studentName} (#{$studentId}): "
+                           . "marked {$status} at {$timeInput} in {$subject}.";
+                if (!empty($notes)) {
+                    $auditDesc .= " Reason: {$notes}";
+                }
+
+                $auditStmt = $db->prepare("
+                    INSERT INTO audit_logs (user_id, action, description, reference_type, reference_id, created_at)
+                    VALUES (?, 'create', ?, 'attendance', ?, NOW())
+                ");
+                $auditStmt->execute([$teacherId, $auditDesc, $attendanceId]);
+
+                $db->commit();
+
+                echo json_encode([
+                    'status'        => 'success',
+                    'action'        => 'created',
+                    'message'       => "Manual attendance for {$studentName} recorded as " . ucfirst($status) . ".",
+                    'attendance_id' => $attendanceId,
+                    'old_status'    => null,
+                    'old_method'    => null,
+                    'new_status'    => $status,
+                    'new_method'    => 'manual',
+                    'record'        => [
+                        'student_id'   => $studentId,
+                        'student_name' => $studentName,
+                        'section'      => $rosterRow['section'],
+                        'subject'      => $subject,
+                        'date'         => $date,
+                        'time'         => date('h:i:s A', strtotime($timeInput)),
+                        'status'       => $status,
+                        'method'       => 'Manual'
+                    ]
+                ]);
+                exit;
+            }
+
+        } catch (Exception $e) {
+            if (isset($db) && $db instanceof PDO && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Manual entry failed: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 }
+

@@ -7,10 +7,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
 // Initial server-side query
 $teachers = [];
 $metrics = ['total' => 0, 'active' => 0, 'inactive' => 0, 'depts' => 0];
+$initialLimit = 10;
+$initialPage = 1;
+$initialTotal = 0;
+$initialTotalPages = 1;
+$initialStart = 0;
+$initialEnd = 0;
+
 try {
     $db = Database::getConnection();
-    $stmt = $db->query("SELECT * FROM `teachers` ORDER BY id DESC LIMIT 50");
-    $teachers = $stmt->fetchAll();
 
     $statsStmt = $db->query("
         SELECT 
@@ -29,6 +34,16 @@ try {
             'depts'    => (int)($rawMetrics['dept_count'] ?? 0)
         ];
     }
+
+    $initialTotal = $metrics['total'];
+    $initialTotalPages = max(1, (int)ceil($initialTotal / $initialLimit));
+    $initialStart = $initialTotal > 0 ? 1 : 0;
+    $initialEnd = min($initialLimit, $initialTotal);
+
+    $stmt = $db->prepare("SELECT * FROM `teachers` ORDER BY id DESC LIMIT ?");
+    $stmt->bindValue(1, $initialLimit, PDO::PARAM_INT);
+    $stmt->execute();
+    $teachers = $stmt->fetchAll();
 } catch (Exception $e) {
     // Database connection or table not yet seeded
 }
@@ -42,40 +57,17 @@ try {
 
     <main class="page-body">
       <!-- Breadcrumb & Page Title -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-        <div>
-          <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
-            <span class="text-xs text-slate-400 font-medium">•</span>
-            <span class="text-xs text-slate-500 font-semibold">Faculty Master Accounts</span>
-          </div>
-          <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Teacher &amp; Faculty Master Directory</h1>
-          <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Manage teacher faculty accounts, create instructor credentials, or bulk import faculty records via CSV/Excel with audit logging.
-          </p>
+      <!-- Breadcrumb & Page Title -->
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
+          <span class="text-xs text-slate-400 font-medium">•</span>
+          <span class="text-xs text-slate-500 font-semibold">Faculty Master Accounts</span>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button type="button" onclick="downloadTeacherCsvTemplate()" class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition flex items-center gap-2">
-            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            <span>CSV Template</span>
-          </button>
-
-          <button type="button" onclick="openTeacherExcelModal()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg transition flex items-center gap-2 group">
-            <svg class="w-4 h-4 text-emerald-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            <span>Bulk Import CSV/Excel</span>
-          </button>
-
-          <button type="button" onclick="openManualTeacherModal()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 group">
-            <svg class="w-4 h-4 text-blue-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-            </svg>
-            <span>+ Add Teacher Account</span>
-          </button>
-        </div>
+        <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Teacher &amp; Faculty Master Directory</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
+          Manage teacher faculty accounts, search instructor credentials, or bulk import and export faculty records with complete audit logging.
+        </p>
       </div>
 
       <!-- Quick Metrics Grid -->
@@ -121,35 +113,86 @@ try {
         </div>
       </div>
 
-      <!-- Filters & Live Search -->
-      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <!-- Search box -->
-          <div class="relative w-full sm:w-80">
-            <input type="text" id="search-teacher" placeholder="Search by name, employee ID, department..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="debounceTeacherSearch()">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <!-- Filters, Search & Action Bar -->
+      <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-xs mb-6">
+        <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+          <!-- Left: Search & Filters Group -->
+          <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+            <!-- Search box -->
+            <div class="relative flex-1 sm:flex-initial sm:w-64 md:w-72 min-w-[180px]">
+              <input type="text" id="search-teacher" placeholder="Search by name, ID, department..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="debounceTeacherSearch()">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <!-- Department filter -->
+            <select id="filter-dept" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500 min-w-[130px]" onchange="fetchTeachers(1)">
+              <option value="all">All Departments</option>
+              <option value="College of Computer Studies">College of Computer Studies</option>
+              <option value="College of Business Administration">College of Business Administration</option>
+              <option value="College of Criminology">College of Criminology</option>
+              <option value="College of Education">College of Education</option>
+              <option value="General Academics">General Academics</option>
+            </select>
+
+            <!-- Status filter -->
+            <select id="filter-status" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500 min-w-[100px]" onchange="fetchTeachers(1)">
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
           </div>
 
-          <!-- Department filter -->
-          <select id="filter-dept" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500" onchange="fetchTeachers()">
-            <option value="all">All Departments</option>
-            <option value="College of Computer Studies">College of Computer Studies</option>
-            <option value="College of Business Administration">College of Business Administration</option>
-            <option value="College of Criminology">College of Criminology</option>
-            <option value="College of Education">College of Education</option>
-            <option value="General Academics">General Academics</option>
-          </select>
+          <!-- Right: Consolidated Action Controls (Never cut, wraps cleanly) -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <!-- Combined Export Dropdown (Choose CSV or Excel) -->
+            <div class="relative inline-block text-left" id="export-dropdown-wrapper">
+              <button type="button" onclick="toggleExportDropdown(event)" class="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition flex items-center gap-2 cursor-pointer" title="Export faculty roster">
+                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Export Roster</span>
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
 
-          <!-- Status filter -->
-          <select id="filter-status" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500" onchange="fetchTeachers()">
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
-        </div>
+              <!-- Dropdown Menu -->
+              <div id="export-dropdown-menu" class="hidden absolute right-0 mt-1.5 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in duration-100">
+                <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Choose Export Format</div>
+                <button type="button" onclick="exportTeacherRoster('csv')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition cursor-pointer">
+                  <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-[10px] border border-emerald-100">CSV</span>
+                  <div>
+                    <div class="font-bold">Export as CSV (.csv)</div>
+                    <div class="text-[10px] text-slate-400">Standard comma-separated file</div>
+                  </div>
+                </button>
+                <button type="button" onclick="exportTeacherRoster('excel')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition cursor-pointer">
+                  <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-[10px] border border-blue-100">XLS</span>
+                  <div>
+                    <div class="font-bold">Export as Excel (.xlsx)</div>
+                    <div class="text-[10px] text-slate-400">Styled workbook for Microsoft Excel</div>
+                  </div>
+                </button>
+                <div class="border-t border-slate-100 my-1"></div>
+                <button type="button" onclick="downloadTeacherCsvTemplate(); closeExportDropdown();" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition cursor-pointer">
+                  <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  <span>Download Blank Template</span>
+                </button>
+              </div>
+            </div>
 
-        <div class="text-xs text-slate-400 font-semibold" id="table-results-counter">
-          Showing <?= count($teachers) ?> faculty record(s)
+            <!-- Modal Button 1: Bulk Import CSV/Excel -->
+            <button type="button" onclick="openTeacherExcelModal()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap" title="Bulk Import Faculty">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span>Bulk Import</span>
+            </button>
+
+            <!-- Modal Button 2: + Add Teacher Account -->
+            <button type="button" onclick="openManualTeacherModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-600/20 hover:shadow transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap" title="Add Teacher Account">
+              <svg class="w-4 h-4 text-blue-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+              <span>+ Add Teacher</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -239,6 +282,41 @@ try {
               <?php endif; ?>
             </tbody>
           </table>
+        </div>
+
+        <!-- Table Pagination Footer -->
+        <div class="px-5 py-3.5 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <!-- Left: Showing X to Y of Z faculty records -->
+          <div class="text-slate-500 font-medium" id="table-results-counter">
+            Showing <span id="pagination-start" class="font-bold text-slate-800"><?= $initialStart ?></span> to <span id="pagination-end" class="font-bold text-slate-800"><?= $initialEnd ?></span> of <span id="pagination-total" class="font-bold text-slate-800"><?= $initialTotal ?></span> faculty record(s)
+          </div>
+
+          <!-- Right: Rows per page & Prev/Next buttons -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1.5 text-slate-500">
+              <span class="text-[11px] font-medium text-slate-400">Rows per page:</span>
+              <select id="teacher-page-limit" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer" onchange="changeTeacherPageLimit()">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5" id="pagination-controls">
+              <button type="button" id="btn-prev-page" onclick="changeTeacherPage(-1)" disabled class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span>Previous</span>
+              </button>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 shadow-2xs whitespace-nowrap">
+                Page <span id="current-page-display" class="font-bold text-blue-600">1</span> of <span id="total-pages-display" class="font-bold"><?= $initialTotalPages ?></span>
+              </span>
+              <button type="button" id="btn-next-page" onclick="changeTeacherPage(1)" <?= ($initialTotalPages <= 1) ? 'disabled' : '' ?> class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                <span>Next</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -488,21 +566,27 @@ try {
 
 <script>
 let searchTimeout = null;
+let currentTeacherPage = 1;
+let teacherPageLimit = 10;
+let totalTeacherPages = <?= $initialTotalPages ?>;
 
 function debounceTeacherSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    fetchTeachers();
+    fetchTeachers(1);
   }, 300);
 }
 
-// Fetch live teachers from API
-async function fetchTeachers() {
+// Fetch live teachers from API with pagination
+async function fetchTeachers(page = currentTeacherPage) {
+  currentTeacherPage = page;
   const search = document.getElementById('search-teacher').value.trim();
   const dept   = document.getElementById('filter-dept').value;
   const status = document.getElementById('filter-status').value;
+  const limitSelect = document.getElementById('teacher-page-limit');
+  teacherPageLimit = limitSelect ? parseInt(limitSelect.value, 10) : 10;
 
-  const url = `${window.url('api/teachers')}?search=${encodeURIComponent(search)}&department=${encodeURIComponent(dept)}&status=${encodeURIComponent(status)}`;
+  const url = `${window.url('api/teachers')}?page=${currentTeacherPage}&limit=${teacherPageLimit}&search=${encodeURIComponent(search)}&department=${encodeURIComponent(dept)}&status=${encodeURIComponent(status)}`;
 
   try {
     const res = await fetch(url);
@@ -515,11 +599,47 @@ async function fetchTeachers() {
         document.getElementById('stat-inactive-faculty').textContent = Number(data.metrics.inactive).toLocaleString();
         document.getElementById('stat-depts-faculty').textContent = Number(data.metrics.depts).toLocaleString();
       }
-      document.getElementById('table-results-counter').textContent = `Showing ${data.data.length} faculty record(s)`;
+
+      // Update Pagination UI
+      const pag = data.pagination || { page: 1, limit: teacherPageLimit, total: data.data.length, total_pages: 1 };
+      totalTeacherPages = Math.max(1, pag.total_pages);
+      currentTeacherPage = Math.min(pag.page, totalTeacherPages);
+
+      const total = pag.total;
+      const start = total === 0 ? 0 : ((currentTeacherPage - 1) * pag.limit) + 1;
+      const end = Math.min(currentTeacherPage * pag.limit, total);
+
+      const startEl = document.getElementById('pagination-start');
+      const endEl = document.getElementById('pagination-end');
+      const totalEl = document.getElementById('pagination-total');
+      const pageDisplay = document.getElementById('current-page-display');
+      const totalPagesDisplay = document.getElementById('total-pages-display');
+      const btnPrev = document.getElementById('btn-prev-page');
+      const btnNext = document.getElementById('btn-next-page');
+
+      if (startEl) startEl.textContent = start.toLocaleString();
+      if (endEl) endEl.textContent = end.toLocaleString();
+      if (totalEl) totalEl.textContent = total.toLocaleString();
+      if (pageDisplay) pageDisplay.textContent = currentTeacherPage;
+      if (totalPagesDisplay) totalPagesDisplay.textContent = totalTeacherPages;
+
+      if (btnPrev) btnPrev.disabled = (currentTeacherPage <= 1);
+      if (btnNext) btnNext.disabled = (currentTeacherPage >= totalTeacherPages);
     }
   } catch (err) {
     console.error(err);
   }
+}
+
+function changeTeacherPage(delta) {
+  const targetPage = currentTeacherPage + delta;
+  if (targetPage >= 1 && targetPage <= totalTeacherPages) {
+    fetchTeachers(targetPage);
+  }
+}
+
+function changeTeacherPageLimit() {
+  fetchTeachers(1);
 }
 
 function renderTeachersTable(teachers) {
@@ -622,7 +742,7 @@ async function handleManualTeacherSubmit(e) {
       APP.toast(result.message, 'success');
       closeManualTeacherModal();
       form.reset();
-      fetchTeachers();
+      fetchTeachers(1);
     } else {
       APP.toast(result.message || 'Validation error', 'error');
     }
@@ -794,7 +914,7 @@ async function processTeacherExcelImport() {
 
       document.getElementById('import-summary-container').classList.remove('hidden');
       APP.toast(`Batch imported: ${summary.inserted} faculty members added.`, 'success');
-      fetchTeachers();
+      fetchTeachers(1);
     } else {
       APP.toast(result.message || 'Import failed.', 'error');
     }
@@ -822,6 +942,45 @@ function downloadTeacherCsvTemplate() {
   document.body.removeChild(link);
   APP.toast('Template downloaded: Teacher_Faculty_Master_Template.csv', 'info');
 }
+
+// Export Live Faculty Master Roster (CSV or Excel)
+function exportTeacherRoster(format) {
+  format = format || 'csv';
+  const searchInput = document.getElementById('search-teacher');
+  const deptInput   = document.getElementById('filter-dept');
+  const statusInput = document.getElementById('filter-status');
+
+  const search = searchInput ? searchInput.value.trim() : '';
+  const dept   = deptInput ? deptInput.value : '';
+  const status = statusInput ? statusInput.value : '';
+
+  closeExportDropdown();
+
+  const exportUrl = `${window.url('api/teachers/export')}?format=${encodeURIComponent(format)}&search=${encodeURIComponent(search)}&department=${encodeURIComponent(dept)}&status=${encodeURIComponent(status)}`;
+  const label = (format === 'excel' || format === 'xlsx') ? 'Excel (.xlsx)' : 'CSV (.csv)';
+  APP.toast(`Generating ${label} export...`, 'info');
+  window.location.href = exportUrl;
+}
+
+// Dropdown Menu Helpers
+function toggleExportDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('export-dropdown-menu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+function closeExportDropdown() {
+  const menu = document.getElementById('export-dropdown-menu');
+  if (menu) menu.classList.add('hidden');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('export-dropdown-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    closeExportDropdown();
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>

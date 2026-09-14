@@ -260,24 +260,18 @@ const APP = {
   openManualEntryModal() {
     const today = new Date().toISOString().split('T')[0];
     const bodyHTML = `
-      <form id="manual-entry-modal-form" onsubmit="event.preventDefault(); APP.closeModal(); APP.showToast('Manual attendance record saved successfully.', 'success');">
+      <form id="manual-entry-modal-form" onsubmit="APP.submitManualEntry(event)">
         <div class="space-y-3.5">
           <!-- Student Selector with Avatar Preview -->
           <div>
-            <label for="modal-manual-student" class="form-label text-xs mb-1 block">Student / Borrower</label>
+            <label for="modal-manual-student" class="form-label text-xs mb-1 block">Student / Roster Member</label>
             <div class="flex items-center gap-2.5 p-2 rounded-lg border" style="background:var(--color-surface); border-color:var(--color-border)">
               <div id="modal-student-avatar" class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm" style="background:var(--color-text-muted)">
                 ?
               </div>
               <div class="flex-1 min-w-0">
                 <select id="modal-manual-student" class="form-input form-select text-xs py-1.5" required onchange="APP._updateManualStudentAvatar(this)">
-                  <option value="">Select or search student...</option>
-                  <option value="JD" data-name="Juan Dela Cruz" data-id="BCP-001" data-grade="Grade 7 - Sec A">Dela Cruz, Juan · BCP-001 (Grade 7 - Sec A)</option>
-                  <option value="MS" data-name="Maria Santos" data-id="BCP-002" data-grade="Grade 7 - Sec A">Santos, Maria · BCP-002 (Grade 7 - Sec A)</option>
-                  <option value="PR" data-name="Pedro Reyes" data-id="BCP-003" data-grade="Grade 8 - Sec B">Reyes, Pedro · BCP-003 (Grade 8 - Sec B)</option>
-                  <option value="AM" data-name="Alex Moreno" data-id="BCP-019" data-grade="Grade 9 - Sec A">Moreno, Alex · BCP-019 (Grade 9 - Sec A)</option>
-                  <option value="AG" data-name="Ana Garcia" data-id="BCP-005" data-grade="Grade 7 - Sec B">Garcia, Ana · BCP-005 (Grade 7 - Sec B)</option>
-                  <option value="JL" data-name="Jenny Lim" data-id="BCP-008" data-grade="Grade 8 - Sec B">Lim, Jenny · BCP-008 (Grade 8 - Sec B)</option>
+                  <option value="">Loading roster students...</option>
                 </select>
               </div>
             </div>
@@ -295,7 +289,6 @@ const APP = {
                 <option value="present">Present</option>
                 <option value="tardy">Tardy</option>
                 <option value="absent">Absent</option>
-                <option value="excused">Excused</option>
               </select>
             </div>
           </div>
@@ -338,7 +331,7 @@ const APP = {
           <!-- Administrative Notes -->
           <div>
             <label for="modal-manual-notes" class="form-label text-xs">Administrative Notes / Override Reason</label>
-            <textarea id="modal-manual-notes" class="form-input text-xs" rows="2" placeholder="e.g., RFID card unreadable, physically verified by library staff..."></textarea>
+            <textarea id="modal-manual-notes" class="form-input text-xs" rows="2" placeholder="e.g., RFID card unreadable, physically verified by teacher..."></textarea>
           </div>
         </div>
       </form>
@@ -346,18 +339,118 @@ const APP = {
 
     const footerHTML = `
       <button type="button" class="btn btn-secondary btn-sm" onclick="APP.closeModal()">Cancel</button>
-      <button type="submit" form="manual-entry-modal-form" class="btn btn-primary btn-sm">Save Record</button>
+      <button type="submit" form="manual-entry-modal-form" id="manual-entry-submit-btn" class="btn btn-primary btn-sm">Save Record</button>
     `;
 
     APP.openModal('Manual Attendance Entry', bodyHTML, footerHTML);
+
+    // Fetch and populate roster students dynamically
+    const rosterUrl = (typeof window.url === 'function') 
+      ? window.url('api/teacher/roster/students') 
+      : '/api/teacher/roster/students';
+    fetch(rosterUrl)
+      .then(r => r.json())
+      .then(data => {
+        const select = document.getElementById('modal-manual-student');
+        if (!select) return;
+        select.innerHTML = '<option value="">Select or search student...</option>';
+        if (data.status === 'success' && Array.isArray(data.students) && data.students.length > 0) {
+          data.students.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.student_id;
+            opt.setAttribute('data-name', s.full_name || `${s.last_name}, ${s.first_name}`);
+            opt.setAttribute('data-number', s.student_number || '');
+            opt.setAttribute('data-section', s.section || '');
+            opt.setAttribute('data-subject', s.course_title || '');
+            opt.textContent = `${s.last_name}, ${s.first_name} · ${s.student_number} (${s.section})`;
+            select.appendChild(opt);
+          });
+        } else {
+          select.innerHTML = '<option value="" disabled>No enrolled students found in your roster</option>';
+        }
+      })
+      .catch(err => {
+        const select = document.getElementById('modal-manual-student');
+        if (select) select.innerHTML = '<option value="" disabled>Error loading roster</option>';
+      });
+  },
+
+  async submitManualEntry(event) {
+    if (event) event.preventDefault();
+    const studentSelect = document.getElementById('modal-manual-student');
+    const studentId = studentSelect ? studentSelect.value : null;
+    const selectedOpt = studentSelect ? studentSelect.options[studentSelect.selectedIndex] : null;
+    const subject = selectedOpt ? selectedOpt.getAttribute('data-subject') : '';
+    const dateVal = document.getElementById('modal-manual-date') ? document.getElementById('modal-manual-date').value : '';
+    const statusVal = document.getElementById('modal-manual-status') ? document.getElementById('modal-manual-status').value : 'present';
+    const timeVal = document.getElementById('modal-manual-entry') ? document.getElementById('modal-manual-entry').value : '';
+    const notesVal = document.getElementById('modal-manual-notes') ? document.getElementById('modal-manual-notes').value : '';
+
+    if (!studentId) {
+      APP.showToast('Please select a student from your roster.', 'error');
+      return;
+    }
+
+    const submitBtn = document.getElementById('manual-entry-submit-btn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+
+    try {
+      const manualEntryUrl = (typeof window.url === 'function') 
+        ? window.url('api/attendance/manual-entry') 
+        : '/api/attendance/manual-entry';
+      const resp = await fetch(manualEntryUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: parseInt(studentId, 10),
+          date: dateVal,
+          status: statusVal,
+          time: timeVal,
+          subject: subject,
+          notes: notesVal
+        })
+      });
+
+      const res = await resp.json();
+      if (resp.ok && res.status === 'success') {
+        APP.closeModal();
+        APP.showToast(res.message || 'Manual attendance record saved successfully.', 'success');
+        if (typeof window.fetchDailyLedger === 'function') {
+          window.fetchDailyLedger();
+        }
+      } else {
+        APP.showToast(res.message || 'Failed to record attendance.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Record';
+        }
+      }
+    } catch (e) {
+      APP.showToast('Network error while saving attendance record.', 'error');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Record';
+      }
+    }
   },
 
   _updateManualStudentAvatar(selectElem) {
     const avatar = document.getElementById('modal-student-avatar');
     if (!avatar) return;
     const selected = selectElem.options[selectElem.selectedIndex];
-    if (selected && selected.value) {
-      avatar.textContent = selected.value;
+    const name = selected ? selected.getAttribute('data-name') : '';
+    if (name) {
+      let initials = '';
+      const parts = name.trim().split(/[\s,]+/);
+      if (parts.length >= 2) {
+        initials = (parts[0][0] || '') + (parts[1][0] || '');
+      } else if (parts.length === 1 && parts[0].length > 0) {
+        initials = parts[0].substring(0, 2);
+      }
+      avatar.textContent = initials.toUpperCase() || 'ST';
       avatar.style.background = 'var(--color-teal-500)';
     } else {
       avatar.textContent = '?';

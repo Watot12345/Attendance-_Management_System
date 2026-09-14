@@ -2,6 +2,11 @@
 $page_title = 'Scan Attendance QR';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
 require_once dirname(__DIR__) . '/partials/header.php';
+
+// Resolve current student session or default
+$studentName = $_SESSION['user']['full_name'] ?? 'Juan Dela Cruz';
+$studentNumber = $_SESSION['user']['student_id'] ?? '230110001';
+$studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?? 1);
 ?>
 
 <div class="app-layout">
@@ -14,7 +19,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <!-- Breadcrumb & Header -->
       <div class="mb-6 text-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-2">
-          <span>Student Portal</span> • <span>Juan Dela Cruz (2026-00123)</span>
+          <span>Student Portal</span> • <span><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string)$studentNumber, ENT_QUOTES, 'UTF-8') ?>)</span>
         </div>
         <h1 class="text-2xl font-bold text-slate-800">Scan Session Attendance QR</h1>
         <p class="text-sm text-slate-500 max-w-md mx-auto">Point your device camera at the rotating QR code projected on the classroom screen.</p>
@@ -66,14 +71,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <h3 class="font-bold text-slate-800 text-sm mb-1">Backup: Enter Token Manually</h3>
             <p class="text-xs text-slate-500 mb-4">If your camera cannot scan the screen, enter the 6-character session token displayed below the teacher's QR code.</p>
 
-            <form action="<?php echo url('student/scan-result'); ?>" method="GET" class="space-y-3">
-              <input type="hidden" name="status" value="success">
+            <form id="token-attendance-form" onsubmit="submitTokenAttendance(event)" class="space-y-3">
               <div>
                 <label for="manual-token" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">6-Digit Session Token</label>
-                <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 7X9K2M" class="w-full px-3.5 py-2.5 text-center font-mono font-bold text-lg uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 focus:bg-white">
+                <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 7X9K2M" required class="w-full px-3.5 py-2.5 text-center font-mono font-bold text-lg uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 focus:bg-white">
               </div>
 
-              <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-2">
+              <div id="token-error-msg" class="hidden text-xs text-rose-600 font-medium bg-rose-50 border border-rose-200 p-2.5 rounded-lg text-center"></div>
+
+              <button type="submit" id="submit-token-btn" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer">
                 <span>Submit Attendance Token</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </button>
@@ -131,6 +137,71 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <script>
 function toggleCamera() {
   alert('Camera switched (simulated front/back sensor).');
+}
+
+async function submitTokenAttendance(e) {
+  if (e) e.preventDefault();
+  const tokenInput = document.getElementById('manual-token');
+  const token = tokenInput ? tokenInput.value.trim() : '';
+  const errBox = document.getElementById('token-error-msg');
+  const btn = document.getElementById('submit-token-btn');
+  if (!token) return;
+
+  if (errBox) errBox.classList.add('hidden');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>Verifying Token...</span>';
+  }
+
+  try {
+    const endpoint = (typeof window.url === 'function') 
+      ? window.url('api/attendance/check-in') 
+      : '/api/attendance/check-in';
+
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        qr_code: token,
+        student_id: <?= json_encode($studentUserId) ?>
+      })
+    });
+
+    const data = await resp.json();
+
+    if (resp.ok && data.status === 'success') {
+      try {
+        sessionStorage.setItem('last_attendance_record', JSON.stringify(data.record || {}));
+      } catch (e) {}
+      const targetUrl = (typeof window.url === 'function')
+        ? window.url('student/scan-result?status=success')
+        : '/student/scan-result?status=success';
+      window.location.href = targetUrl;
+    } else {
+      let statusParam = 'expired';
+      if (data.scan_code === 'DUPLICATE' || resp.status === 409) {
+        statusParam = 'duplicate';
+      } else if (data.scan_code === 'WRONG_SECTION') {
+        statusParam = 'wrong_section';
+      }
+      try {
+        sessionStorage.setItem('last_attendance_error', data.message || 'Check-in failed');
+      } catch (e) {}
+      const targetUrl = (typeof window.url === 'function')
+        ? window.url(`student/scan-result?status=${statusParam}&msg=${encodeURIComponent(data.message || '')}`)
+        : `/student/scan-result?status=${statusParam}&msg=${encodeURIComponent(data.message || '')}`;
+      window.location.href = targetUrl;
+    }
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = 'Network error while contacting attendance service. Please check connection.';
+      errBox.classList.remove('hidden');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Submit Attendance Token</span>';
+    }
+  }
 }
 </script>
 

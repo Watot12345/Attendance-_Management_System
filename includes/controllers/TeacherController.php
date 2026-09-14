@@ -131,6 +131,161 @@ class TeacherController {
     }
 
     /**
+     * GET /api/teachers/export
+     * Export faculty master directory as a downloadable CSV file.
+     * Respects active search, department, and status filters.
+     */
+    public function apiExport(): void {
+        try {
+            $db = Database::getConnection();
+
+            $search = trim($_GET['search'] ?? '');
+            $dept   = trim($_GET['department'] ?? '');
+            $status = trim($_GET['status'] ?? '');
+
+            $where = ['1=1'];
+            $params = [];
+
+            if ($search !== '') {
+                $where[] = "(`employee_id` LIKE ? OR `full_name` LIKE ? OR `email` LIKE ? OR `department` LIKE ? OR `position` LIKE ?)";
+                $like = "%{$search}%";
+                $params = array_merge($params, [$like, $like, $like, $like, $like]);
+            }
+
+            if ($dept !== '' && $dept !== 'all') {
+                $where[] = "`department` = ?";
+                $params[] = $dept;
+            }
+
+            if ($status !== '' && $status !== 'all') {
+                $where[] = "`status` = ?";
+                $params[] = $status;
+            }
+
+            $whereSql = implode(' AND ', $where);
+
+            $stmt = $db->prepare("
+                SELECT employee_id, full_name, email, department, position, contact_number, date_hired, status, created_at 
+                FROM `teachers` 
+                WHERE {$whereSql} 
+                ORDER BY full_name ASC
+            ");
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $format = strtolower(trim($_GET['format'] ?? 'csv'));
+
+            if ($format === 'excel' || $format === 'xlsx' || $format === 'xls') {
+                $filename = 'Faculty_Master_Directory_' . date('Y-m-d') . '.xls';
+
+                header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+                header('Pragma: no-cache');
+                header('Expires: 0');
+
+                echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+                echo "<?mso-application progid=\"Excel.Sheet\"?>\n";
+                echo "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
+                echo " xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n";
+                echo " xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\n";
+                echo " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
+                echo " xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
+                echo " <Styles>\n";
+                echo "  <Style ss:ID=\"Header\">\n";
+                echo "   <Font ss:Bold=\"1\" ss:Color=\"#FFFFFF\"/>\n";
+                echo "   <Interior ss:Color=\"#2563EB\" ss:Pattern=\"Solid\"/>\n";
+                echo "   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n";
+                echo "  </Style>\n";
+                echo "  <Style ss:ID=\"Data\">\n";
+                echo "   <Alignment ss:Vertical=\"Center\"/>\n";
+                echo "  </Style>\n";
+                echo " </Styles>\n";
+                echo " <Worksheet ss:Name=\"Faculty Master\">\n";
+                echo "  <Table>\n";
+                echo "   <Column ss:Width=\"110\"/>\n";
+                echo "   <Column ss:Width=\"180\"/>\n";
+                echo "   <Column ss:Width=\"180\"/>\n";
+                echo "   <Column ss:Width=\"160\"/>\n";
+                echo "   <Column ss:Width=\"140\"/>\n";
+                echo "   <Column ss:Width=\"110\"/>\n";
+                echo "   <Column ss:Width=\"90\"/>\n";
+                echo "   <Column ss:Width=\"80\"/>\n";
+                echo "   <Column ss:Width=\"120\"/>\n";
+                echo "   <Row ss:StyleID=\"Header\">\n";
+                foreach (['Employee ID', 'Full Name', 'Email', 'Department', 'Position', 'Contact Number', 'Date Hired', 'Status', 'Created At'] as $colTitle) {
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars($colTitle, ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                }
+                echo "   </Row>\n";
+
+                foreach ($rows as $row) {
+                    echo "   <Row ss:StyleID=\"Data\">\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['employee_id'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['full_name'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['email'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['department'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['position'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['contact_number'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['date_hired'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars(ucfirst((string)($row['status'] ?? 'active')), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "    <Cell><Data ss:Type=\"String\">" . htmlspecialchars((string)($row['created_at'] ?? ''), ENT_XML1, 'UTF-8') . "</Data></Cell>\n";
+                    echo "   </Row>\n";
+                }
+
+                echo "  </Table>\n";
+                echo " </Worksheet>\n";
+                echo "</Workbook>\n";
+                exit;
+            }
+
+            $filename = 'Faculty_Master_Directory_' . date('Y-m-d') . '.csv';
+
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            $output = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Microsoft Excel compatibility
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header Row
+            fputcsv($output, [
+                'Employee ID',
+                'Full Name',
+                'Email',
+                'Department',
+                'Position',
+                'Contact Number',
+                'Date Hired',
+                'Status',
+                'Created At'
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['employee_id'] ?? '',
+                    $row['full_name'] ?? '',
+                    $row['email'] ?? '',
+                    $row['department'] ?? '',
+                    $row['position'] ?? '',
+                    $row['contact_number'] ?? '',
+                    $row['date_hired'] ?? '',
+                    ucfirst($row['status'] ?? 'active'),
+                    $row['created_at'] ?? ''
+                ]);
+            }
+
+            fclose($output);
+            exit;
+        } catch (Exception $e) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Export failed: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
      * POST /api/teachers
      * Create single teacher account manually
      */
@@ -351,7 +506,7 @@ class TeacherController {
                 $notifStmt = $db->prepare("
                     INSERT INTO `notifications` 
                     (`user_id`, `type`, `title`, `message`, `is_read`, `created_at`) 
-                    VALUES (?, 'security', ?, ?, 0, NOW())
+                    VALUES (?, 'system', ?, ?, 0, NOW())
                 ");
                 $notifStmt->execute([
                     1, // Admin user ID
