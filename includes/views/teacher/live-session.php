@@ -21,20 +21,7 @@ $secStmt = $db->prepare("
     ORDER BY section ASC
 ");
 $secStmt->execute([$teacherId]);
-$teacherSections = $secStmt->fetchAll(PDO::FETCH_ASSOC);
-
-if (empty($teacherSections)) {
-    $teacherSections = [
-        [
-            'section'        => '31001',
-            'course_code'    => 'IT301',
-            'course_title'   => 'Web Systems and Technologies',
-            'room_number'    => '402',
-            'scheduled_time' => '08:00:00',
-            'schedule_day'   => 'Monday'
-        ]
-    ];
-}
+$teacherSections = $secStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
 // Fetch currently running QR sessions for this teacher
 $actSecStmt = $db->prepare("
@@ -61,12 +48,12 @@ foreach ($teacherSections as $sec) {
         break;
     }
 }
-if (!$selectedSectionInfo) {
+if (!$selectedSectionInfo && !empty($teacherSections)) {
     $selectedSectionInfo = $teacherSections[0];
     $selectedSectionKey = $selectedSectionInfo['section'];
 }
 
-$startTimeFormatted = date('h:i A', strtotime($selectedSectionInfo['scheduled_time']));
+$startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i A', strtotime($selectedSectionInfo['scheduled_time'])) : '--:--';
 ?>
 <?php include dirname(__DIR__) . '/partials/header.php'; ?>
 <style>
@@ -134,7 +121,7 @@ $startTimeFormatted = date('h:i A', strtotime($selectedSectionInfo['scheduled_ti
               </span>
             </div>
             <h1 class="text-2xl font-bold text-text-primary tracking-tight" id="header-course-title">
-              <?= htmlspecialchars($selectedSectionInfo['section']) ?> · <?= htmlspecialchars($selectedSectionInfo['course_code']) ?> (<?= htmlspecialchars($selectedSectionInfo['course_title']) ?>)
+              <?= htmlspecialchars($selectedSectionInfo['section'] ?? '') ?> · <?= htmlspecialchars($selectedSectionInfo['course_code'] ?? '') ?> (<?= htmlspecialchars($selectedSectionInfo['course_title'] ?? 'No Classes Assigned') ?>)
             </h1>
             <p class="text-sm text-text-secondary mt-0.5" id="header-course-sub">
               Room <span id="header-room-number"><?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?></span> · Started <span id="header-scheduled-time"><?= $startTimeFormatted ?></span> · <span id="header-live-clock" class="font-mono text-slate-600">--:--:-- --</span>
@@ -157,8 +144,8 @@ $startTimeFormatted = date('h:i A', strtotime($selectedSectionInfo['scheduled_ti
                 </div>
                 <div class="flex flex-col min-w-0 pr-1">
                   <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold text-slate-800 tracking-tight" id="switcher-active-section">Section <?= htmlspecialchars($selectedSectionInfo['section']) ?></span>
-                    <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-white text-slate-600" id="switcher-active-code"><?= htmlspecialchars($selectedSectionInfo['course_code']) ?></span>
+                    <span class="text-xs font-bold text-slate-800 tracking-tight" id="switcher-active-section">Section <?= htmlspecialchars($selectedSectionInfo['section'] ?? 'None') ?></span>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-white text-slate-600" id="switcher-active-code"><?= htmlspecialchars($selectedSectionInfo['course_code'] ?? 'N/A') ?></span>
                   </div>
                   <span class="text-[11px] text-slate-500 truncate" id="switcher-active-sub">Rm <?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?> · <?= $startTimeFormatted ?></span>
                 </div>
