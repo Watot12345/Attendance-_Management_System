@@ -1,0 +1,8 @@
+# Railway / Nixpacks Configuration
+# Tells Railway how to build and start the PHP app
+
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo", "php83Extensions.pdo_mysql", "php83Extensions.mbstring", "php83Extensions.openssl", "php83Extensions.session"]
+
+[start]
+cmd = "php -S 0.0.0.0:${PORT:-8080} index.php"
