@@ -1,30 +1,22 @@
 <?php
-if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-    session_start();
-}
+require_once dirname(__DIR__, 2) . '/core/Router.php';
 
-$currentUri = $_SERVER['REQUEST_URI'] ?? '';
-$pathOnly = trim(parse_url($currentUri, PHP_URL_PATH) ?? '', '/');
-
-$isTeacher = (str_starts_with($pathOnly, 'teacher/') || $pathOnly === 'teacher');
-$isStudent = (str_starts_with($pathOnly, 'student/') || $pathOnly === 'student');
-$isAdmin = !$isTeacher && !$isStudent;
+$activeRole = Router::getCurrentRole();
+$isTeacher  = ($activeRole === 'teacher');
+$isStudent  = ($activeRole === 'student');
+$isAdmin    = ($activeRole === 'admin');
 
 $sessionUser = $_SESSION['user'] ?? null;
+$userAvatarBg = 'bg-blue-600';
 
-if ($sessionUser) {
+if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
     $userName = htmlspecialchars($sessionUser['full_name'] ?? ($sessionUser['first_name'] . ' ' . $sessionUser['last_name']));
-    $role = $sessionUser['role'] ?? ($isTeacher ? 'teacher' : ($isStudent ? 'student' : 'admin'));
-    
-    if ($role === 'teacher') {
+    if ($activeRole === 'teacher') {
         $userRole = 'Faculty / Instructor';
-        $userAvatarBg = 'bg-emerald-600';
-    } elseif ($role === 'student') {
-        $userRole = 'Student' . (!empty($sessionUser['student_id']) ? ' (' . $sessionUser['student_id'] . ')' : '');
-        $userAvatarBg = 'bg-indigo-600';
+    } elseif ($activeRole === 'student') {
+        $userRole = 'Student' . (!empty($sessionUser['student_id']) ? ' (' . $sessionUser['student_id'] . ')' : ' (BSIT 3-A)');
     } else {
         $userRole = 'Administrator';
-        $userAvatarBg = 'bg-blue-600';
     }
 
     $firstInitial = function_exists('mb_substr') 
@@ -35,13 +27,22 @@ if ($sessionUser) {
         : substr($sessionUser['last_name'] ?? '', 0, 1);
     $userInitials = strtoupper($firstInitial . $lastInitial);
     if (empty($userInitials)) {
-        $userInitials = 'US';
+        $userInitials = $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'SA');
     }
 } else {
-    $userName = $isTeacher ? 'Prof. M. Ramirez' : ($isStudent ? 'Juan Dela Cruz' : 'Admin Santos');
-    $userRole = $isTeacher ? 'Faculty / Instructor' : ($isStudent ? 'Student (BSIT 3-A)' : 'Administrator');
-    $userInitials = $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'AS');
-    $userAvatarBg = $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 'bg-blue-600');
+    if ($isTeacher) {
+        $userName = 'Prof. M. Ramirez';
+        $userRole = 'Faculty / Instructor';
+        $userInitials = 'MR';
+    } elseif ($isStudent) {
+        $userName = 'Juan Dela Cruz';
+        $userRole = 'Student (BSIT 3-A)';
+        $userInitials = 'JD';
+    } else {
+        $userName = 'System Administrator';
+        $userRole = 'Administrator';
+        $userInitials = 'SA';
+    }
 }
 ?>
 <!-- Topbar -->
@@ -67,9 +68,9 @@ if ($sessionUser) {
   <div class="flex items-center gap-2.5">
     <!-- Quick Role Switch Pill -->
     <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shadow-2xs">
-      <a href="<?php echo url('dashboard'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isAdmin ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>">Admin</a>
-      <a href="<?php echo url('teacher/dashboard'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isTeacher ? 'bg-white text-emerald-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>">Teacher</a>
-      <a href="<?php echo url('student/calendar'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isStudent ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>">Student</a>
+      <a href="<?php echo url('switch-role?role=admin'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isAdmin ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Admin Portal">Admin</a>
+      <a href="<?php echo url('switch-role?role=teacher'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isTeacher ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Faculty Portal">Teacher</a>
+      <a href="<?php echo url('switch-role?role=student'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isStudent ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Student Portal">Student</a>
     </div>
 
     <!-- Notification Bell -->

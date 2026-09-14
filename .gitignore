@@ -1,8 +1,11 @@
 # Environment variables
 .env
 *.sql
+!database/sierra_schema.sql
 *.gitignore
 *.md
+!docs/Myworktask.md
+!docs/mytask_Module_Workflow_Guide.md
 
 # Dependencies
 /vendor/

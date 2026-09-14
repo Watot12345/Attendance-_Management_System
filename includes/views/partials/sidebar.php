@@ -1,17 +1,55 @@
 <?php
-// Detect active role and subpage from URI
-$currentUri = $_SERVER['REQUEST_URI'] ?? '';
-$pathOnly = trim(parse_url($currentUri, PHP_URL_PATH) ?? '', '/');
+require_once dirname(__DIR__, 2) . '/core/Router.php';
 
-$isTeacher = (str_starts_with($pathOnly, 'teacher/') || $pathOnly === 'teacher');
-$isStudent = (str_starts_with($pathOnly, 'student/') || $pathOnly === 'student');
-$isAdmin = !$isTeacher && !$isStudent;
+// Detect active role and clean subpage path via Router
+$activeRole = Router::getCurrentRole();
+$isTeacher  = ($activeRole === 'teacher');
+$isStudent  = ($activeRole === 'student');
+$isAdmin    = ($activeRole === 'admin');
+
+$pathOnly   = trim(Router::getCurrentPath(), '/');
 
 if (!function_exists('isActiveLink')) {
     function isActiveLink(string $target, string $current): bool {
-        $cleanCurrent = trim(parse_url($current, PHP_URL_PATH) ?? '', '/');
         $cleanTarget = trim($target, '/');
+        $cleanCurrent = trim($current, '/');
         return ($cleanCurrent === $cleanTarget);
+    }
+}
+
+// Active user persona display
+$sessionUser = $_SESSION['user'] ?? null;
+$sidebarAvatarBg = 'bg-blue-600';
+
+if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
+    $sidebarUserName = htmlspecialchars($sessionUser['full_name'] ?? ($sessionUser['first_name'] . ' ' . $sessionUser['last_name']));
+    if ($activeRole === 'teacher') {
+        $sidebarUserRole = 'Faculty / Instructor';
+    } elseif ($activeRole === 'student') {
+        $sidebarUserRole = 'Student' . (!empty($sessionUser['student_id']) ? ' (' . $sessionUser['student_id'] . ')' : ' (BSIT 3-A)');
+    } else {
+        $sidebarUserRole = 'Administrator';
+    }
+
+    $firstInitial = function_exists('mb_substr') ? mb_substr($sessionUser['first_name'] ?? '', 0, 1) : substr($sessionUser['first_name'] ?? '', 0, 1);
+    $lastInitial  = function_exists('mb_substr') ? mb_substr($sessionUser['last_name'] ?? '', 0, 1) : substr($sessionUser['last_name'] ?? '', 0, 1);
+    $sidebarUserInitials = strtoupper($firstInitial . $lastInitial);
+    if (empty($sidebarUserInitials)) {
+        $sidebarUserInitials = $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'SA');
+    }
+} else {
+    if ($isTeacher) {
+        $sidebarUserName = 'Prof. M. Ramirez';
+        $sidebarUserRole = 'Faculty / Instructor';
+        $sidebarUserInitials = 'MR';
+    } elseif ($isStudent) {
+        $sidebarUserName = 'Juan Dela Cruz';
+        $sidebarUserRole = 'BSIT 3-A • 2026-00123';
+        $sidebarUserInitials = 'JD';
+    } else {
+        $sidebarUserName = 'System Administrator';
+        $sidebarUserRole = 'Administrator';
+        $sidebarUserInitials = 'SA';
     }
 }
 ?>
@@ -34,19 +72,27 @@ if (!function_exists('isActiveLink')) {
   </div>
 
   <!-- Role Status Pill & 1-Click Switch -->
-  <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 shrink-0 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="relative flex h-2 w-2">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full <?php echo $isTeacher ? 'bg-emerald-400' : ($isStudent ? 'bg-indigo-400' : 'bg-blue-400'); ?> opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2 w-2 <?php echo $isTeacher ? 'bg-emerald-500' : ($isStudent ? 'bg-indigo-500' : 'bg-blue-500'); ?>"></span>
-      </span>
-      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">
-        <?php echo $isTeacher ? 'Faculty Portal' : ($isStudent ? 'Student Portal' : 'Admin Portal'); ?>
+  <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 shrink-0">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+        </span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">
+          <?php echo $isTeacher ? 'Faculty Portal' : ($isStudent ? 'Student Portal' : 'Admin Portal'); ?>
+        </span>
+      </div>
+      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        Active
       </span>
     </div>
-    <a href="<?php echo url('auth'); ?>" class="text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition px-2 py-0.5 rounded bg-white/5 hover:bg-white/10" title="Switch Portal Role">
-      Switch Role
-    </a>
+    <!-- Quick 1-Click Role Switcher in Sidebar -->
+    <div class="grid grid-cols-3 gap-1">
+      <a href="<?php echo url('switch-role?role=admin'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isAdmin ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Administrator Portal">Admin</a>
+      <a href="<?php echo url('switch-role?role=teacher'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isTeacher ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Faculty / Teacher Portal">Teacher</a>
+      <a href="<?php echo url('switch-role?role=student'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isStudent ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Student Portal">Student</a>
+    </div>
   </div>
 
   <!-- Navigation Links -->
@@ -56,56 +102,56 @@ if (!function_exists('isActiveLink')) {
       <!-- TEACHER NAVIGATION -->
       <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Faculty Menu</div>
       
-      <a href="<?php echo url('teacher/dashboard'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/dashboard', $pathOnly) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/dashboard', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <a href="<?php echo url('teacher/dashboard'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/dashboard', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/dashboard', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span>Overview Dashboard</span>
       </a>
 
-      <a href="<?php echo url('teacher/classes'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/classes', $pathOnly) || isActiveLink('teacher/roster', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/classes', $pathOnly) || isActiveLink('teacher/roster', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      <a href="<?php echo url('teacher/classes'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/classes', $pathOnly) || isActiveLink('teacher/roster', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/classes', $pathOnly) || isActiveLink('teacher/roster', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         <span>My Classes &amp; Rosters</span>
       </a>
 
-      <a href="<?php echo url('teacher/import-roster'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      <a href="<?php echo url('teacher/import-roster'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         <span>Import Class Roster</span>
       </a>
 
       <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Attendance Operations</div>
       
       <!-- Daily Attendance Marking -->
-      <a href="<?php echo url('teacher/daily-attendance'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/daily-attendance', $pathOnly) || isActiveLink('attendance/daily', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/daily-attendance', $pathOnly) || isActiveLink('attendance/daily', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <a href="<?php echo url('teacher/daily-attendance'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/daily-attendance', $pathOnly) || isActiveLink('attendance/daily', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/daily-attendance', $pathOnly) || isActiveLink('attendance/daily', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         <span>Daily Attendance Marking</span>
       </a>
 
       <!-- Start Live QR Session -->
-      <a href="<?php echo url('teacher/live-session'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/live-session', $pathOnly) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 border border-emerald-500/20'; ?>">
-        <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+      <a href="<?php echo url('teacher/live-session'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/live-session', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-950/30 border border-blue-500/20'; ?>">
+        <svg class="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
         <span>Start Live QR Session</span>
       </a>
 
       <!-- Tardy & Absence Logs -->
-      <a href="<?php echo url('teacher/tardy-logs'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/tardy-logs', $pathOnly) || isActiveLink('alerts/history', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/tardy-logs', $pathOnly) || isActiveLink('alerts/history', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <a href="<?php echo url('teacher/tardy-logs'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/tardy-logs', $pathOnly) || isActiveLink('alerts/history', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/tardy-logs', $pathOnly) || isActiveLink('alerts/history', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Tardy &amp; Absence Logs</span>
       </a>
 
       <!-- Submitted Excuse Slips Review -->
-      <a href="<?php echo url('teacher/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/excuse-slips', $pathOnly) || isActiveLink('dashboard/excuse-slips', $pathOnly) || isActiveLink('excuses/review', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/excuse-slips', $pathOnly) || isActiveLink('dashboard/excuse-slips', $pathOnly) || isActiveLink('excuses/review', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <a href="<?php echo url('teacher/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/excuse-slips', $pathOnly) || isActiveLink('dashboard/excuse-slips', $pathOnly) || isActiveLink('excuses/review', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/excuse-slips', $pathOnly) || isActiveLink('dashboard/excuse-slips', $pathOnly) || isActiveLink('excuses/review', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>Submitted Excuse Slips</span>
       </a>
 
       <!-- Perfect Attendance Award Tool -->
-      <a href="<?php echo url('teacher/awards'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/awards', $pathOnly) || isActiveLink('awards', $pathOnly) || isActiveLink('dashboard/tools', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/awards', $pathOnly) || isActiveLink('awards', $pathOnly) || isActiveLink('dashboard/tools', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-amber-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+      <a href="<?php echo url('teacher/awards'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/awards', $pathOnly) || isActiveLink('awards', $pathOnly) || isActiveLink('dashboard/tools', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/awards', $pathOnly) || isActiveLink('awards', $pathOnly) || isActiveLink('dashboard/tools', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
         <span>Perfect Attendance Award Tool</span>
       </a>
 
       <!-- Attendance History & Audit -->
-      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/attendance-history', $pathOnly) || isActiveLink('teacher/attendance/history', $pathOnly) || isActiveLink('teacher/history', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         <span>Attendance History &amp; Audit</span>
       </a>
 
@@ -114,26 +160,26 @@ if (!function_exists('isActiveLink')) {
       <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student Portal</div>
       
       <!-- Scan Attendance QR -->
-      <a href="<?php echo url('student/scanner'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('student/scanner', $pathOnly) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/30 border border-indigo-500/20'; ?>">
-        <svg class="w-4 h-4 shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+      <a href="<?php echo url('student/scanner'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('student/scanner', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-950/30 border border-blue-500/20'; ?>">
+        <svg class="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
         <span>Scan Attendance QR</span>
       </a>
 
       <!-- Attendance Calendar (Present, Late, Absent, Excused) -->
-      <a href="<?php echo url('student/calendar'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('student/calendar', $pathOnly) || isActiveLink('calendar', $pathOnly)) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('student/calendar', $pathOnly) || isActiveLink('calendar', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <a href="<?php echo url('student/calendar'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('student/calendar', $pathOnly) || isActiveLink('calendar', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('student/calendar', $pathOnly) || isActiveLink('calendar', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         <span>Attendance Calendar</span>
       </a>
 
       <!-- Excuse Slip Submission -->
-      <a href="<?php echo url('student/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('student/excuse-slips', $pathOnly) || isActiveLink('excuses/submit', $pathOnly)) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('student/excuse-slips', $pathOnly) || isActiveLink('excuses/submit', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <a href="<?php echo url('student/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('student/excuse-slips', $pathOnly) || isActiveLink('excuses/submit', $pathOnly)) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('student/excuse-slips', $pathOnly) || isActiveLink('excuses/submit', $pathOnly)) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>Excuse Slip Submission</span>
       </a>
 
       <!-- Attendance History -->
-      <a href="<?php echo url('student/history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('student/history', $pathOnly) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
-        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('student/history', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+      <a href="<?php echo url('student/history'); ?>" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('student/history', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('student/history', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         <span>Attendance History</span>
       </a>
 
@@ -191,18 +237,18 @@ if (!function_exists('isActiveLink')) {
   <!-- User Account Card Footer -->
   <div class="p-3 bg-slate-950/80 border-t border-slate-800/80 shrink-0">
     <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-900/60 border border-slate-800">
-      <div class="w-8 h-8 rounded-lg <?php echo $isTeacher ? 'bg-emerald-600' : ($isStudent ? 'bg-indigo-600' : 'bg-blue-600'); ?> flex items-center justify-center text-white text-xs font-bold shadow-xs">
-        <?php echo $isTeacher ? 'MR' : ($isStudent ? 'JD' : 'AS'); ?>
+      <div class="w-8 h-8 rounded-lg <?php echo $sidebarAvatarBg; ?> flex items-center justify-center text-white text-xs font-bold shadow-xs">
+        <?php echo $sidebarUserInitials; ?>
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-xs text-white truncate font-bold">
-          <?php echo $isTeacher ? 'Prof. M. Ramirez' : ($isStudent ? 'Juan Dela Cruz' : 'Admin Santos'); ?>
+          <?php echo $sidebarUserName; ?>
         </div>
         <div class="text-[10px] text-slate-400 truncate">
-          <?php echo $isTeacher ? 'Faculty / Instructor' : ($isStudent ? 'BSIT 3-A • 2026-00123' : 'Administrator'); ?>
+          <?php echo $sidebarUserRole; ?>
         </div>
       </div>
-      <a href="<?php echo url('auth'); ?>" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition" title="Sign Out">
+      <a href="<?php echo url('logout'); ?>" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition" title="Sign Out">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </a>
     </div>
