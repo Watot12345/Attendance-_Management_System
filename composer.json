@@ -1,5 +1,5 @@
 {
-    "name": "attendance-management-system",
+    "name": "bcp/attendance-management-system",
     "description": "Library Attendance Monitoring System (LAMS)",
     "require": {
         "php": ">=8.1",
