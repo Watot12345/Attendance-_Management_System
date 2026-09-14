@@ -147,6 +147,8 @@ class Router {
         '/api/attendance/daily'            => 'AttendanceController@apiDailyAttendance',
         '/api/attendance/manual-entry'     => 'AttendanceController@apiManualEntry',
         '/api/teacher/roster/students'     => 'AttendanceController@apiGetRosterStudents',
+        '/api/teacher/awards/calculate'    => 'AttendanceController@apiCalculateAwards',
+        '/api/teacher/awards/seed-sample'  => 'AttendanceController@apiSeedAwardsSample',
 
         // Teachers Master & Bulk Import API
         '/api/teachers'                 => 'TeacherController@handleRoot',
@@ -402,6 +404,42 @@ class Router {
      */
     public static function dispatch(): void {
         $path = self::getCurrentPath();
+
+        // Temporary health-check endpoint for debugging Railway deployment
+        if ($path === '/healthcheck') {
+            header('Content-Type: application/json; charset=utf-8');
+            $result = [
+                'php_version' => PHP_VERSION,
+                'sapi' => php_sapi_name(),
+                'extensions' => [
+                    'pdo' => extension_loaded('pdo'),
+                    'pdo_mysql' => extension_loaded('pdo_mysql'),
+                    'mbstring' => extension_loaded('mbstring'),
+                    'openssl' => extension_loaded('openssl'),
+                ],
+                'env_vars' => [
+                    'DB_HOST' => !empty(getenv('DB_HOST')) ? getenv('DB_HOST') : '(not set)',
+                    'DB_PORT' => !empty(getenv('DB_PORT')) ? getenv('DB_PORT') : '(not set)',
+                    'DB_NAME' => !empty(getenv('DB_NAME')) ? getenv('DB_NAME') : '(not set)',
+                    'DB_USER' => !empty(getenv('DB_USER')) ? '***set***' : '(not set)',
+                    'DB_PASS' => !empty(getenv('DB_PASS')) ? '***set***' : '(not set)',
+                ],
+                'db_connection' => 'untested',
+            ];
+            try {
+                require_once dirname(__DIR__) . '/core/Database.php';
+                $db = Database::getConnection();
+                $ver = $db->getAttribute(PDO::ATTR_SERVER_VERSION);
+                $result['db_connection'] = 'OK (MySQL ' . $ver . ')';
+                $tables = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+                $result['tables'] = $tables;
+            } catch (Throwable $e) {
+                $result['db_connection'] = 'FAILED: ' . $e->getMessage();
+            }
+            echo json_encode($result, JSON_PRETTY_PRINT);
+            exit;
+        }
+
 
         // 0. Quick switch-role endpoint
         if ($path === '/switch-role') {

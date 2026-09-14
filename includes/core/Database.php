@@ -49,8 +49,12 @@ class Database {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
                 PDO::ATTR_TIMEOUT => 10,
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ];
+
+            // Only set SSL option when pdo_mysql extension is loaded (defines this constant)
+            if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            }
 
             self::$instance = new PDO($dsn, $user, $pass, $options);
         }
