@@ -237,35 +237,34 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
       <!-- Submitted Excuse Slips Real Data Table -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
-          <div class="flex items-center gap-2">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div class="flex items-center gap-2.5">
             <h2 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Excuse Slips Review Queue</h2>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100"><?php echo htmlspecialchars($currentTeacherName); ?></span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/70"><?php echo htmlspecialchars($currentTeacherName); ?></span>
           </div>
-          <span class="text-xs text-slate-500">Showing <strong id="visible-count" class="text-slate-800"><?php echo count($slips); ?></strong> excuse slip submissions</span>
+          <span class="text-xs text-slate-400">Showing <strong id="visible-count" class="text-slate-700 font-semibold"><?php echo count($slips); ?></strong> submissions</span>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200 text-[11px]">
+            <thead class="bg-slate-50/70 text-slate-500 uppercase font-semibold border-b border-slate-100 text-[10px] tracking-wider">
               <tr>
-                <th class="py-3 px-4">Student</th>
-                <th class="py-3 px-4">Section &amp; Subject</th>
-                <th class="py-3 px-4">Absence Date</th>
-                <th class="py-3 px-4">Reason &amp; Documentation</th>
-                <th class="py-3 px-4">Submission Date</th>
-                <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4 text-right">Action</th>
+                <th class="py-3 px-4 sm:px-5">Student</th>
+                <th class="py-3 px-4 sm:px-5">Subject</th>
+                <th class="py-3 px-4 sm:px-5">Absence Date</th>
+                <th class="py-3 px-4 sm:px-5">Reason</th>
+                <th class="py-3 px-4 sm:px-5">Status</th>
+                <th class="py-3 px-4 sm:px-5 text-right">Action</th>
               </tr>
             </thead>
             <tbody id="slips-tbody" class="divide-y divide-slate-100 text-slate-700">
               
               <?php if (empty($slips)): ?>
                 <tr id="empty-db-row">
-                  <td colspan="7" class="py-12 text-center text-slate-400">
-                    <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <p class="font-semibold text-slate-600 text-sm">No excuse slips found for <?php echo htmlspecialchars($currentTeacherName); ?></p>
-                    <p class="text-xs text-slate-400 mt-1">Student excuse submissions assigned to your classes will appear here for review.</p>
+                  <td colspan="6" class="py-12 text-center text-slate-400">
+                    <svg class="w-9 h-9 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="font-medium text-slate-600 text-xs">No excuse slips found for <?php echo htmlspecialchars($currentTeacherName); ?></p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Submissions will appear here for your review.</p>
                   </td>
                 </tr>
               <?php else: ?>
@@ -275,18 +274,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   $isApproved = ($status === 'approved');
                   $isDeclined = ($status === 'declined' || $status === 'rejected');
 
-                  $statusBadge = '<span class="badge badge-pending font-bold text-amber-800 bg-amber-50 border-amber-200"> Pending</span>';
+                  $statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/70"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending</span>';
                   if ($isApproved) {
-                      $statusBadge = '<span class="badge badge-present font-bold text-emerald-800 bg-emerald-50 border-emerald-200"> Approved</span>';
+                      $statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved</span>';
                   } elseif ($isDeclined) {
-                      $statusBadge = '<span class="badge badge-absent font-bold text-rose-800 bg-rose-50 border-rose-200"> Declined</span>';
+                      $statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200/70"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Declined</span>';
                   }
 
                   $formattedAbsence = date('M d, Y', strtotime($slip['date_of_absence']));
-                  $formattedCreated = date('M d, Y • h:i A', strtotime($slip['created_at']));
                   $hasDoc = !empty($slip['supporting_document']);
-                  $docUrl = $hasDoc ? htmlspecialchars($slip['supporting_document']) : '';
-                  $docFileName = $hasDoc ? basename(parse_url($slip['supporting_document'], PHP_URL_PATH)) : '';
 
                   // Parse course code
                   $subjectRaw = $slip['subject'] ?? '';
@@ -296,7 +292,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   
                   $searchTerms = strtolower($slip['student_name'] . ' ' . $slip['student_number'] . ' ' . $subjectRaw . ' ' . $slip['reason'] . ' ' . $slip['explanation']);
                 ?>
-                  <tr class="slip-row hover:bg-slate-50/80 transition cursor-pointer" 
+                  <tr class="slip-row hover:bg-slate-50/60 transition cursor-pointer" 
                       id="slip-row-<?php echo $slip['excuse_slip_id']; ?>"
                       data-id="<?php echo $slip['excuse_slip_id']; ?>"
                       data-status="<?php echo $status; ?>" 
@@ -305,59 +301,47 @@ require_once dirname(__DIR__) . '/partials/header.php';
                       onclick="openReviewModalFromRow(<?php echo htmlspecialchars(json_encode($slip)); ?>)">
                     
                     <!-- Student -->
-                    <td class="py-3 px-4">
-                      <div class="font-bold text-slate-800"><?php echo htmlspecialchars($slip['student_name'] ?: 'Student #' . $slip['student_id']); ?></div>
-                      <div class="text-[10px] font-mono text-indigo-600 font-semibold"><?php echo htmlspecialchars($slip['student_number']); ?></div>
+                    <td class="py-3.5 px-4 sm:px-5 max-w-[130px] sm:max-w-[200px]">
+                      <div class="font-semibold text-slate-800 text-xs truncate" title="<?php echo htmlspecialchars($slip['student_name'] ?: 'Student #' . $slip['student_id']); ?>"><?php echo htmlspecialchars($slip['student_name'] ?: 'Student #' . $slip['student_id']); ?></div>
+                      <div class="text-[11px] font-mono text-slate-400 truncate"><?php echo htmlspecialchars($slip['student_number']); ?></div>
                     </td>
 
-                    <!-- Section & Subject -->
-                    <td class="py-3 px-4">
-                      <div class="font-semibold text-slate-700 leading-snug"><?php echo htmlspecialchars($slip['subject']); ?></div>
-                      <div class="text-[10px] text-slate-400 mt-0.5">Instructor: <?php echo htmlspecialchars($slip['teacher_name'] ?: 'Faculty'); ?></div>
+                    <!-- Subject -->
+                    <td class="py-3.5 px-4 sm:px-5 max-w-[130px] sm:max-w-[220px]">
+                      <div class="font-medium text-slate-700 text-xs truncate" title="<?php echo htmlspecialchars($slip['subject']); ?>"><?php echo htmlspecialchars($slip['subject']); ?></div>
                     </td>
 
-                    <!-- Absence Date -->
-                    <td class="py-3 px-4 font-medium text-slate-700">
-                      <div><?php echo $formattedAbsence; ?></div>
-                      <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                        <?php echo htmlspecialchars($slip['reason']); ?>
-                      </span>
+                    <!-- Absence Date (Separate Column) -->
+                    <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap">
+                      <div class="font-medium text-slate-800 text-xs"><?php echo $formattedAbsence; ?></div>
                     </td>
 
-                    <!-- Reason & Document -->
-                    <td class="py-3 px-4 max-w-xs">
-                      <div class="truncate text-slate-800 font-medium" title="<?php echo htmlspecialchars($slip['explanation']); ?>">
-                        "<?php echo htmlspecialchars($slip['explanation']); ?>"
+                    <!-- Reason -->
+                    <td class="py-3.5 px-4 sm:px-5 max-w-[110px] sm:max-w-[160px]">
+                      <div class="flex items-center gap-1.5 flex-nowrap min-w-0">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200/60 truncate" title="<?php echo htmlspecialchars($slip['reason']); ?>">
+                          <?php echo htmlspecialchars($slip['reason']); ?>
+                        </span>
+                        <?php if ($hasDoc): ?>
+                          <span class="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-1.5 py-0.5 rounded shrink-0" title="Document attached">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                            <span>Doc</span>
+                          </span>
+                        <?php endif; ?>
                       </div>
-                      <?php if ($hasDoc): ?>
-                        <button type="button" 
-                                onclick="event.stopPropagation(); previewDocument('<?php echo $docUrl; ?>', 'Slip #<?php echo $slip['excuse_slip_id']; ?> - <?php echo htmlspecialchars(addslashes($slip['student_name'])); ?>')" 
-                                class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded mt-1 transition cursor-pointer">
-                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                          <span>View Doc</span>
-                        </button>
-                      <?php else: ?>
-                        <span class="text-[10px] text-slate-400 italic block mt-0.5">No document attached</span>
-                      <?php endif; ?>
-                    </td>
-
-                    <!-- Submission Date -->
-                    <td class="py-3 px-4">
-                      <div class="font-medium text-slate-700"><?php echo $formattedCreated; ?></div>
-                      <div class="text-[10px] font-mono text-slate-400">Slip #<?php echo $slip['excuse_slip_id']; ?></div>
                     </td>
 
                     <!-- Status Badge -->
-                    <td class="py-3 px-4" id="slip-status-col-<?php echo $slip['excuse_slip_id']; ?>">
+                    <td class="py-3.5 px-4 sm:px-5 whitespace-nowrap" id="slip-status-col-<?php echo $slip['excuse_slip_id']; ?>">
                       <?php echo $statusBadge; ?>
                     </td>
 
                     <!-- Action Button -->
-                    <td class="py-3 px-4 text-right" onclick="event.stopPropagation();">
+                    <td class="py-3.5 px-4 sm:px-5 text-right whitespace-nowrap" onclick="event.stopPropagation();">
                       <button type="button" 
                               onclick="openReviewModalFromRow(<?php echo htmlspecialchars(json_encode($slip)); ?>)" 
-                              class="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-2xs transition cursor-pointer <?php echo $isPending ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'; ?>">
-                        <?php echo $isPending ? 'Review' : 'Details'; ?>
+                              class="px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer <?php echo $isPending ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'; ?>">
+                        <?php echo $isPending ? 'Review' : 'View'; ?>
                       </button>
                     </td>
                   </tr>
@@ -373,149 +357,150 @@ require_once dirname(__DIR__) . '/partials/header.php';
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     MODAL 1: EXCUSE SLIP REVIEW & VERIFICATION
+     MODAL 1: EXCUSE SLIP REVIEW & VERIFICATION (MINIMALIST)
 ══════════════════════════════════════════════════════════════ -->
-<div id="review-modal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeReviewModal()">
-  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 relative" onclick="event.stopPropagation()">
+<div id="review-modal" class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-4" onclick="if(event.target === this) closeReviewModal()">
+  <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 relative min-w-0" onclick="event.stopPropagation()">
     
     <!-- Loading Overlay for Approving / Declining -->
     <div id="review-modal-loading-overlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-30 transition-opacity duration-200">
-      <div id="review-modal-loading-spinner" class="w-12 h-12 rounded-full border-3 border-emerald-200 border-t-emerald-600 animate-spin shadow-sm"></div>
+      <div id="review-modal-loading-spinner" class="w-10 h-10 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin"></div>
       <div class="text-center px-4">
-        <div id="review-modal-loading-title" class="text-sm font-bold text-slate-800">Processing Review Decision...</div>
-        <div id="review-modal-loading-sub" class="text-xs text-slate-500 mt-1 font-medium">Communicating with server and updating clearance...</div>
+        <div id="review-modal-loading-title" class="text-xs font-bold text-slate-800">Processing Decision...</div>
+        <div id="review-modal-loading-sub" class="text-[11px] text-slate-400 mt-0.5">Updating excuse clearance record...</div>
       </div>
     </div>
     
     <!-- Modal Header -->
-    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span id="modal-status-badge" class="badge badge-pending font-bold text-xs"> Pending Review</span>
-          <span id="modal-slip-id-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 font-mono">Slip #---</span>
-        </div>
-        <h2 id="modal-student-name" class="text-lg font-bold text-slate-800">Student Name</h2>
+    <div class="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 min-w-0">
+      <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+        <span id="modal-slip-id-badge" class="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200/60 shrink-0">Slip #---</span>
+        <span id="modal-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending
+        </span>
       </div>
-      <button type="button" onclick="closeReviewModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center font-bold text-sm transition cursor-pointer">
-        
+      <button type="button" onclick="closeReviewModal()" class="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center text-base transition cursor-pointer shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
 
     <!-- Modal Body -->
-    <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+    <div class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-xs min-w-0">
       <input type="hidden" id="modal-slip-id" value="">
 
-      <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase text-[10px]">Student ID Number</span>
-          <span id="modal-student-id" class="font-mono font-bold text-indigo-700 text-sm">2026-00123</span>
+      <!-- Student Card -->
+      <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 min-w-0">
+        <div class="min-w-0 flex-1">
+          <h2 id="modal-student-name" class="text-sm sm:text-base font-bold text-slate-900 leading-tight truncate">Student Name</h2>
+          <div id="modal-student-id" class="text-[11px] font-mono text-slate-400 mt-0.5 truncate">2026-00123</div>
         </div>
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase text-[10px]">Enrolled Course / Subject</span>
-          <span id="modal-course-name" class="font-bold text-slate-800 text-sm">IT301 — Web Development 2</span>
-        </div>
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase text-[10px]">Date of Absence</span>
-          <span id="modal-dates" class="font-bold text-slate-800">Sep 11, 2026</span>
-        </div>
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase text-[10px]">Reason Category</span>
-          <span id="modal-category" class="font-bold text-slate-800">Medical / Illness</span>
+        <div class="text-right shrink-0">
+          <span id="modal-category-badge" class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/70 inline-block max-w-[120px] sm:max-w-none truncate">Medical</span>
         </div>
       </div>
 
-      <!-- Detailed Reason / Explanation -->
+      <!-- Quick Meta Grid with Separate Dates -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-2.5 p-3 bg-slate-50/70 rounded-xl border border-slate-100 text-[11px] min-w-0">
+        <div class="min-w-0">
+          <span class="text-slate-400 block font-medium truncate">Subject</span>
+          <span id="modal-course-name" class="font-semibold text-slate-800 truncate block mt-0.5">IT301</span>
+        </div>
+        <div class="min-w-0">
+          <span class="text-slate-400 block font-medium truncate">Absence Date</span>
+          <span id="modal-dates" class="font-semibold text-slate-800 block mt-0.5 truncate">Sep 11, 2026</span>
+        </div>
+        <div class="min-w-0">
+          <span class="text-slate-400 block font-medium truncate">Submitted Date</span>
+          <span id="modal-submitted-date" class="font-semibold text-slate-800 block mt-0.5 truncate">Sep 11, 2026</span>
+        </div>
+      </div>
+
+      <!-- Explanation -->
       <div>
-        <label class="block font-semibold text-slate-700 mb-1">Stated Explanation from Student:</label>
-        <div id="modal-reason" class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 leading-relaxed font-medium">
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Student Explanation</label>
+        <div id="modal-reason" class="p-3 bg-slate-50/50 border border-slate-200/70 rounded-xl text-slate-700 leading-relaxed text-xs break-words">
           Explanation details...
         </div>
       </div>
 
-      <!-- Attached File Preview Card -->
-      <div>
-        <label class="block font-semibold text-slate-700 mb-1">Supporting Document (Supabase Cloud Storage):</label>
-        <div id="modal-doc-container" class="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-center justify-between">
-          <div class="flex items-center gap-2 text-indigo-900 font-semibold overflow-hidden">
-            <svg class="w-5 h-5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <span id="modal-file-name" class="truncate max-w-sm">document.pdf</span>
+      <!-- Attached File Preview -->
+      <div class="min-w-0">
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Attachment</label>
+        <div id="modal-doc-container" class="p-2.5 bg-slate-50/80 border border-slate-200/70 rounded-xl flex items-center justify-between gap-2 min-w-0">
+          <div class="flex items-center gap-2 text-slate-700 font-medium overflow-hidden min-w-0 flex-1">
+            <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+            <span id="modal-file-name" class="truncate text-xs font-mono">document.pdf</span>
           </div>
-          <button type="button" id="modal-preview-btn" onclick="previewCurrentModalDocument()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-2xs transition cursor-pointer">
-            Preview File
+          <button type="button" id="modal-preview-btn" onclick="previewCurrentModalDocument()" class="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-medium text-[11px] shadow-2xs transition cursor-pointer shrink-0">
+            View Attachment
           </button>
         </div>
-        <div id="modal-no-doc" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 italic">
-          No document attached with this request.
+        <div id="modal-no-doc" class="hidden p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 italic text-[11px]">
+          No document attached
         </div>
       </div>
 
-      <!-- Instructor Review Notes / Declined Reason -->
+      <!-- Instructor Review Notes -->
       <div>
-        <label for="review-decision-notes" class="block font-semibold text-slate-700 mb-1">Instructor Review Notes / Comments:</label>
-        <textarea id="review-decision-notes" rows="2" placeholder="e.g. Valid medical certificate verified. Absences excused in gradebook." class="w-full p-2.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        <label for="review-decision-notes" class="block text-[11px] font-semibold text-slate-500 mb-1">Review Notes <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <textarea id="review-decision-notes" rows="2" placeholder="Add remarks or reason..." class="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50/50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 transition"></textarea>
       </div>
     </div>
 
-    <!-- Modal Footer Actions -->
-    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
-      <button type="button" onclick="closeReviewModal()" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition cursor-pointer">
-        Close
-      </button>
-
+    <!-- Modal Footer Actions (Approve/Decline on Left, Close on Right) -->
+    <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3 shrink-0">
+      <!-- Left: Approve & Decline -->
       <div class="flex items-center gap-2">
-        <button type="button" 
-                id="modal-decline-btn" 
-                onclick="submitReviewDecision('reject')" 
-                class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-          <svg id="modal-decline-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          <svg id="modal-decline-spinner" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          <span id="modal-decline-text">Decline / Reject</span>
-        </button>
         <button type="button" 
                 id="modal-approve-btn" 
                 onclick="submitReviewDecision('approve')" 
-                class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-          <svg id="modal-approve-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background-color: #059669; color: #ffffff;">
+          <svg id="modal-approve-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           <svg id="modal-approve-spinner" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          <span id="modal-approve-text">Approve &amp; Excuse</span>
+          <span id="modal-approve-text">Approve</span>
+        </button>
+        <button type="button" 
+                id="modal-decline-btn" 
+                onclick="submitReviewDecision('reject')" 
+                class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background-color: #f97316; color: #ffffff;">
+          <svg id="modal-decline-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          <svg id="modal-decline-spinner" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <span id="modal-decline-text">Decline</span>
         </button>
       </div>
+
+      <!-- Right: Close Button -->
+      <button type="button" onclick="closeReviewModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer" style="background-color: #e2e8f0; color: #334155;">
+        Close
+      </button>
     </div>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     MODAL 2: DOCUMENT / MEDICAL CERTIFICATE PREVIEW
+     MODAL 2: DOCUMENT / MEDICAL CERTIFICATE PREVIEW (MINIMALIST)
 ══════════════════════════════════════════════════════════════ -->
-<div id="teacher-doc-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeTeacherDocModal()">
-  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
-    <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+<div id="teacher-doc-modal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeTeacherDocModal()">
+  <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-xl w-full overflow-hidden flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
+    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        </div>
-        <div>
-          <h3 id="doc-modal-title" class="font-bold text-slate-800 text-sm">Supporting Medical Certificate</h3>
-          <span class="text-[10px] text-slate-400 font-mono">Supabase Storage</span>
-        </div>
+        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+        <h3 id="doc-modal-title" class="font-semibold text-slate-800 text-xs truncate max-w-[280px]">Supporting Document</h3>
       </div>
       <div class="flex items-center gap-2">
-        <a id="doc-modal-open-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition inline-flex items-center gap-1">
+        <a id="doc-modal-open-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition inline-flex items-center gap-1">
           <span>Open Full</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
         </a>
-        <button type="button" onclick="closeTeacherDocModal()" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs transition cursor-pointer">
-          
+        <button type="button" onclick="closeTeacherDocModal()" class="w-6 h-6 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
-    <div class="p-5 overflow-auto flex items-center justify-center bg-slate-900/5 min-h-[280px]">
-      <img id="doc-modal-img" src="" alt="Document Preview" class="max-h-[65vh] w-auto max-w-full rounded-lg shadow-sm border border-slate-200 object-contain">
-    </div>
-    <div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
-      <button type="button" onclick="closeTeacherDocModal()" class="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition cursor-pointer">
-        Close Preview
-      </button>
+    <div class="p-4 overflow-auto flex items-center justify-center bg-slate-50 min-h-[240px]">
+      <img id="doc-modal-img" src="" alt="Document Preview" class="max-h-[60vh] w-auto max-w-full rounded-lg shadow-2xs border border-slate-200/80 object-contain">
     </div>
   </div>
 </div>
@@ -599,8 +584,19 @@ function openReviewModalFromRow(slip) {
   document.getElementById('modal-student-name').textContent = slip.student_name || 'Student';
   document.getElementById('modal-student-id').textContent = slip.student_number || '---';
   document.getElementById('modal-course-name').textContent = slip.subject;
-  document.getElementById('modal-dates').textContent = slip.date_of_absence;
-  document.getElementById('modal-category').textContent = slip.reason;
+  
+  const formattedAbsenceDate = slip.date_of_absence ? new Date(slip.date_of_absence + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (slip.date_of_absence || '---');
+  const formattedCreatedDate = slip.created_at ? new Date(slip.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '---';
+
+  const modalDates = document.getElementById('modal-dates');
+  if (modalDates) modalDates.textContent = formattedAbsenceDate;
+
+  const modalSubmittedDate = document.getElementById('modal-submitted-date');
+  if (modalSubmittedDate) modalSubmittedDate.textContent = formattedCreatedDate;
+
+  const catBadge = document.getElementById('modal-category-badge');
+  if (catBadge) catBadge.textContent = slip.reason || 'General';
+
   document.getElementById('modal-reason').textContent = slip.explanation;
 
   const statusBadge = document.getElementById('modal-status-badge');
@@ -608,14 +604,14 @@ function openReviewModalFromRow(slip) {
   const isPending = (status === 'pending');
 
   if (status === 'approved') {
-    statusBadge.className = 'badge badge-present font-bold text-xs';
-    statusBadge.textContent = ' Approved';
+    statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70';
+    statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved';
   } else if (status === 'declined' || status === 'rejected') {
-    statusBadge.className = 'badge badge-absent font-bold text-xs';
-    statusBadge.textContent = ' Declined';
+    statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/70';
+    statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Declined';
   } else {
-    statusBadge.className = 'badge badge-pending font-bold text-xs';
-    statusBadge.textContent = ' Pending Review';
+    statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70';
+    statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending';
   }
 
   // Handle Document
@@ -649,8 +645,8 @@ function openReviewModalFromRow(slip) {
 
   if (approveBtn) approveBtn.disabled = !isPending;
   if (declineBtn) declineBtn.disabled = !isPending;
-  if (approveText) approveText.textContent = isPending ? 'Approve & Excuse' : 'Already Approved';
-  if (declineText) declineText.textContent = isPending ? 'Decline / Reject' : 'Already Declined';
+  if (approveText) approveText.textContent = isPending ? 'Approve' : 'Already Approved';
+  if (declineText) declineText.textContent = isPending ? 'Decline' : 'Already Declined';
   if (approveSpinner) approveSpinner.classList.add('hidden');
   if (declineSpinner) declineSpinner.classList.add('hidden');
   if (approveIcon) approveIcon.classList.remove('hidden');
@@ -742,7 +738,7 @@ async function submitReviewDecision(action) {
     if (loadingSpinner) {
       loadingSpinner.className = isApprove
         ? 'w-12 h-12 rounded-full border-3 border-emerald-200 border-t-emerald-600 animate-spin shadow-sm'
-        : 'w-12 h-12 rounded-full border-3 border-rose-200 border-t-rose-600 animate-spin shadow-sm';
+        : 'w-12 h-12 rounded-full border-3 border-orange-200 border-t-orange-600 animate-spin shadow-sm';
     }
     if (loadingTitle) {
       loadingTitle.textContent = isApprove ? 'Approving Absence Clearance...' : 'Declining Excuse Slip...';
@@ -790,15 +786,15 @@ async function submitReviewDecision(action) {
       row.setAttribute('data-status', newStatus);
       const actionBtn = row.querySelector('button[onclick*="openReviewModalFromRow"]');
       if (actionBtn) {
-        actionBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold shadow-2xs transition cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200';
-        actionBtn.textContent = 'Details';
+        actionBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer';
+        actionBtn.textContent = 'View';
         if (slipIdx !== -1) {
           actionBtn.setAttribute('onclick', `openReviewModalFromRow(${JSON.stringify(realSlips[slipIdx]).replace(/"/g, '&quot;')})`);
         }
       }
 
       // Smooth visual highlight flash effect on table row
-      const flashClass = isApprove ? 'bg-emerald-50' : 'bg-rose-50';
+      const flashClass = isApprove ? 'bg-emerald-50/70' : 'bg-rose-50/70';
       row.classList.add(flashClass, 'transition-colors', 'duration-300');
       setTimeout(() => {
         row.classList.remove(flashClass);
@@ -807,8 +803,8 @@ async function submitReviewDecision(action) {
 
     if (statusCol) {
       statusCol.innerHTML = isApprove
-        ? '<span class="badge badge-present font-bold text-emerald-800 bg-emerald-50 border-emerald-200"> Approved</span>'
-        : '<span class="badge badge-absent font-bold text-rose-800 bg-rose-50 border-rose-200"> Declined</span>';
+        ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Approved</span>'
+        : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200/70"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Declined</span>';
     }
 
     closeReviewModal();
@@ -821,8 +817,8 @@ async function submitReviewDecision(action) {
     if (loadingOverlay) loadingOverlay.classList.add('hidden');
     if (approveBtn) approveBtn.disabled = false;
     if (declineBtn) declineBtn.disabled = false;
-    if (approveText) approveText.textContent = 'Approve & Excuse';
-    if (declineText) declineText.textContent = 'Decline / Reject';
+    if (approveText) approveText.textContent = 'Approve';
+    if (declineText) declineText.textContent = 'Decline';
     if (approveSpinner) approveSpinner.classList.add('hidden');
     if (declineSpinner) declineSpinner.classList.add('hidden');
     if (approveIcon) approveIcon.classList.remove('hidden');

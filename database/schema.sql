@@ -185,6 +185,20 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   KEY `idx_audit_entity` (`entity_type`, `entity_id`),
   KEY `idx_audit_action` (`action`, `created_at`),
   CONSTRAINT `fk_audit_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+-- 10. QR Sessions Table (Live class dynamic QR attendance sessions)
+CREATE TABLE IF NOT EXISTS `qr_sessions` (
+  `qr_session_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `teacher_id` INT UNSIGNED NOT NULL,
+  `section` VARCHAR(50) DEFAULT NULL,
+  `qr_code` VARCHAR(255) NOT NULL,
+  `start` DATETIME NOT NULL,
+  `end` DATETIME NOT NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`qr_session_id`),
+  KEY `idx_qr_sessions_teacher` (`teacher_id`),
+  KEY `idx_qr_sessions_active_sec` (`teacher_id`, `section`, `is_active`, `end`),
+  KEY `idx_qr_sessions_code` (`qr_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

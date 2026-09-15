@@ -27,7 +27,7 @@ $teacherSections = $secStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 $actSecStmt = $db->prepare("
     SELECT DISTINCT section
     FROM qr_sessions
-    WHERE teacher_id = ? AND `end` > NOW()
+    WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW()
 ");
 $actSecStmt->execute([$teacherId]);
 $activeSectionsFromDb = $actSecStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -1323,6 +1323,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
             activeSectionsList.push(currentSection);
             updateSectionLiveChips(activeSectionsList);
           }
+          window.lastToastedActiveSessionKey = `${currentSection}_${data.session.qr_session_id}`;
           if (window.APP && typeof APP.showToast === 'function') {
             APP.showToast(`New 6-digit QR generated for Section ${currentSection} (${data.session.qr_code}) — 30m window started!`, 'success');
           }
@@ -1370,6 +1371,16 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
             isReady: false
           });
           showActiveQrState(data.session);
+
+          // If there is still an active QR for this section, show toaster of active QR
+          const sessionToastKey = `${targetSec}_${data.session.qr_session_id}`;
+          if (window.lastToastedActiveSessionKey !== sessionToastKey) {
+            window.lastToastedActiveSessionKey = sessionToastKey;
+            if (window.APP && typeof APP.showToast === 'function') {
+              const minsLeft = Math.ceil((data.session.expires_in_seconds || 1800) / 60);
+              APP.showToast(`Section ${targetSec} has an active QR session running (${data.session.qr_code}) — ~${minsLeft}m remaining`, 'info');
+            }
+          }
         } else {
           setSectionCache(targetSec, {
             hasActive: false,
@@ -1519,38 +1530,43 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       // ONLY SHOW TOP 5 ITEMS IN THE ACTIVE LIVE FEED
       const top5Checkins = activeCheckins.slice(0, 5);
 
-      let html = top5Checkins.map(item => {
-        let badgeClass = 'badge-present';
-        let badgeText = '● Present';
-        let borderBg = 'bg-emerald-50/70 border-emerald-200';
-        let avatarBg = 'bg-emerald-600';
+      let html = top5Checkins.map((item, index) => {
+        let badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+        let badgeDot = 'bg-emerald-500';
+        let badgeText = 'Present';
+        let numBg = 'bg-slate-100 text-slate-700 border border-slate-200/80';
 
         if (item.status === 'tardy') {
-          badgeClass = 'badge-tardy';
-          badgeText = '● Tardy';
-          borderBg = 'bg-amber-50/70 border-amber-200';
-          avatarBg = 'bg-amber-600';
+          badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200';
+          badgeDot = 'bg-amber-500';
+          badgeText = 'Tardy';
+          numBg = 'bg-amber-50 text-amber-800 border border-amber-200/80';
         } else if (item.status === 'absent') {
-          badgeClass = 'bg-rose-100 text-rose-800 border border-rose-200 text-xs px-2 py-0.5 rounded-full font-semibold';
-          badgeText = '● Absent';
-          borderBg = 'bg-rose-50/70 border-rose-200';
-          avatarBg = 'bg-rose-600';
+          badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200';
+          badgeDot = 'bg-rose-500';
+          badgeText = 'Absent';
+          numBg = 'bg-rose-50 text-rose-800 border border-rose-200/80';
         }
 
+        const seqNumber = String(index + 1).padStart(2, '0');
+
         return `
-          <div class="p-3 ${borderBg} border rounded-xl flex items-center justify-between animate-fade-in transition hover:shadow-2xs">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full ${avatarBg} text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                ${escapeHtml(item.initials)}
+          <div class="p-3 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between animate-fade-in transition hover:border-slate-300 hover:shadow-2xs">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-7 h-7 rounded-lg ${numBg} flex items-center justify-center font-mono font-bold text-xs shrink-0 select-none">
+                ${seqNumber}
               </div>
-              <div>
-                <h4 class="text-sm font-bold text-slate-800">${escapeHtml(item.student_name)}</h4>
-                <p class="text-xs font-mono text-slate-600">${escapeHtml(item.student_number)} · Dynamic 6-Digit QR</p>
+              <div class="min-w-0">
+                <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${escapeHtml(item.student_name)}</h4>
+                <p class="text-[11px] font-mono text-slate-500">${escapeHtml(item.student_number)}</p>
               </div>
             </div>
-            <div class="text-right">
-              <span class="${badgeClass}">${badgeText}</span>
-              <p class="text-[11px] text-text-muted mt-0.5 font-mono">${escapeHtml(item.time)}</p>
+            <div class="text-right shrink-0">
+              <span class="${badgeClass}">
+                <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
+                <span>${badgeText}</span>
+              </span>
+              <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${escapeHtml(item.time)}</p>
             </div>
           </div>
         `;
@@ -1652,42 +1668,46 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       }
 
       listEl.innerHTML = items.map((item, idx) => {
-        let badgeClass = 'badge-present';
-        let badgeText = '● Present';
-        let borderBg = 'bg-white border-slate-200';
-        let avatarBg = 'bg-emerald-600';
+        let badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+        let badgeDot = 'bg-emerald-500';
+        let badgeText = 'Present';
+        let numBg = 'bg-slate-100 text-slate-700 border border-slate-200/80';
 
         if (item.status === 'tardy') {
-          badgeClass = 'badge-tardy';
-          badgeText = '● Tardy';
-          borderBg = 'bg-amber-50/40 border-amber-200';
-          avatarBg = 'bg-amber-600';
+          badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200';
+          badgeDot = 'bg-amber-500';
+          badgeText = 'Tardy';
+          numBg = 'bg-amber-50 text-amber-800 border border-amber-200/80';
         } else if (item.status === 'absent') {
-          badgeClass = 'bg-rose-100 text-rose-800 border border-rose-200 text-xs px-2 py-0.5 rounded-full font-semibold';
-          badgeText = '● Absent';
-          borderBg = 'bg-rose-50/40 border-rose-200';
-          avatarBg = 'bg-rose-600';
+          badgeClass = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200';
+          badgeDot = 'bg-rose-500';
+          badgeText = 'Absent';
+          numBg = 'bg-rose-50 text-rose-800 border border-rose-200/80';
         }
 
+        const seqNumber = String(idx + 1).padStart(2, '0');
+
         return `
-          <div class="p-3.5 ${borderBg} border rounded-xl flex items-center justify-between hover:bg-slate-50 transition shadow-2xs">
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-mono font-bold text-slate-400 w-5 text-right">${idx + 1}.</span>
-              <div class="w-10 h-10 rounded-full ${avatarBg} text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                ${escapeHtml(item.initials)}
+          <div class="p-3.5 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between hover:bg-slate-50 transition shadow-2xs">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-7 h-7 rounded-lg ${numBg} flex items-center justify-center font-mono font-bold text-xs shrink-0 select-none">
+                ${seqNumber}
               </div>
-              <div>
-                <h4 class="text-sm font-bold text-slate-900">${escapeHtml(item.student_name)}</h4>
+              <div class="min-w-0">
+                <h4 class="text-sm font-bold text-slate-900 truncate">${escapeHtml(item.student_name)}</h4>
                 <div class="flex items-center gap-2 text-xs text-slate-500 font-mono mt-0.5">
                   <span class="font-semibold text-slate-700">${escapeHtml(item.student_number)}</span>
                   <span>•</span>
-                  <span>${escapeHtml(item.subject || 'Web Systems')}</span>
+                  <span class="truncate">${escapeHtml(item.subject || 'Web Systems')}</span>
                 </div>
               </div>
             </div>
             <div class="text-right shrink-0">
-              <span class="${badgeClass}">${badgeText}</span>
-              <p class="text-[11px] text-slate-500 mt-1 font-mono">${escapeHtml(item.time)}</p>
+              <span class="${badgeClass}">
+                <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
+                <span>${badgeText}</span>
+              </span>
+              <p class="text-[11px] text-slate-400 mt-1 font-mono">${escapeHtml(item.time)}</p>
             </div>
           </div>
         `;
@@ -1850,6 +1870,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         // Clear active session in local state
         activeQrCode = null;
         activeSessionId = null;
+        window.lastToastedActiveSessionKey = null;
         window.cachedActiveCheckins = [];
 
         // Reload feed to get updated absences & today's totals

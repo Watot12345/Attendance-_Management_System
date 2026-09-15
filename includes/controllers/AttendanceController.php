@@ -66,22 +66,24 @@ class AttendanceController {
                 }
                 $qrCode = (string)mt_rand(100000, 999999);
             }
+            // Auto-deactivate any sessions whose 30m window has already passed
+            $db->exec("UPDATE qr_sessions SET is_active = 0 WHERE is_active = 1 AND `end` <= NOW()");
 
-            // Close any existing active sessions for this teacher
-            $closeOld = $db->prepare("UPDATE qr_sessions SET end = NOW() WHERE teacher_id = ? AND end > NOW()");
-            $closeOld->execute([$teacherId]);
+            // Close and deactivate any previously active sessions for this teacher / section to avoid duplication
+            $closeOld = $db->prepare("UPDATE qr_sessions SET is_active = 0, `end` = LEAST(`end`, NOW()) WHERE teacher_id = ? AND (section = ? OR is_active = 1)");
+            $closeOld->execute([$teacherId, $requestedSection]);
 
-            // Insert new 30-minute QR session with section
+            // Insert new 30-minute QR session with is_active = 1 (default true)
             $stmt = $db->prepare("
-                INSERT INTO qr_sessions (teacher_id, section, qr_code, start, `end`, created_at)
-                VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NOW())
+                INSERT INTO qr_sessions (teacher_id, section, qr_code, start, `end`, is_active, created_at)
+                VALUES (?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 MINUTE), 1, NOW())
             ");
             $stmt->execute([$teacherId, $requestedSection, $qrCode]);
             $sessionId = (int)$db->lastInsertId();
 
             // Fetch created session details
             $sStmt = $db->prepare("
-                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
+                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, is_active, created_at,
                        TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
                 FROM qr_sessions
                 WHERE qr_session_id = ?
@@ -126,10 +128,11 @@ class AttendanceController {
                     'qr_code'            => $session['qr_code'],
                     'start'              => $session['start'],
                     'end'                => $session['end'],
+                    'is_active'          => (bool)$session['is_active'],
                     'expires_in_seconds' => max(0, (int)$session['expires_in_seconds']),
                     'course_code'        => $roster['course_code'],
                     'course_title'       => $roster['course_title'],
-                    'section'            => $roster['section'],
+                    'section'            => $session['section'] ?: $roster['section'],
                     'room_number'        => $roster['room_number'] ?? '402',
                     'scheduled_time'     => $roster['scheduled_time'] ?? '08:00:00',
                     'schedule_day'       => $roster['schedule_day'] ?? 'Monday'
@@ -149,7 +152,7 @@ class AttendanceController {
 
     /**
      * GET /api/teacher/qr-session/active
-     * Fetches current active QR session for the logged-in teacher (if within 30 minutes).
+     * Fetches current active QR session for the logged-in teacher (if within 30 minutes and is_active = 1).
      */
     public function getActiveQrSession(): void {
         if (!headers_sent()) {
@@ -161,22 +164,25 @@ class AttendanceController {
             $teacherId = $this->resolveTeacherId($db);
             $reqSection = trim($_GET['section'] ?? '');
 
+            // Auto-deactivate any sessions whose 30m window has already passed
+            $db->exec("UPDATE qr_sessions SET is_active = 0 WHERE is_active = 1 AND `end` <= NOW()");
+
             if (!empty($reqSection)) {
                 $stmt = $db->prepare("
-                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
+                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, is_active, created_at,
                            TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
                     FROM qr_sessions
-                    WHERE teacher_id = ? AND section = ? AND `end` > NOW()
+                    WHERE teacher_id = ? AND section = ? AND is_active = 1 AND `end` > NOW()
                     ORDER BY qr_session_id DESC
                     LIMIT 1
                 ");
                 $stmt->execute([$teacherId, $reqSection]);
             } else {
                 $stmt = $db->prepare("
-                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, created_at,
+                    SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, is_active, created_at,
                            TIMESTAMPDIFF(SECOND, NOW(), `end`) AS expires_in_seconds
                     FROM qr_sessions
-                    WHERE teacher_id = ? AND `end` > NOW()
+                    WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW()
                     ORDER BY qr_session_id DESC
                     LIMIT 1
                 ");
@@ -186,7 +192,7 @@ class AttendanceController {
             $allActStmt = $db->prepare("
                 SELECT DISTINCT section
                 FROM qr_sessions
-                WHERE teacher_id = ? AND `end` > NOW()
+                WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW()
             ");
             $allActStmt->execute([$teacherId]);
             $activeSectionsList = $allActStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -277,14 +283,14 @@ class AttendanceController {
                 if ($sessRow && !empty($sessRow['section'])) {
                     $sessionSection = $sessRow['section'];
                 }
-                $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE qr_session_id = ? AND teacher_id = ?");
+                $closeStmt = $db->prepare("UPDATE qr_sessions SET is_active = 0, `end` = NOW() WHERE qr_session_id = ? AND teacher_id = ?");
                 $closeStmt->execute([$sessionId, $teacherId]);
             } else {
                 if (!empty($sessionSection)) {
-                    $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE teacher_id = ? AND section = ? AND `end` > NOW()");
+                    $closeStmt = $db->prepare("UPDATE qr_sessions SET is_active = 0, `end` = NOW() WHERE teacher_id = ? AND section = ? AND is_active = 1");
                     $closeStmt->execute([$teacherId, $sessionSection]);
                 } else {
-                    $closeStmt = $db->prepare("UPDATE qr_sessions SET `end` = NOW() WHERE teacher_id = ? AND `end` > NOW()");
+                    $closeStmt = $db->prepare("UPDATE qr_sessions SET is_active = 0, `end` = NOW() WHERE teacher_id = ? AND is_active = 1");
                     $closeStmt->execute([$teacherId]);
                 }
             }
@@ -361,14 +367,17 @@ class AttendanceController {
             $today = date('Y-m-d');
             $reqSection = trim($_GET['section'] ?? '');
 
+            // Auto-deactivate any sessions whose 30m window has already passed
+            $db->exec("UPDATE qr_sessions SET is_active = 0 WHERE is_active = 1 AND `end` <= NOW()");
+
             // 1. Check if teacher currently has an active QR session for this section
             $activeSession = null;
             if (!empty($reqSection)) {
-                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, 1 AS is_active FROM qr_sessions WHERE teacher_id = ? AND section = ? AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, is_active FROM qr_sessions WHERE teacher_id = ? AND section = ? AND is_active = 1 AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
                 $sessStmt->execute([$teacherId, $reqSection]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             } else {
-                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, 1 AS is_active FROM qr_sessions WHERE teacher_id = ? AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, is_active FROM qr_sessions WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
                 $sessStmt->execute([$teacherId]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             }
@@ -564,11 +573,11 @@ class AttendanceController {
                 exit;
             }
 
-            // 1. Verify active QR session
+            // 1. Verify active QR session (must have is_active = 1 and end > NOW())
             $sessStmt = $db->prepare("
-                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`
+                SELECT qr_session_id, teacher_id, section, qr_code, start, `end`, is_active
                 FROM qr_sessions
-                WHERE qr_code = ? AND `end` > NOW()
+                WHERE qr_code = ? AND is_active = 1 AND `end` > NOW()
                 ORDER BY qr_session_id DESC
                 LIMIT 1
             ");
