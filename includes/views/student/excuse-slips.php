@@ -123,52 +123,147 @@ try {
     $enrolledTeachers = [];
 }
 
+// Compute aggregate metrics for summary KPI cards
+$slipCounts = [
+    'total'    => count($slips),
+    'pending'  => 0,
+    'approved' => 0,
+    'declined' => 0,
+];
+foreach ($slips as $s) {
+    $st = strtolower($s['status'] ?? 'pending');
+    if ($st === 'approved') {
+        $slipCounts['approved']++;
+    } elseif ($st === 'declined' || $st === 'rejected') {
+        $slipCounts['declined']++;
+    } else {
+        $slipCounts['pending']++;
+    }
+}
+
 require_once dirname(__DIR__) . '/partials/header.php';
 ?>
 
 <div class="app-layout">
   <?php require_once dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-  <div class="main-content">
+  <div class="main-content min-w-0">
     <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
 
     <main class="page-body">
       <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <div class="flex items-center gap-2 mb-1">
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
             <span class="badge badge-present">Student Portal</span>
-            <span class="text-xs text-slate-500 font-medium"><?php echo htmlspecialchars($studentName); ?> • <?php echo htmlspecialchars($studentSection); ?></span>
+            <span class="text-xs text-slate-400 font-medium">•</span>
+            <span class="text-xs text-slate-600 font-semibold"><?php echo htmlspecialchars($studentName); ?> (<?php echo htmlspecialchars($studentSection); ?>)</span>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">Excuse Slips &amp; Absence Clearance</h1>
-          <p class="text-sm text-slate-500">Submit justifications, manage requests, and track approval status with Supabase Cloud Storage.</p>
+          <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Excuse Slips &amp; Absence Clearance</h1>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">Submit justification letters, attach doctor certificates, and monitor faculty clearance decisions.</p>
         </div>
 
-      </div>      <!-- Main Content Grid -->
-      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        <!-- Submit Form (4 cols on xl, full width on smaller) -->
-        <div class="xl:col-span-4 bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-          <div class="flex items-center justify-between mb-1">
-            <h2 class="font-bold text-slate-800 text-base">Submit New Excuse Slip</h2>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Step 1</span>
-          </div>
-          <p class="text-xs text-slate-500 mb-4">Your course instructor will review the attached certificate and update attendance records.</p>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" onclick="refreshSlips(true)" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
 
-          <form id="excuse-slip-form" onsubmit="event.preventDefault(); submitExcuseSlip();" class="space-y-4">
+      <!-- KPI Summary Cards (Unified Cohesive Color Theme - Clickable Filters) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 w-full min-w-0 max-w-full">
+        <!-- Card 1: Total Slips -->
+        <div onclick="setFilterStatus('all')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Total Submissions</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900" id="kpi-total-count"><?php echo $slipCounts['total']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">records</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">All absence requests</p>
+        </div>
+
+        <!-- Card 2: Pending Review -->
+        <div onclick="setFilterStatus('pending')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Pending Review</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900" id="kpi-pending-count"><?php echo $slipCounts['pending']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">awaiting decision</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Faculty action needed</p>
+        </div>
+
+        <!-- Card 3: Approved & Cleared -->
+        <div onclick="setFilterStatus('approved')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Approved &amp; Cleared</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900" id="kpi-approved-count"><?php echo $slipCounts['approved']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">cleared</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Absences validated</p>
+        </div>
+
+        <!-- Card 4: Declined -->
+        <div onclick="setFilterStatus('declined')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Declined Slips</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900" id="kpi-declined-count"><?php echo $slipCounts['declined']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">unexcused</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Requires revision / info</p>
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 sm:gap-6 items-start w-full min-w-0 max-w-full">
+        <!-- Submit Form (5 cols on xl, full width on smaller) -->
+        <div class="xl:col-span-5 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm w-full min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </div>
+              <h2 class="font-bold text-slate-900 text-sm sm:text-base">Submit New Excuse Slip</h2>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">Step 1 of 2</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-4 pl-9">Course instructors will review your certificate and update attendance records.</p>
+
+          <form id="excuse-slip-form" onsubmit="event.preventDefault(); submitExcuseSlip();" class="space-y-4 text-xs">
             <input type="hidden" id="excuse-student-id" value="<?php echo $studentId; ?>">
 
             <?php if (count($enrolledClasses) > 1): ?>
             <!-- Send to All Subject Teachers Checkbox Banner -->
-            <div class="p-3 rounded-xl bg-gradient-to-r from-indigo-50/90 to-blue-50/70 border border-indigo-200/90 shadow-2xs">
+            <div class="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/90 to-blue-50/70 border border-indigo-200/90 shadow-2xs">
               <label class="flex items-start gap-2.5 cursor-pointer select-none">
-                <input type="checkbox" id="send-to-all-teachers" name="send_to_all" value="1" onchange="toggleSendToAllTeachers(this.checked)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600">
-                <div class="flex-1">
+                <input type="checkbox" id="send-to-all-teachers" name="send_to_all" value="1" onchange="toggleSendToAllTeachers(this.checked)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer accent-indigo-600 shrink-0">
+                <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5 font-bold text-xs text-indigo-950 flex-wrap">
                     <span>Send to All Subject Teachers</span>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-800">Whole Day Absence</span>
                   </div>
                   <p class="text-[11px] text-indigo-700/90 mt-0.5 leading-snug">
-                    Submit once to deliver your excuse slip and documents to all course instructors at the same time.
+                    Submit once to notify all <?php echo count($enrolledClasses); ?> class instructors at the same time.
                   </p>
                 </div>
               </label>
@@ -178,14 +273,14 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <!-- Subject Selection (Populated exclusively from Class Roster) -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label for="excuse-subject" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Class / Subject *</label>
+                <label for="excuse-subject" class="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">Class / Subject *</label>
                 <?php if (count($enrolledClasses) > 1): ?>
                 <span id="subject-all-indicator" class="hidden text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
                   All <?php echo count($enrolledClasses); ?> Classes Selected
                 </span>
                 <?php endif; ?>
               </div>
-              <select id="excuse-subject" name="subject" onchange="handleSubjectDropdownChange(this.value)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+              <select id="excuse-subject" name="subject" onchange="handleSubjectDropdownChange(this.value)" class="w-full px-3 py-2.5 rounded-xl border border-slate-200/90 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer" required>
                 <?php if (!empty($enrolledClasses)): ?>
                   <option value="">Select subject or send to all...</option>
                   <?php if (count($enrolledClasses) > 1): ?>
@@ -212,7 +307,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <?php endif; ?>
 
               <!-- Recipient Teachers Summary Pill List (Populated dynamically from Class Roster) -->
-              <div id="recipient-teachers-box" class="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+              <div id="recipient-teachers-box" class="mt-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 text-[11px] text-slate-600 space-y-1.5">
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Faculty receiving this request:</div>
                 <div id="recipient-pills" class="flex flex-wrap gap-1.5">
                   <?php if (!empty($enrolledTeachers)): ?>
@@ -220,9 +315,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
                       <span id="pill-teacher-<?php echo $tId; ?>" 
                             data-teacher-id="<?php echo $tId; ?>"
                             data-subjects="<?php echo htmlspecialchars(implode(',', $tInfo['subjects'])); ?>"
-                            class="teacher-recipient-pill inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium transition-opacity">
+                            class="teacher-recipient-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium transition-opacity">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        <?php echo htmlspecialchars($tInfo['teacher_name'] . ' (' . implode(', ', $tInfo['subjects']) . ')'); ?>
+                        <span><?php echo htmlspecialchars($tInfo['teacher_name']); ?></span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold"><?php echo htmlspecialchars(implode(', ', $tInfo['subjects'])); ?></span>
                       </span>
                     <?php endforeach; ?>
                   <?php else: ?>
@@ -234,14 +330,14 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <!-- Date of Absence -->
             <div>
-              <label for="excuse-date" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Date of Absence *</label>
-              <input type="date" id="excuse-date" name="date_of_absence" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required value="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d'); ?>">
+              <label for="excuse-date" class="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">Date of Absence *</label>
+              <input type="date" id="excuse-date" name="date_of_absence" class="w-full px-3 py-2.5 rounded-xl border border-slate-200/90 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" required value="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d'); ?>">
             </div>
 
             <!-- Reason Category -->
             <div>
-              <label for="excuse-category" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Reason Category *</label>
-              <select id="excuse-category" name="reason" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+              <label for="excuse-category" class="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">Reason Category *</label>
+              <select id="excuse-category" name="reason" class="w-full px-3 py-2.5 rounded-xl border border-slate-200/90 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer" required>
                 <option value="Medical / Illness (with doctor's note)">Medical / Illness (with doctor's note)</option>
                 <option value="Family / Personal Emergency">Family / Personal Emergency</option>
                 <option value="Official Institutional Activity / Competition">Official Institutional Activity / Competition</option>
@@ -252,13 +348,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
             <!-- Explanation -->
             <div>
-              <label for="excuse-reason" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Detailed Explanation *</label>
-              <textarea id="excuse-reason" name="explanation" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Please provide specific context and details for your absence..." required></textarea>
+              <label for="excuse-reason" class="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">Detailed Explanation *</label>
+              <textarea id="excuse-reason" name="explanation" rows="3" class="w-full px-3 py-2.5 rounded-xl border border-slate-200/90 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" placeholder="Please provide specific context and details for your absence..." required></textarea>
             </div>
 
             <!-- Supporting Document (Supabase Storage) -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label class="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
                 Supporting Document (Image or PDF)
               </label>
 
@@ -268,26 +364,26 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <!-- Drag & Drop Zone -->
               <div id="drop-zone" onclick="document.getElementById('excuse-file').click()"
                    ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)"
-                   class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:border-indigo-400 hover:bg-indigo-50/20 transition cursor-pointer bg-slate-50 relative group">
+                   class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-indigo-400 hover:bg-indigo-50/20 transition cursor-pointer bg-slate-50/50 relative group">
                 <div id="upload-prompt" class="space-y-1">
-                  <div class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                   </div>
-                  <span class="text-xs text-slate-700 font-medium block">Click or drag &amp; drop document</span>
-                  <p class="text-[10px] text-slate-400">PNG, JPG, PDF up to 10MB (Supabase)</p>
+                  <span class="text-xs text-slate-700 font-bold block">Click or drag &amp; drop document</span>
+                  <p class="text-[10px] text-slate-400">PNG, JPG, PDF up to 10MB (Supabase Cloud Storage)</p>
                 </div>
 
                 <!-- Selected File Preview Card -->
-                <div id="file-preview-card" class="hidden text-left bg-white p-2.5 rounded-lg border border-slate-200 flex items-center justify-between gap-2 shadow-2xs">
+                <div id="file-preview-card" class="hidden text-left bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2 shadow-2xs">
                   <div class="flex items-center gap-2.5 overflow-hidden">
-                    <div id="preview-thumbnail" class="w-9 h-9 rounded bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0 border border-slate-200">
+                    <div id="preview-thumbnail" class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0 border border-slate-200">
                     </div>
                     <div class="min-w-0">
                       <p id="preview-filename" class="text-xs font-semibold text-slate-800 truncate max-w-[140px]">document.png</p>
                       <p id="preview-filesize" class="text-[10px] text-slate-400">0 KB</p>
                     </div>
                   </div>
-                  <button type="button" onclick="event.stopPropagation(); removeSelectedFile();" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" title="Remove file">
+                  <button type="button" onclick="event.stopPropagation(); removeSelectedFile();" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" title="Remove file">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                   </button>
                 </div>
@@ -313,7 +409,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" id="submit-btn" class="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            <button type="submit" id="submit-btn" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
               <span id="btn-text">Submit Excuse Slip for Review</span>
               <svg id="btn-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               <svg id="btn-spinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -321,28 +417,42 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </form>
         </div>
 
-        <!-- Excuse Slips 2-Column Grid & Pagination (8 cols on xl, full on smaller) -->
-        <div class="xl:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+        <!-- Excuse Slips 2-Column Grid & Pagination (7 cols on xl, full on smaller) -->
+        <div class="xl:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-6 w-full min-w-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-100">
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="font-bold text-slate-800 text-base">Submitted Requests &amp; Status</h2>
-                <span id="cache-indicator" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500" title="Client cache active">⚡ Cached</span>
+                <h2 class="font-bold text-slate-900 text-sm sm:text-base">Submitted Requests &amp; Status</h2>
+                <span id="cache-indicator" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="Live Database Status">⚡ Live Database</span>
               </div>
-              <p class="text-xs text-slate-400 mt-0.5">2-Column view with live Supabase document modals &amp; actions</p>
+              <p class="text-xs text-slate-400 mt-0.5">2-Column card grid with instant document preview and status tracking</p>
             </div>
 
-            <!-- Filter / Search Row -->
             <div class="flex items-center gap-2">
-              <select id="filter-status" onchange="applyFilters()" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending Review</option>
-                <option value="approved">Approved</option>
-                <option value="declined">Declined</option>
-              </select>
-              <span id="record-counter" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
-                0 records
+              <span id="record-counter" class="text-xs font-bold px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 shrink-0">
+                <?php echo count($slips); ?> records
               </span>
+            </div>
+          </div>
+
+          <!-- Search & Filter Controls Bar -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 mb-4">
+            <!-- Search Bar -->
+            <div class="sm:col-span-7 relative w-full min-w-0">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </div>
+              <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Search subject, reason, or date..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition">
+            </div>
+
+            <!-- Status Filter -->
+            <div class="sm:col-span-5 w-full min-w-0">
+              <select id="filter-status" onchange="applyFilters()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50/60 hover:bg-white focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer">
+                <option value="all">All Statuses (<?php echo $slipCounts['total']; ?>)</option>
+                <option value="pending">Pending Review (<?php echo $slipCounts['pending']; ?>)</option>
+                <option value="approved">Approved &amp; Cleared (<?php echo $slipCounts['approved']; ?>)</option>
+                <option value="declined">Declined (<?php echo $slipCounts['declined']; ?>)</option>
+              </select>
             </div>
           </div>
 
@@ -369,27 +479,27 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
 
           <!-- 2-COLUMN CARDS GRID -->
-          <div id="slips-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[200px]">
+          <div id="slips-container" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 min-h-[200px] w-full min-w-0">
             <!-- JavaScript Populates 2-Column Cards Here -->
           </div>
 
           <!-- Empty State -->
-          <div id="empty-state" class="hidden p-12 text-center border-2 border-dashed border-slate-200 rounded-xl my-4">
-            <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto mb-2">
+          <div id="empty-state" class="hidden p-12 text-center border-2 border-dashed border-slate-200 rounded-2xl my-4">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto mb-2.5">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
-            <p class="text-sm font-semibold text-slate-700">No excuse slips found</p>
-            <p class="text-xs text-slate-400 mt-1">Submit your first slip on the left to request an absence clearance.</p>
+            <p class="text-sm font-bold text-slate-800">No excuse slips found</p>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Submit your first excuse slip on the left to request an absence clearance from your course instructors.</p>
           </div>
 
           <!-- PAGINATION CONTROLS -->
-          <div id="pagination-wrapper" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 mt-4 border-t border-slate-100">
-            <div id="pagination-info" class="text-xs text-slate-500">
+          <div id="pagination-wrapper" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-100">
+            <div id="pagination-info" class="text-xs text-slate-500 font-medium">
               Showing page <strong id="current-page-num" class="text-slate-800">1</strong> of <strong id="total-pages-num" class="text-slate-800">1</strong>
             </div>
 
             <div class="flex items-center gap-1.5">
-              <button type="button" id="btn-prev-page" onclick="changePage(-1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer">
+              <button type="button" id="btn-prev-page" onclick="changePage(-1)" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 <span>Prev</span>
               </button>
@@ -398,7 +508,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <!-- Page buttons injected via JS -->
               </div>
 
-              <button type="button" id="btn-next-page" onclick="changePage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer">
+              <button type="button" id="btn-next-page" onclick="changePage(1)" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer">
                 <span>Next</span>
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               </button>
@@ -722,24 +832,66 @@ async function refreshSlips(force = false) {
   }
 }
 
-function applyFilters() {
-  const status = document.getElementById('filter-status').value;
-  if (status === 'all') {
-    filteredSlips = [...allSlips];
-  } else if (status === 'declined') {
-    filteredSlips = allSlips.filter(s => {
-      const st = (s.status || '').toLowerCase();
-      return st === 'declined' || st === 'rejected';
-    });
-  } else {
-    filteredSlips = allSlips.filter(s => (s.status || '').toLowerCase() === status.toLowerCase());
+function setFilterStatus(statusVal) {
+  const filterSelect = document.getElementById('filter-status');
+  if (filterSelect) {
+    filterSelect.value = statusVal;
   }
+  applyFilters();
+}
+
+function updateKPIBadges() {
+  let pending = 0, approved = 0, declined = 0;
+  allSlips.forEach(s => {
+    const st = (s.status || 'pending').toLowerCase();
+    if (st === 'approved') approved++;
+    else if (st === 'declined' || st === 'rejected') declined++;
+    else pending++;
+  });
+  const elPending = document.getElementById('kpi-pending-count');
+  const elApproved = document.getElementById('kpi-approved-count');
+  const elDeclined = document.getElementById('kpi-declined-count');
+  const elTotal = document.getElementById('kpi-total-count');
+  if (elPending) elPending.textContent = pending;
+  if (elApproved) elApproved.textContent = approved;
+  if (elDeclined) elDeclined.textContent = declined;
+  if (elTotal) elTotal.textContent = allSlips.length;
+}
+
+function applyFilters() {
+  const statusEl = document.getElementById('filter-status');
+  const searchEl = document.getElementById('filter-search');
+  const status = statusEl ? statusEl.value : 'all';
+  const query = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+  filteredSlips = allSlips.filter(s => {
+    // Status Filter
+    const st = (s.status || 'pending').toLowerCase();
+    if (status === 'pending' && st !== 'pending') return false;
+    if (status === 'approved' && st !== 'approved') return false;
+    if (status === 'declined' && st !== 'declined' && st !== 'rejected') return false;
+
+    // Search Query Filter
+    if (query) {
+      const matchSubj = (s.subject || '').toLowerCase().includes(query);
+      const matchReason = (s.reason || '').toLowerCase().includes(query);
+      const matchExp = (s.explanation || '').toLowerCase().includes(query);
+      const matchDate = (s.date_of_absence || '').toLowerCase().includes(query);
+      const matchTeacher = (s.teacher_name || '').toLowerCase().includes(query);
+      const matchId = String(s.excuse_slip_id || '').includes(query);
+      if (!matchSubj && !matchReason && !matchExp && !matchDate && !matchTeacher && !matchId) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const counter = document.getElementById('record-counter');
   if (counter) {
     counter.textContent = `${filteredSlips.length} record${filteredSlips.length === 1 ? '' : 's'}`;
   }
 
+  updateKPIBadges();
   currentPage = 1;
   updateBulkActionBar();
   renderCurrentPage();
@@ -792,9 +944,9 @@ function renderPaginationButtons(totalPages) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = i;
-    btn.className = `w-7 h-7 rounded-lg text-xs font-semibold transition cursor-pointer ${
+    btn.className = `w-7 h-7 rounded-xl text-xs font-bold transition cursor-pointer ${
       i === currentPage
-        ? 'bg-indigo-600 text-white shadow-2xs'
+        ? 'bg-indigo-600 text-white shadow-sm'
         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
     }`;
     btn.onclick = () => {
@@ -815,29 +967,36 @@ function createSlipCardElement(slip) {
   const card = document.createElement('div');
   card.id = `slip-card-${slip.excuse_slip_id}`;
   card.setAttribute('data-slip-id', slip.excuse_slip_id);
-  card.className = `bg-white rounded-xl border p-4 shadow-2xs transition-all duration-300 hover:shadow-md flex flex-col justify-between relative overflow-hidden ${
-    isSelected ? 'ring-2 ring-rose-500 bg-rose-50/20' : ''
+  card.className = `bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between relative overflow-hidden group w-full min-w-0 ${
+    isSelected ? 'ring-2 ring-rose-500 bg-rose-50/20 border-rose-300' : ''
   }`;
 
   const status = (slip.status || 'pending').toLowerCase();
   const isDeclined = (status === 'declined' || status === 'rejected');
   const isApproved = (status === 'approved');
 
-  let badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
-  let borderClass = 'border-amber-200 bg-amber-50/20';
-  let statusText = 'PENDING REVIEW';
+  let badgeMarkup = `
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+      <span>Pending Review</span>
+    </span>
+  `;
 
   if (isApproved) {
-    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    borderClass = 'border-emerald-200 bg-emerald-50/20';
-    statusText = 'APPROVED';
+    badgeMarkup = `
+      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+        <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        <span>Approved</span>
+      </span>
+    `;
   } else if (isDeclined) {
-    badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
-    borderClass = 'border-rose-300 bg-rose-50/30';
-    statusText = 'DECLINED';
+    badgeMarkup = `
+      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+        <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        <span>Declined</span>
+      </span>
+    `;
   }
-
-  borderClass.split(' ').forEach(cls => card.classList.add(cls));
 
   const absenceFormatted = new Date(slip.date_of_absence + 'T00:00:00').toLocaleDateString('en-US', {
     month: 'short',
@@ -847,20 +1006,20 @@ function createSlipCardElement(slip) {
 
   const hasDoc = Boolean(slip.supporting_document);
   const docAction = hasDoc
-    ? `<button type="button" onclick="openImageModal('${escapeJsStr(slip.supporting_document)}', 'Slip #${slip.excuse_slip_id}')" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-indigo-200 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-semibold transition shadow-2xs text-[11px] cursor-pointer">
-         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-         <span>View Doc</span>
+    ? `<button type="button" onclick="openImageModal('${escapeJsStr(slip.supporting_document)}', 'Slip #${slip.excuse_slip_id}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 text-indigo-700 font-bold transition shadow-2xs text-[11px] cursor-pointer">
+         <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+         <span>View Document</span>
        </button>`
     : `<span class="text-[11px] text-slate-400 italic">No document</span>`;
 
   const isPending = status === 'pending';
   const editBtn = isPending
-    ? `<button type="button" onclick="openEditModal(${slip.excuse_slip_id})" class="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer" title="Edit Slip">
+    ? `<button type="button" onclick="openEditModal(${slip.excuse_slip_id})" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer" title="Edit Slip">
          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
        </button>`
     : '';
 
-  const deleteBtn = `<button type="button" onclick="openDeleteModal(${slip.excuse_slip_id})" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer" title="Delete Slip">
+  const deleteBtn = `<button type="button" onclick="openDeleteModal(${slip.excuse_slip_id})" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" title="Delete Slip">
        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
      </button>`;
 
@@ -868,14 +1027,14 @@ function createSlipCardElement(slip) {
   let declinedBanner = '';
   if (isDeclined) {
     const declineText = slip.declined_reason ? escapeHtml(slip.declined_reason) : 'Declined by instructor during review.';
-    const reviewerLabel = slip.teacher_name ? `Instructor Feedback (${escapeHtml(slip.teacher_name)})` : 'Decline Reason';
+    const reviewerLabel = slip.teacher_name ? `Faculty Feedback (${escapeHtml(slip.teacher_name)})` : 'Decline Reason';
     declinedBanner = `
-      <div class="mb-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200/90 text-rose-900 text-[11px] leading-relaxed shadow-2xs">
+      <div class="mb-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200/90 text-rose-900 text-[11px] leading-relaxed shadow-2xs">
         <div class="flex items-center gap-1.5 font-bold text-rose-700 mb-1">
           <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           <span>${reviewerLabel}:</span>
         </div>
-        <div class="pl-5 font-semibold text-rose-900 bg-white/80 p-1.5 rounded border border-rose-100">
+        <div class="font-medium text-rose-950 bg-white/90 p-2 rounded-lg border border-rose-100">
           "${declineText}"
         </div>
       </div>
@@ -886,43 +1045,52 @@ function createSlipCardElement(slip) {
   let approvedBanner = '';
   if (isApproved) {
     approvedBanner = `
-      <div class="mb-3 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center gap-1.5 font-medium shadow-2xs">
+      <div class="mb-3 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center gap-1.5 font-bold shadow-2xs">
         <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        <span>Absence cleared &amp; marked as Excused in official records.</span>
+        <span>Absence cleared &amp; marked Excused in official records.</span>
       </div>
     `;
   }
 
   card.innerHTML = `
-    <div>
-      <div class="flex items-center justify-between gap-1 mb-2">
+    <div class="min-w-0">
+      <!-- Card Header: Checkbox + Status Badge + ID + Actions -->
+      <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
         <div class="flex items-center gap-2">
           <input type="checkbox" 
                  class="slip-select-checkbox w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300 accent-rose-600 cursor-pointer" 
                  data-slip-id="${slip.excuse_slip_id}" 
                  ${isSelected ? 'checked' : ''} 
                  onchange="handleSlipCheckboxChange(${slip.excuse_slip_id}, this.checked)">
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">
-            ${statusText}
-          </span>
+          ${badgeMarkup}
         </div>
         <div class="flex items-center gap-1">
-          <span class="text-[10px] font-mono text-slate-400 mr-0.5">#${slip.excuse_slip_id}</span>
+          <span class="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#${slip.excuse_slip_id}</span>
           ${editBtn}
           ${deleteBtn}
         </div>
       </div>
 
-      <h3 class="font-bold text-slate-800 text-xs leading-snug line-clamp-1 mb-1" title="${escapeHtml(slip.subject)}">
+      <!-- Subject & Instructor -->
+      <h3 class="font-bold text-slate-900 text-xs sm:text-sm leading-snug mb-1 line-clamp-1" title="${escapeHtml(slip.subject)}">
         ${escapeHtml(slip.subject)}
       </h3>
-      <div class="text-[11px] text-slate-500 mb-2">
-        <span>📅 ${absenceFormatted}</span> &bull; <span class="font-medium text-slate-700">${escapeHtml(slip.reason)}</span>
+
+      <!-- Date & Reason Tags -->
+      <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 mb-2.5">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-slate-700">
+          <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          ${absenceFormatted}
+        </span>
+        <span class="px-2 py-0.5 rounded-md bg-indigo-50/70 border border-indigo-100 text-indigo-700 font-semibold truncate max-w-[200px]">
+          ${escapeHtml(slip.reason)}
+        </span>
       </div>
 
-      <div class="mb-2.5">
-        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-0.5">Your Explanation:</span>
-        <p class="text-[11px] text-slate-600 bg-white/90 p-2 rounded-md border border-slate-200/70 line-clamp-2" title="${escapeHtml(slip.explanation)}">
+      <!-- Explanation Quote -->
+      <div class="mb-3">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Your Explanation:</span>
+        <p class="text-[11px] text-slate-600 bg-slate-50/90 p-2.5 rounded-xl border border-slate-200/70 line-clamp-2 italic" title="${escapeHtml(slip.explanation)}">
           "${escapeHtml(slip.explanation)}"
         </p>
       </div>
@@ -931,10 +1099,11 @@ function createSlipCardElement(slip) {
       ${approvedBanner}
     </div>
 
-    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+    <!-- Card Footer -->
+    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
       ${docAction}
-      <span class="text-[10px] text-slate-400">
-        ${new Date(slip.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      <span class="text-[10px] font-medium text-slate-400">
+        Submitted ${new Date(slip.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
       </span>
     </div>
   `;

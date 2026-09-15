@@ -223,7 +223,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
               <?php endforeach; ?>
             </select>
 
-            <button type="button" id="btn-header-generate" class="btn btn-primary text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer" onclick="manualGenerateQR(this)" title="Generate dynamic QR session">
+            <button type="button" id="btn-header-generate" class="btn btn-primary text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer" onclick="requestGenerateQR(this)" title="Generate dynamic QR session">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               <span>Generate QR</span>
             </button>
@@ -270,7 +270,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                 <p class="text-[11px] text-slate-500 mt-0.5 mb-3 leading-tight">
                   Ready to start session
                 </p>
-                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="manualGenerateQR(this)">
+                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   <span>Generate QR</span>
                 </button>
@@ -296,7 +296,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                 <p class="text-[11px] text-slate-500 mt-0.5 mb-3 leading-tight">
                   Attendance window ended
                 </p>
-                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="manualGenerateQR(this)">
+                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   <span>Generate QR</span>
                 </button>
@@ -309,7 +309,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                   <svg id="icon-resume-session" class="w-3.5 h-3.5 text-teal-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   <span id="text-pause-resume">Pause</span>
                 </button>
-                <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-1.5 py-2 px-3.5 shadow-2xs rounded-xl cursor-pointer" onclick="manualGenerateQR(this)" title="Rotate QR code">
+                <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-1.5 py-2 px-3.5 shadow-2xs rounded-xl cursor-pointer" onclick="openRotateQRModal()" title="Rotate QR code">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   <span>Rotate QR</span>
                 </button>
@@ -380,9 +380,107 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     </div>
   </div>
 
-  <!-- ════ CLOSE SESSION CONFIRMATION MODAL ════ -->
-  <div id="close-session-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
+  <!-- ════ 1. START SESSION CONFIRMATION MODAL ════ -->
+  <div id="start-session-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'start-session-modal')">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
+      <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Start Live Attendance Session?</h3>
+      <p class="text-sm text-text-secondary text-center mb-5">
+        This will generate an active 6-digit dynamic QR code for enrolled students to scan.
+      </p>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2 mb-6">
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Target Section:</span>
+          <span class="font-bold text-slate-900" id="start-modal-section">Section <?= htmlspecialchars($selectedSectionKey) ?></span>
+        </div>
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Course:</span>
+          <span class="font-semibold text-slate-800 truncate max-w-[200px]" id="start-modal-course"><?= htmlspecialchars($selectedSectionInfo['course_code'] ?? '') ?> - <?= htmlspecialchars($selectedSectionInfo['course_title'] ?? '') ?></span>
+        </div>
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Session Duration:</span>
+          <span class="font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60">30 Minutes</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Room:</span>
+          <span class="font-medium text-slate-700" id="start-modal-room">Room <?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?></span>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeStartSessionModal()">Cancel</button>
+        <button type="button" id="confirm-start-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedStartSession(this)">Start Live Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 2. ROTATE QR CONFIRMATION MODAL ════ -->
+  <div id="rotate-qr-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'rotate-qr-modal')">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Rotate QR Attendance Code?</h3>
+      <p class="text-sm text-text-secondary text-center mb-5">
+        Rotating the QR code will <strong>immediately expire the previous 6-digit token</strong> and generate a new dynamic code for section <strong id="rotate-modal-section"><?= htmlspecialchars($selectedSectionKey) ?></strong>.
+      </p>
+
+      <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80 text-xs text-amber-900 mb-6 flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>Students attempting to scan the old screenshot or projected code will need to scan the new code. Checked-in students will remain present.</span>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeRotateQRModal()">Cancel</button>
+        <button type="button" id="confirm-rotate-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedRotateQR(this)">Rotate QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 3. SWITCH SECTION DURING ACTIVE SESSION MODAL ════ -->
+  <div id="switch-section-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'switch-section-modal')">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
+      <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Switch Class Section?</h3>
+      <p class="text-sm text-text-secondary text-center mb-5">
+        You have an active live session currently running for <strong id="switch-modal-current-section">Section <?= htmlspecialchars($selectedSectionKey) ?></strong>.
+      </p>
+
+      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2 mb-6">
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500">Current Live Section:</span>
+          <span class="font-bold text-emerald-700 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="switch-modal-curr-name">Section <?= htmlspecialchars($selectedSectionKey) ?> (Live)</span>
+          </span>
+        </div>
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500">Target Section:</span>
+          <span class="font-bold text-slate-900" id="switch-modal-target-name">Section ...</span>
+        </div>
+        <p class="text-[11px] text-slate-500 pt-1 border-t border-slate-200 leading-relaxed">
+          Switching will change your screen view to the target section. The active session on Section <span id="switch-modal-note-section"><?= htmlspecialchars($selectedSectionKey) ?></span> will continue running in the background until it expires or is closed.
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeSwitchSectionModal()">Stay Here</button>
+        <button type="button" id="confirm-switch-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedSwitchSection()">Switch Section</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 4. CLOSE SESSION CONFIRMATION MODAL ════ -->
+  <div id="close-session-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleModalBackdropClick(event, 'close-session-modal')">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
       <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
@@ -633,7 +731,11 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     function selectSectionFromDropdown(secVal) {
       toggleSectionSwitcherDropdown(true);
       if (String(secVal) !== String(currentSection)) {
-        onSectionChange(secVal);
+        if (activeQrCode && activeSessionId) {
+          openSwitchSectionModal(secVal);
+        } else {
+          onSectionChange(secVal);
+        }
       }
     }
 
@@ -651,7 +753,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       });
     }
 
-    // Dismiss dropdown on click outside or Escape
+    // Dismiss dropdown and modals on click outside or Escape
     document.addEventListener('click', (e) => {
       const container = document.getElementById('section-switcher-container');
       if (container && !container.contains(e.target)) {
@@ -661,6 +763,11 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         toggleSectionSwitcherDropdown(true);
+        closeStartSessionModal();
+        closeRotateQRModal();
+        closeSwitchSectionModal();
+        closeModal();
+        closePresentStudentsModal();
       }
     });
 
@@ -726,6 +833,36 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     const SESSION_CACHE_KEY = 'ams_live_session_cache_v2';
     window.AMS_SESSION_CACHE = {};
 
+    function getPersistentPauseState(sec, sessId = null) {
+      try {
+        const raw = localStorage.getItem('ams_pause_state_' + sec);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (sessId && data.pausedSessionId && String(data.pausedSessionId) !== String(sessId)) {
+          localStorage.removeItem('ams_pause_state_' + sec);
+          return null;
+        }
+        return data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setPersistentPauseState(sec, isPaused, remainingSecs = 0, sessId = null) {
+      try {
+        if (isPaused) {
+          localStorage.setItem('ams_pause_state_' + sec, JSON.stringify({
+            isPaused: true,
+            remainingSeconds: Number(remainingSecs) || 0,
+            pausedSessionId: sessId,
+            pausedAt: Date.now()
+          }));
+        } else {
+          localStorage.removeItem('ams_pause_state_' + sec);
+        }
+      } catch (e) {}
+    }
+
     function getSectionCache(sec) {
       const sKey = String(sec);
       if (window.AMS_SESSION_CACHE && window.AMS_SESSION_CACHE[sKey]) {
@@ -758,13 +895,21 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
 
       // 1. Restore QR Session State if valid
       if (cached.hasActive && cached.session && cached.session.qr_code) {
-        const elapsedSecs = Math.floor((Date.now() - (cached.cachedAt || Date.now())) / 1000);
-        const adjExpires = (cached.session.expires_in_seconds || 1800) - elapsedSecs;
-        if (adjExpires > 5) {
-          const adjSession = Object.assign({}, cached.session, { expires_in_seconds: adjExpires });
+        const pauseState = getPersistentPauseState(secVal, cached.session.qr_session_id);
+        if (pauseState && pauseState.isPaused) {
+          const adjSession = Object.assign({}, cached.session, {
+            expires_in_seconds: pauseState.remainingSeconds
+          });
           showActiveQrState(adjSession);
         } else {
-          showEmptyQrState();
+          const elapsedSecs = Math.floor((Date.now() - (cached.cachedAt || Date.now())) / 1000);
+          const adjExpires = (cached.session.expires_in_seconds || 1800) - elapsedSecs;
+          if (adjExpires > 5) {
+            const adjSession = Object.assign({}, cached.session, { expires_in_seconds: adjExpires });
+            showActiveQrState(adjSession);
+          } else {
+            showEmptyQrState();
+          }
         }
       } else if (cached.isReady) {
         showReadyToGenerateState();
@@ -960,6 +1105,12 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       }
 
       isSessionPaused = !isSessionPaused;
+      setPersistentPauseState(currentSection, isSessionPaused, remainingSeconds, activeSessionId);
+      setSectionCache(currentSection, {
+        isPaused: isSessionPaused,
+        pausedRemainingSeconds: remainingSeconds
+      });
+
       if (isSessionPaused) {
         if (timerInterval) {
           clearInterval(timerInterval);
@@ -995,6 +1146,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       activeQrCode = null;
       activeSessionId = null;
       isSessionPaused = false;
+      setPersistentPauseState(currentSection, false);
       updatePauseResumeUI();
       setCloseSessionButtonState(false);
 
@@ -1035,29 +1187,38 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
 
       activeQrCode = session.qr_code;
       activeSessionId = session.qr_session_id;
-      remainingSeconds = session.expires_in_seconds || ROTATION_INTERVAL_SECONDS;
-      isSessionPaused = false;
+
+      // Check persistent pause state from localStorage
+      const pauseState = getPersistentPauseState(currentSection, session.qr_session_id);
+      if (pauseState && pauseState.isPaused) {
+        isSessionPaused = true;
+        remainingSeconds = (typeof pauseState.remainingSeconds === 'number' && pauseState.remainingSeconds >= 0)
+          ? pauseState.remainingSeconds
+          : (session.expires_in_seconds || ROTATION_INTERVAL_SECONDS);
+      } else {
+        isSessionPaused = false;
+        remainingSeconds = session.expires_in_seconds || ROTATION_INTERVAL_SECONDS;
+      }
+
       updatePauseResumeUI();
       setCloseSessionButtonState(true);
 
       const tokenDisplay = document.getElementById('token-display');
-      if (tokenDisplay) tokenDisplay.textContent = session.qr_code;
-
-      // Set Minimalist Active Badge
-      const statusBadge = document.getElementById('header-status-badge');
-      if (statusBadge) {
-        statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700';
-        statusBadge.innerHTML = `
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-[11px] font-semibold">Live</span>
-        `;
+      if (tokenDisplay) {
+        tokenDisplay.textContent = isSessionPaused ? 'PAUSED' : session.qr_code;
       }
 
       renderQRCode(session.qr_code);
       updateTimerDisplay();
 
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(tickTimer, 1000);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      if (!isSessionPaused && remainingSeconds > 0) {
+        timerInterval = setInterval(tickTimer, 1000);
+      }
     }
 
     function showEmptyQrState() {
@@ -1074,6 +1235,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       activeQrCode = null;
       activeSessionId = null;
       isSessionPaused = false;
+      setPersistentPauseState(currentSection, false);
       updatePauseResumeUI();
       setCloseSessionButtonState(false);
 
@@ -1149,10 +1311,12 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         });
         const data = await res.json();
         if (res.ok && data.status === 'success') {
+          setPersistentPauseState(currentSection, false);
           setSectionCache(currentSection, {
             hasActive: true,
             session: data.session,
-            isReady: false
+            isReady: false,
+            isPaused: false
           });
           showActiveQrState(data.session);
           if (!activeSectionsList.includes(currentSection)) {
@@ -1540,6 +1704,97 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         .replace(/'/g, '&#039;');
     }
 
+    // ── CONFIRMATION MODALS SYSTEM ──
+
+    function handleModalBackdropClick(event, modalId) {
+      if (event.target && event.target.id === modalId) {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) modalEl.classList.add('hidden');
+        if (modalId === 'switch-section-modal') {
+          window.pendingSwitchSectionVal = null;
+        }
+      }
+    }
+
+    function requestGenerateQR(btnEl = null) {
+      if (activeQrCode && activeSessionId) {
+        openRotateQRModal();
+      } else {
+        openStartSessionModal();
+      }
+    }
+
+    function openStartSessionModal() {
+      const secObj = availableSections.find(s => String(s.section) === String(currentSection)) || availableSections[0] || {};
+      const secEl = document.getElementById('start-modal-section');
+      if (secEl) secEl.textContent = `Section ${secObj.section || currentSection}`;
+      const courseEl = document.getElementById('start-modal-course');
+      if (courseEl) courseEl.textContent = `${secObj.course_code || ''} - ${secObj.course_title || ''}`;
+      const roomEl = document.getElementById('start-modal-room');
+      if (roomEl) roomEl.textContent = `Room ${secObj.room_number || '402'}`;
+      
+      const modal = document.getElementById('start-session-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeStartSessionModal() {
+      const modal = document.getElementById('start-session-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function executeConfirmedStartSession(btnEl = null) {
+      closeStartSessionModal();
+      manualGenerateQR(btnEl);
+    }
+
+    function openRotateQRModal() {
+      const secEl = document.getElementById('rotate-modal-section');
+      if (secEl) secEl.textContent = `Section ${currentSection}`;
+      const modal = document.getElementById('rotate-qr-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeRotateQRModal() {
+      const modal = document.getElementById('rotate-qr-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function executeConfirmedRotateQR(btnEl = null) {
+      closeRotateQRModal();
+      manualGenerateQR(btnEl);
+    }
+
+    window.pendingSwitchSectionVal = null;
+
+    function openSwitchSectionModal(targetSec) {
+      window.pendingSwitchSectionVal = targetSec;
+      const currEl = document.getElementById('switch-modal-current-section');
+      if (currEl) currEl.textContent = `Section ${currentSection}`;
+      const currNameEl = document.getElementById('switch-modal-curr-name');
+      if (currNameEl) currNameEl.textContent = `Section ${currentSection} (Live)`;
+      const targetNameEl = document.getElementById('switch-modal-target-name');
+      if (targetNameEl) targetNameEl.textContent = `Section ${targetSec}`;
+      const noteSecEl = document.getElementById('switch-modal-note-section');
+      if (noteSecEl) noteSecEl.textContent = currentSection;
+
+      const modal = document.getElementById('switch-section-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeSwitchSectionModal() {
+      window.pendingSwitchSectionVal = null;
+      const modal = document.getElementById('switch-section-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function executeConfirmedSwitchSection() {
+      const target = window.pendingSwitchSectionVal;
+      closeSwitchSectionModal();
+      if (target) {
+        onSectionChange(target);
+      }
+    }
+
     function openCloseSessionModal() {
       if (!activeQrCode && !activeSessionId) {
         if (window.APP && typeof APP.showToast === 'function') {
@@ -1547,6 +1802,8 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         }
         return;
       }
+      const modalSecName = document.getElementById('modal-section-name');
+      if (modalSecName) modalSecName.textContent = currentSection;
       document.getElementById('close-session-modal').classList.remove('hidden');
     }
 

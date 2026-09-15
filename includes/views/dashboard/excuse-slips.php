@@ -139,40 +139,83 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
 
-      <!-- KPI Summary Cards (Real Database Counts for This Specific Teacher) -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs text-center transition hover:shadow-sm">
-          <div class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Pending Review</div>
-          <div id="kpi-pending" class="text-2xl font-bold text-amber-600 mt-1"><?php echo $counts['pending']; ?> Slips</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Requires Decision</div>
+      <!-- KPI Summary Cards (Real Database Counts - Unified Cohesive Color Theme) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 w-full min-w-0 max-w-full">
+        <!-- Card 1: Pending Review -->
+        <div onclick="setTeacherFilterStatus('pending')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Pending Review</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span id="kpi-pending" class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900"><?php echo $counts['pending']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">awaiting decision</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Action required</p>
         </div>
 
-        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs text-center transition hover:shadow-sm">
-          <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Approved Slips</div>
-          <div id="kpi-approved" class="text-2xl font-bold text-emerald-600 mt-1"><?php echo $counts['approved']; ?> Slips</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Absences Excused</div>
+        <!-- Card 2: Approved Slips -->
+        <div onclick="setTeacherFilterStatus('approved')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Approved Slips</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span id="kpi-approved" class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900"><?php echo $counts['approved']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">excused</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Cleared in records</p>
         </div>
 
-        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs text-center transition hover:shadow-sm">
-          <div class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Declined Slips</div>
-          <div id="kpi-declined" class="text-2xl font-bold text-rose-600 mt-1"><?php echo $counts['declined']; ?> Slips</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Unexcused Absences</div>
+        <!-- Card 3: Declined Slips -->
+        <div onclick="setTeacherFilterStatus('declined')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Declined Slips</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span id="kpi-declined" class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900"><?php echo $counts['declined']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">unexcused</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Invalid or rejected</p>
         </div>
 
-        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs text-center transition hover:shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Received</div>
-          <div id="kpi-total" class="text-2xl font-bold text-slate-800 mt-1"><?php echo $counts['total']; ?> Slips</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">Assigned Classes</div>
+        <!-- Card 4: Total Received -->
+        <div onclick="setTeacherFilterStatus('all')" class="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-sm transition cursor-pointer group w-full min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Total Received</span>
+            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+          </div>
+          <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 flex-wrap">
+            <span id="kpi-total" class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900"><?php echo $counts['total']; ?></span>
+            <span class="text-[10px] sm:text-xs font-medium text-slate-400">submissions</span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Across assigned classes</p>
         </div>
       </div>
 
-      <!-- Filters & Search Bar -->
-      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <!-- Filters & Search Bar (Modern 2-tier Grid) -->
+      <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 shadow-sm mb-6 w-full min-w-0">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <!-- Search Keyword -->
+          <div class="sm:col-span-6 relative w-full min-w-0">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <input type="text" id="search-student" placeholder="Search student name, ID number, subject, or reason keyword..." class="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50/60 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" oninput="filterSlips()">
+          </div>
+
           <!-- Status Filter -->
-          <div>
-            <label for="filter-status" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Status</label>
-            <select id="filter-status" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" onchange="filterSlips()">
+          <div class="sm:col-span-3 w-full min-w-0">
+            <select id="filter-status" class="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50/60 hover:bg-white focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer truncate" onchange="filterSlips()">
               <option value="all">All Statuses (<?php echo $counts['total']; ?>)</option>
               <option value="pending" <?php echo $counts['pending'] > 0 ? 'selected' : ''; ?>>Pending Review (<?php echo $counts['pending']; ?>)</option>
               <option value="approved">Approved (<?php echo $counts['approved']; ?>)</option>
@@ -181,23 +224,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
 
           <!-- Section / Subject Filter -->
-          <div>
-            <label for="filter-class" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Class &amp; Subject</label>
-            <select id="filter-class" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" onchange="filterSlips()">
+          <div class="sm:col-span-3 w-full min-w-0">
+            <select id="filter-class" class="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50/60 hover:bg-white focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer truncate" onchange="filterSlips()">
               <option value="all">All Assigned Classes (<?php echo count($slips); ?>)</option>
               <?php foreach ($uniqueSubjects as $subj): ?>
                 <option value="<?php echo htmlspecialchars($subj); ?>"><?php echo htmlspecialchars($subj); ?></option>
               <?php endforeach; ?>
             </select>
-          </div>
-
-          <!-- Search Keyword -->
-          <div class="sm:col-span-1 md:col-span-2">
-            <label for="search-student" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Search Student, ID, or Reason</label>
-            <div class="relative">
-              <input type="text" id="search-student" placeholder="Search by student name, ID number, subject, or reason keyword..." class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" oninput="filterSlips()">
-              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
           </div>
         </div>
       </div>
@@ -518,6 +551,14 @@ function filterSlips() {
 
   const countEl = document.getElementById('visible-count');
   if (countEl) countEl.textContent = visible;
+}
+
+function setTeacherFilterStatus(statusVal) {
+  const filterSelect = document.getElementById('filter-status');
+  if (filterSelect) {
+    filterSelect.value = statusVal;
+  }
+  filterSlips();
 }
 
 function updateKpiCounters() {

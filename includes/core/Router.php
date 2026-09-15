@@ -179,6 +179,8 @@ class Router {
         // Awards & Exports
         '/awards'                => 'awards/index.php',
         '/exports'               => 'admin/reports.php',
+        '/export'                => 'admin/reports.php',
+        '/reports'               => 'admin/reports.php',
 
         // Excuses
         '/excuses'               => 'dashboard/excuse-slips.php',

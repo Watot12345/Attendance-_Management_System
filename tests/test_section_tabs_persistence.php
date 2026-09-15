@@ -8,14 +8,18 @@ require_once __DIR__ . '/../includes/core/Database.php';
 $baseUrl = 'http://127.0.0.1:8000';
 $db = Database::getConnection();
 
-// Ensure Teacher 2 has sections 31001 and 31002 in class_roster
-$db->exec("INSERT INTO class_roster (student_id, first_name, last_name, course, year_level, teacher_id, section, course_code, course_title, room_number, scheduled_time, schedule_day)
-           VALUES (1, 'jj', 'Dela Cruz', 'BSIT', 3, 2, '31001', 'IT301', 'Web Systems and Technologies', '402', '08:00:00', 'Monday')
-           ON DUPLICATE KEY UPDATE section = '31001'");
+// Ensure Teacher 2 has sections 31001 and 31002 in class_roster without inserting duplicates
+$has31001 = (int)$db->query("SELECT COUNT(*) FROM class_roster WHERE teacher_id = 2 AND section = '31001'")->fetchColumn();
+if ($has31001 === 0) {
+    $db->exec("INSERT INTO class_roster (student_id, first_name, last_name, course, year_level, teacher_id, section, course_code, course_title, room_number, scheduled_time, schedule_day)
+               VALUES (1, 'Juan', 'Dela Cruz', 'BSIT', 3, 2, '31001', 'IT301', 'Web Systems and Technologies', '402', '08:00:00', 'Monday')");
+}
 
-$db->exec("INSERT INTO class_roster (student_id, first_name, last_name, course, year_level, teacher_id, section, course_code, course_title, room_number, scheduled_time, schedule_day)
-           VALUES (3, 'Maria', 'Santos', 'BSIT', 3, 2, '31002', 'IT301', 'Web Systems and Technologies', '403', '09:30:00', 'Tuesday')
-           ON DUPLICATE KEY UPDATE section = '31002'");
+$has31002 = (int)$db->query("SELECT COUNT(*) FROM class_roster WHERE teacher_id = 2 AND section = '31002'")->fetchColumn();
+if ($has31002 === 0) {
+    $db->exec("INSERT INTO class_roster (student_id, first_name, last_name, course, year_level, teacher_id, section, course_code, course_title, room_number, scheduled_time, schedule_day)
+               VALUES (3, 'Maria', 'Santos', 'BSIT', 3, 2, '31002', 'IT301', 'Web Systems and Technologies', '403', '09:30:00', 'Tuesday')");
+}
 
 function req($url, $cookie = '') {
     $ch = curl_init();
