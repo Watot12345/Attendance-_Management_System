@@ -512,6 +512,42 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     </div>
   </div>
 
+  <!-- ════ 5. VOID / FLAG PROXY ATTENDANCE MODAL ════ -->
+  <div id="void-proxy-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'void-proxy-modal')">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
+      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+      </div>
+
+      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Void Check-In &amp; Mark Absent?</h3>
+      <p class="text-sm text-text-secondary text-center mb-5">
+        Suspected remote proxy scan or student not in room? You can void this attendance record and mark the student as officially absent.
+      </p>
+
+      <div class="bg-rose-50/70 p-4 rounded-xl border border-rose-200 text-xs space-y-2 mb-5">
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Student Name:</span>
+          <span class="font-bold text-slate-900" id="void-modal-student-name">Juan Dela Cruz</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-700">
+          <span class="text-slate-500 font-medium">Student ID:</span>
+          <span class="font-mono text-slate-800" id="void-modal-student-num">230110001</span>
+        </div>
+        <div class="pt-2 border-t border-rose-200/60">
+          <label for="void-modal-reason" class="block text-slate-600 font-semibold mb-1">Observation Reason:</label>
+          <input type="text" id="void-modal-reason" value="Not physically present in room (Suspected proxy scan)" class="w-full px-2.5 py-1.5 text-xs bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-800">
+        </div>
+      </div>
+
+      <input type="hidden" id="void-modal-attendance-id" value="">
+
+      <div class="flex justify-end gap-3">
+        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeVoidProxyModal()">Cancel</button>
+        <button type="button" id="confirm-void-btn" class="btn btn-danger flex-1 cursor-pointer font-bold bg-rose-600 hover:bg-rose-700 text-white" onclick="executeConfirmedVoidProxy(this)">Mark as Absent</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ════ ALL PRESENT STUDENTS MODAL ════ -->
   <div id="present-students-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[88vh] animate-scale-in overflow-hidden">
@@ -1466,6 +1502,20 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         return;
       }
 
+      // Real-time arrival toast alert when new students check in
+      if (!window.knownAttendanceIds) {
+        window.knownAttendanceIds = new Set((activeCheckins || []).map(c => c.attendance_id));
+      } else {
+        (activeCheckins || []).forEach(item => {
+          if (!window.knownAttendanceIds.has(item.attendance_id)) {
+            window.knownAttendanceIds.add(item.attendance_id);
+            if (window.APP && typeof APP.showToast === 'function') {
+              APP.showToast(`🔔 ${item.student_name} just checked in (${item.status.toUpperCase()})!`, 'info');
+            }
+          }
+        });
+      }
+
       window.cachedActiveCheckins = activeCheckins || [];
       window.cachedAllTodayCheckins = (allTodayCheckins && allTodayCheckins.length > 0) 
         ? allTodayCheckins 
@@ -1549,6 +1599,9 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         }
 
         const seqNumber = String(index + 1).padStart(2, '0');
+        const isAbsent = item.status === 'absent';
+        const safeName = escapeHtml(item.student_name).replace(/'/g, "\\'");
+        const safeNum = escapeHtml(item.student_number).replace(/'/g, "\\'");
 
         return `
           <div class="p-3 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between animate-fade-in transition hover:border-slate-300 hover:shadow-2xs">
@@ -1561,12 +1614,25 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                 <p class="text-[11px] font-mono text-slate-500">${escapeHtml(item.student_number)}</p>
               </div>
             </div>
-            <div class="text-right shrink-0">
-              <span class="${badgeClass}">
-                <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
-                <span>${badgeText}</span>
-              </span>
-              <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${escapeHtml(item.time)}</p>
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <span class="${badgeClass}">
+                  <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
+                  <span>${badgeText}</span>
+                </span>
+                <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${escapeHtml(item.time)}</p>
+              </div>
+              ${!isAbsent ? `
+                <button type="button" 
+                        onclick="promptVoidProxy(${item.attendance_id}, '${safeName}', '${safeNum}')" 
+                        class="px-2 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition flex items-center gap-1 cursor-pointer shadow-2xs" 
+                        title="Flag as proxy / absent">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                  <span class="hidden sm:inline">Void</span>
+                </button>
+              ` : `
+                <span class="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-md">Voided</span>
+              `}
             </div>
           </div>
         `;
@@ -1702,12 +1768,25 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                 </div>
               </div>
             </div>
-            <div class="text-right shrink-0">
-              <span class="${badgeClass}">
-                <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
-                <span>${badgeText}</span>
-              </span>
-              <p class="text-[11px] text-slate-400 mt-1 font-mono">${escapeHtml(item.time)}</p>
+            <div class="flex items-center gap-2.5 shrink-0">
+              <div class="text-right">
+                <span class="${badgeClass}">
+                  <span class="w-1.5 h-1.5 rounded-full ${badgeDot}"></span>
+                  <span>${badgeText}</span>
+                </span>
+                <p class="text-[11px] text-slate-400 mt-1 font-mono">${escapeHtml(item.time)}</p>
+              </div>
+              ${item.status !== 'absent' ? `
+                <button type="button" 
+                        onclick="promptVoidProxy(${item.attendance_id}, '${escapeHtml(item.student_name).replace(/'/g, "\\'")}', '${escapeHtml(item.student_number).replace(/'/g, "\\'")}')" 
+                        class="px-2 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition flex items-center gap-1 cursor-pointer shadow-2xs" 
+                        title="Flag as proxy / absent">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                  <span>Void</span>
+                </button>
+              ` : `
+                <span class="px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-md">Voided</span>
+              `}
             </div>
           </div>
         `;
@@ -1722,6 +1801,84 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // ── VOID PROXY / INTRUDER HANDLERS ──
+    window.pendingVoidAttendanceId = null;
+
+    function promptVoidProxy(attendanceId, studentName, studentNumber) {
+      window.pendingVoidAttendanceId = attendanceId;
+      const idEl = document.getElementById('void-modal-attendance-id');
+      const nameEl = document.getElementById('void-modal-student-name');
+      const numEl = document.getElementById('void-modal-student-num');
+      const reasonEl = document.getElementById('void-modal-reason');
+      
+      if (idEl) idEl.value = attendanceId;
+      if (nameEl) nameEl.textContent = studentName;
+      if (numEl) numEl.textContent = studentNumber;
+      if (reasonEl) reasonEl.value = 'Not physically present in room (Suspected proxy scan)';
+      
+      const modal = document.getElementById('void-proxy-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeVoidProxyModal() {
+      const modal = document.getElementById('void-proxy-modal');
+      if (modal) modal.classList.add('hidden');
+      window.pendingVoidAttendanceId = null;
+    }
+
+    async function executeConfirmedVoidProxy(btnEl = null) {
+      const attId = window.pendingVoidAttendanceId;
+      if (!attId) return;
+      
+      const reasonInput = document.getElementById('void-modal-reason');
+      const reason = reasonInput ? reasonInput.value.trim() : 'Suspected proxy scan';
+      
+      const btn = btnEl || document.getElementById('confirm-void-btn');
+      if (btn && window.APP && typeof APP.setLoading === 'function') {
+        APP.setLoading(btn, true, 'Voiding...');
+      } else if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Voiding...';
+      }
+
+      try {
+        const res = await fetch('<?= url("api/teacher/attendance/void-proxy") ?>', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            attendance_id: attId,
+            reason: reason
+          })
+        });
+        const data = await res.json();
+        closeVoidProxyModal();
+
+        if (res.ok && data.status === 'success') {
+          if (window.APP && typeof APP.showToast === 'function') {
+            APP.showToast(data.message || 'Attendance voided and marked as Absent.', 'success');
+          }
+          await loadLiveFeed(true);
+        } else {
+          if (window.APP && typeof APP.showToast === 'function') {
+            APP.showToast(data.message || 'Failed to void attendance.', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('Error voiding proxy:', err);
+        closeVoidProxyModal();
+      } finally {
+        if (btn && window.APP && typeof APP.setLoading === 'function') {
+          APP.setLoading(btn, false);
+        } else if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Mark as Absent';
+        }
+      }
     }
 
     // ── CONFIRMATION MODALS SYSTEM ──

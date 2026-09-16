@@ -550,6 +550,83 @@ class AttendanceController {
     }
 
     /**
+     * POST /api/teacher/attendance/void-proxy
+     * Voids a student's check-in for the session and marks them as absent
+     * when a teacher detects a proxy or intruder scan.
+     */
+    public function voidProxyAttendance(): void {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+            $attendanceId = (int)($input['attendance_id'] ?? 0);
+            $reason = trim($input['reason'] ?? 'Suspected remote proxy scan / Not physically present in room');
+
+            if ($attendanceId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Attendance ID is required.']);
+                exit;
+            }
+
+            // Verify attendance record belongs to this teacher or session
+            $st = $db->prepare("
+                SELECT a.attendance_id, a.student_id, a.status, a.date, a.time,
+                       u.first_name, u.last_name, u.student_id as student_number
+                FROM attendance a
+                JOIN users u ON u.user_id = a.student_id
+                WHERE a.attendance_id = ? AND a.teacher_id = ?
+                LIMIT 1
+            ");
+            $st->execute([$attendanceId, $teacherId]);
+            $att = $st->fetch(PDO::FETCH_ASSOC);
+
+            if (!$att) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Attendance record not found or unauthorized.']);
+                exit;
+            }
+
+            // Update status to 'absent'
+            $upd = $db->prepare("UPDATE attendance SET status = 'absent' WHERE attendance_id = ?");
+            $upd->execute([$attendanceId]);
+
+            // Insert audit log
+            try {
+                $audit = $db->prepare("
+                    INSERT INTO audit_logs (user_id, action, description, reference_type, reference_id, created_at)
+                    VALUES (?, 'update', ?, 'attendance', ?, NOW())
+                ");
+                $audit->execute([
+                    $teacherId,
+                    "Attendance voided for {$att['first_name']} {$att['last_name']} ({$att['student_number']}) - Marked Absent. Reason: $reason",
+                    $attendanceId
+                ]);
+            } catch (Throwable $e) {}
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => "Attendance for {$att['first_name']} {$att['last_name']} has been voided and marked as Absent.",
+                'record'  => [
+                    'attendance_id' => $attendanceId,
+                    'status'        => 'absent'
+                ]
+            ]);
+            exit;
+
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to void attendance: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
      * POST /api/attendance/check-in
      * Records an attendance scan (validates 6-digit QR session, checks student enrollment in section via `class_roster`, and inserts into `attendance` table).
      */

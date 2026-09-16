@@ -145,6 +145,7 @@ class Router {
         '/api/teacher/qr-session/active'   => 'AttendanceController@getActiveQrSession',
         '/api/teacher/qr-session/close'    => 'AttendanceController@closeQrSession',
         '/api/teacher/attendance/live-feed'=> 'AttendanceController@getLiveAttendanceFeed',
+        '/api/teacher/attendance/void-proxy'=> 'AttendanceController@voidProxyAttendance',
         '/api/attendance/check-in'         => 'AttendanceController@recordCheckIn',
         '/api/attendance/daily'            => 'AttendanceController@apiDailyAttendance',
         '/api/attendance/manual-entry'     => 'AttendanceController@apiManualEntry',

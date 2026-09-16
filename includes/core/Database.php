@@ -56,7 +56,11 @@ class Database {
                 $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
             }
 
+            date_default_timezone_set('Asia/Manila');
             self::$instance = new PDO($dsn, $user, $pass, $options);
+            try {
+                self::$instance->exec("SET time_zone = '+08:00'");
+            } catch (Throwable $e) {}
         }
 
         return self::$instance;
