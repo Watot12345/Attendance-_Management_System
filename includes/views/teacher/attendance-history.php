@@ -19,6 +19,12 @@ if ($teacherId <= 0) {
     $teacherId = $rT ? (int)$rT['user_id'] : 2;
 }
 
+// 1b. Resolve logged-in teacher display name
+$tNameStmt = $db->prepare("SELECT first_name, last_name FROM users WHERE user_id = ?");
+$tNameStmt->execute([$teacherId]);
+$tUser = $tNameStmt->fetch(PDO::FETCH_ASSOC);
+$loggedTeacherName = $tUser ? ('Prof. ' . $tUser['first_name'] . ' ' . $tUser['last_name']) : 'Prof. Ramirez';
+
 // 2. Fetch distinct sections assigned to this teacher from class_roster
 $secStmt = $db->prepare("
     SELECT DISTINCT section, course_code, course_title 
@@ -104,6 +110,17 @@ $attStmt = $db->prepare("
 $attStmt->execute($params);
 $attendanceRecords = $attStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 5b. Compute session counts for summary pills
+$sessionPresent = 0;
+$sessionTardy   = 0;
+$sessionAbsent  = 0;
+foreach ($attendanceRecords as $rec) {
+    $st = strtolower($rec['status']);
+    if ($st === 'present') $sessionPresent++;
+    elseif ($st === 'tardy') $sessionTardy++;
+    elseif ($st === 'absent') $sessionAbsent++;
+}
+
 // 6. Fetch Recent Audit Logs for Attendance
 $auditStmt = $db->prepare("
     SELECT 
@@ -167,17 +184,20 @@ include dirname(__DIR__) . '/partials/header.php';
             <!-- Search Student -->
             <div>
               <label class="text-xs font-semibold uppercase text-text-muted mb-1 block">Search Student</label>
-              <div class="relative">
+              <div class="relative flex items-center">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                </div>
                 <input 
                   type="text" 
                   name="search" 
                   value="<?php echo htmlspecialchars($filterSearch); ?>" 
-                  class="form-input text-sm pl-9" 
+                  class="form-input text-sm" 
+                  style="padding-left: 2.5rem !important;"
                   placeholder="Student number or name..."
                 >
-                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
               </div>
             </div>
 
@@ -221,7 +241,7 @@ include dirname(__DIR__) . '/partials/header.php';
 
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 text-xs">
             <div class="text-slate-500">
-              Showing active filters for <strong>Prof. Ramirez</strong>.
+              Showing active filters for <strong><?php echo htmlspecialchars($loggedTeacherName); ?></strong>.
               <?php if ($filterDate && $filterDate !== 'all'): ?>
                 Session date: <span class="font-semibold text-slate-700"><?php echo date('M d, Y', strtotime($filterDate)); ?></span>
               <?php else: ?>
@@ -251,9 +271,20 @@ include dirname(__DIR__) . '/partials/header.php';
               </h3>
               <p class="text-xs text-text-muted mt-0.5">Verified roster attendance entries captured through live QR sessions and manual logs.</p>
             </div>
-            <span class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
-              <?php echo count($attendanceRecords); ?> total records
-            </span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ● <?php echo $sessionPresent; ?> Present
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                ● <?php echo $sessionTardy; ?> Tardy
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                ● <?php echo $sessionAbsent; ?> Absent
+              </span>
+              <span class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
+                <?php echo count($attendanceRecords); ?> total
+              </span>
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -267,7 +298,7 @@ include dirname(__DIR__) . '/partials/header.php';
                   <th>Time In</th>
                   <th>Verification</th>
                   <th>Remarks / Subject</th>
-                  <th class="text-right">Actions</th>
+                  <th class="text-center" style="text-align: center !important; width: 140px;">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -354,10 +385,11 @@ include dirname(__DIR__) . '/partials/header.php';
                       <td class="text-xs text-text-muted">
                         <?php echo htmlspecialchars($row['subject'] ?: 'Web Systems and Technologies'); ?>
                       </td>
-                      <td class="text-right">
+                      <td class="text-center" style="text-align: center !important;">
                         <button 
                           type="button" 
                           class="btn btn-ghost btn-sm text-xs font-semibold <?php echo $isAbsent ? 'text-teal-700 hover:text-teal-800 font-bold' : 'text-slate-600 hover:text-slate-900'; ?>"
+                          style="margin: 0 auto; display: inline-flex;"
                           onclick="openCorrectionModal(
                             <?php echo (int)$row['student_id']; ?>, 
                             '<?php echo addslashes(htmlspecialchars($fullName)); ?>', 
