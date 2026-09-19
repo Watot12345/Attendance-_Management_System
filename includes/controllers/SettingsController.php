@@ -134,4 +134,135 @@ class SettingsController {
         }
         exit;
     }
+
+    /**
+     * Get personal user preferences from system_settings table
+     */
+    public static function getUserPreferences(?int $userId = null): array {
+        require_once __DIR__ . '/UserController.php';
+        if ($userId === null) {
+            $userId = UserController::resolveCurrentUserId();
+        }
+
+        // Default personal preferences
+        $defaults = [
+            'notify_email'       => '1',
+            'notify_sms'         => '0',
+            'notify_excuses'     => '1',
+            'sound_effects'      => '1',
+            'compact_tables'     => '0',
+            'auto_refresh_feed'  => '1',
+            'preferred_export'   => 'xlsx',
+            'session_warning'    => '1'
+        ];
+
+        try {
+            $db = Database::getConnection();
+            $prefix = "user_{$userId}_";
+            $stmt = $db->prepare("SELECT `setting_key`, `setting_value` FROM `system_settings` WHERE `setting_key` LIKE ?");
+            $stmt->execute([$prefix . '%']);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($rows as $r) {
+                $subKey = substr($r['setting_key'], strlen($prefix));
+                $defaults[$subKey] = $r['setting_value'];
+            }
+        } catch (Throwable $e) {
+            // Return defaults on error
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * Set a personal preference for a specific user
+     */
+    public static function setUserPreference(int $userId, string $key, mixed $value): bool {
+        $scopedKey = "user_{$userId}_{$key}";
+        return self::set($scopedKey, $value);
+    }
+
+    /**
+     * API: GET /api/user/preferences
+     */
+    public function apiUserPreferences(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            require_once __DIR__ . '/UserController.php';
+            $userId = UserController::resolveCurrentUserId();
+            $prefs = self::getUserPreferences($userId);
+
+            echo json_encode([
+                'status'  => 'success',
+                'success' => true,
+                'data'    => $prefs
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Failed to load personal preferences: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * API: POST /api/user/preferences/save
+     */
+    public function apiSaveUserPreferences(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            require_once __DIR__ . '/UserController.php';
+            $userId = UserController::resolveCurrentUserId();
+
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            if (str_contains($contentType, 'application/json')) {
+                $payload = json_decode(file_get_contents('php://input'), true) ?? [];
+            } else {
+                $payload = $_POST;
+            }
+
+            if (empty($payload)) {
+                http_response_code(400);
+                echo json_encode([
+                    'status'  => 'error',
+                    'success' => false,
+                    'message' => 'No preference parameters provided.'
+                ]);
+                exit;
+            }
+
+            $allowedKeys = [
+                'notify_email', 'notify_sms', 'notify_excuses',
+                'sound_effects', 'compact_tables', 'auto_refresh_feed',
+                'preferred_export', 'session_warning'
+            ];
+
+            foreach ($payload as $k => $v) {
+                $cleanKey = trim($k);
+                if (in_array($cleanKey, $allowedKeys, true)) {
+                    self::setUserPreference($userId, $cleanKey, $v);
+                }
+            }
+
+            $updatedPrefs = self::getUserPreferences($userId);
+
+            echo json_encode([
+                'status'  => 'success',
+                'success' => true,
+                'message' => 'Personal settings saved successfully.',
+                'data'    => $updatedPrefs
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Failed to save personal settings: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
 }

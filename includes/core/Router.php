@@ -167,6 +167,13 @@ class Router {
         '/api/settings'                 => 'SettingsController@apiIndex',
         '/api/settings/save'            => 'SettingsController@apiSave',
 
+        // User Profile & Personal Preferences API
+        '/api/user/profile'             => 'UserController@apiProfile',
+        '/api/user/profile/update'      => 'UserController@apiUpdateProfile',
+        '/api/user/password/update'     => 'UserController@apiUpdatePassword',
+        '/api/user/preferences'         => 'SettingsController@apiUserPreferences',
+        '/api/user/preferences/save'    => 'SettingsController@apiSaveUserPreferences',
+
         // Overview Dashboard API
         '/api/dashboard/overview'       => 'DashboardController@apiOverview',
 
@@ -177,6 +184,7 @@ class Router {
 
         // Settings
         '/settings'              => 'settings/index.php',
+        '/personal-settings'     => 'settings/personal.php',
 
         // Awards & Exports
         '/awards'                => 'awards/index.php',
