@@ -14,8 +14,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
   <!-- Project Theme (custom tokens, components) -->
-  <link rel="stylesheet" href="<?php echo url('Project_theme.css'); ?>">
-  <link rel="stylesheet" href="<?php echo url('assets/css/output.css'); ?>">
+  <?php 
+  $themeVer = @filemtime(dirname(__DIR__, 2) . '/Project_theme.css') ?: time();
+  $outputVer = @filemtime(dirname(__DIR__, 2) . '/assets/css/output.css') ?: time();
+  ?>
+  <link rel="stylesheet" href="<?php echo url('Project_theme.css') . '?v=' . $themeVer; ?>">
+  <link rel="stylesheet" href="<?php echo url('assets/css/output.css') . '?v=' . $outputVer; ?>">
   <link rel="stylesheet" href="<?php echo url('assets/dist/vanilla-sonner.min.css'); ?>">
 
   <!-- Page-specific CSS slot -->

@@ -1,12 +1,92 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $page_title = 'Scan Attendance QR';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
 require_once dirname(__DIR__) . '/partials/header.php';
 
-// Resolve current student session or default
-$studentName = $_SESSION['user']['full_name'] ?? 'Juan Dela Cruz';
-$studentNumber = $_SESSION['user']['student_id'] ?? '230110001';
-$studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?? 1);
+$db = Database::getConnection();
+
+// Handle testing/switching student
+$selectedStudentId = isset($_GET['student_id']) ? (int)$_GET['student_id'] : 0;
+if ($selectedStudentId > 0) {
+    $_SESSION['active_student_test_id'] = $selectedStudentId;
+}
+
+$activeStudentId = $_SESSION['active_student_test_id'] ?? (int)($_SESSION['user']['user_id'] ?? $_SESSION['user_id'] ?? $_SESSION['student_id'] ?? 1);
+
+// Fetch student profile from database
+$stStmt = $db->prepare("
+    SELECT user_id, student_id, first_name, last_name, email 
+    FROM users 
+    WHERE user_id = ? AND role = 'student' 
+    LIMIT 1
+");
+$stStmt->execute([$activeStudentId]);
+$currentStudent = $stStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$currentStudent) {
+    // Fallback to first student in users table
+    $currentStudent = $db->query("
+        SELECT user_id, student_id, first_name, last_name, email 
+        FROM users 
+        WHERE role = 'student' 
+        ORDER BY user_id ASC 
+        LIMIT 1
+    ")->fetch(PDO::FETCH_ASSOC);
+}
+
+$studentUserId = (int)($currentStudent['user_id'] ?? 1);
+$studentName = ($currentStudent['first_name'] ?? 'Juan') . ' ' . ($currentStudent['last_name'] ?? 'Dela Cruz');
+$studentNumber = $currentStudent['student_id'] ?? '230110001';
+$studentEmail = $currentStudent['email'] ?? 'juan.delacruz@bcp.edu.ph';
+
+// Fetch enrolled sections and courses for this student
+$enrolledStmt = $db->prepare("
+    SELECT DISTINCT cr.section, cr.course_code, cr.course_title, cr.room_number,
+           CONCAT(t.first_name, ' ', t.last_name) AS instructor_name
+    FROM class_roster cr
+    JOIN users t ON t.user_id = cr.teacher_id
+    WHERE cr.student_id = ?
+    ORDER BY cr.section ASC
+");
+$enrolledStmt->execute([$studentUserId]);
+$enrolledClasses = $enrolledStmt->fetchAll(PDO::FETCH_ASSOC);
+$studentSections = !empty($enrolledClasses) ? array_column($enrolledClasses, 'section') : ['31001'];
+
+// Fetch all available student accounts for quick switching in demo/review mode
+$allStudents = $db->query("
+    SELECT u.user_id, u.student_id, u.first_name, u.last_name,
+           (SELECT GROUP_CONCAT(DISTINCT section SEPARATOR ', ') FROM class_roster WHERE student_id = u.user_id) as sections
+    FROM users u
+    WHERE u.role = 'student'
+    ORDER BY u.user_id ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch any currently active QR Session
+$activeSession = null;
+try {
+    $qsStmt = $db->prepare("
+        SELECT qs.qr_session_id, qs.teacher_id, qs.section, qs.qr_code, qs.start, qs.end,
+               TIMESTAMPDIFF(SECOND, NOW(), qs.end) AS remaining_seconds,
+               CONCAT(t.first_name, ' ', t.last_name) AS teacher_name,
+               cr.course_code, cr.course_title, cr.room_number, cr.scheduled_time
+        FROM qr_sessions qs
+        JOIN users t ON t.user_id = qs.teacher_id
+        LEFT JOIN class_roster cr ON cr.teacher_id = qs.teacher_id AND cr.section = qs.section
+        WHERE qs.is_active = 1 AND qs.end > NOW()
+        ORDER BY qs.qr_session_id DESC
+        LIMIT 1
+    ");
+    $qsStmt->execute();
+    $activeSession = $qsStmt->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {}
+
+$isSectionMatch = $activeSession && in_array($activeSession['section'], $studentSections, true);
+$remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']) : 0;
 ?>
 
 <div class="app-layout">
@@ -15,16 +95,93 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
   <div class="main-content">
     <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
 
-    <main class="page-body max-w-4xl mx-auto">
-      <!-- Breadcrumb & Header -->
-      <div class="mb-6 text-center">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-2">
-          <span>Student Portal</span> • <span><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars((string)$studentNumber, ENT_QUOTES, 'UTF-8') ?>)</span>
+    <main class="page-body max-w-4xl mx-auto space-y-6">
+
+      <!-- Header & Student Context Card -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-indigo-100 flex-shrink-0">
+            <?= strtoupper(substr($currentStudent['first_name'] ?? 'J', 0, 1) . substr($currentStudent['last_name'] ?? 'D', 0, 1)) ?>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">Student Portal Check-In</span>
+              <span class="text-xs text-slate-400 font-mono">ID: <?= htmlspecialchars((string)$studentNumber, ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+            <h1 class="text-xl font-bold text-slate-800"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?></h1>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Enrolled: <span class="font-semibold text-slate-700"><?= !empty($studentSections) ? 'Section ' . implode(', ', array_map('htmlspecialchars', $studentSections)) : 'No assigned section' ?></span>
+            </p>
+          </div>
         </div>
-        <h1 class="text-2xl font-bold text-slate-800">Scan Session Attendance QR</h1>
-        <p class="text-sm text-slate-500 max-w-md mx-auto">Point your device camera at the rotating QR code projected on the classroom screen.</p>
+
+        <!-- Quick Student Switcher for Test & Grading Review -->
+        <div class="w-full md:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+          <label for="test-student-select" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Testing As:</label>
+          <select id="test-student-select" onchange="window.location.href='?student_id=' + this.value" class="text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer w-full sm:w-auto">
+            <?php foreach ($allStudents as $st): ?>
+              <option value="<?= (int)$st['user_id'] ?>" <?= ((int)$st['user_id'] === $studentUserId) ? 'selected' : '' ?>>
+                <?= htmlspecialchars($st['first_name'] . ' ' . $st['last_name'], ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($st['student_id'] ?: 'N/A', ENT_QUOTES, 'UTF-8') ?> - Sec <?= htmlspecialchars($st['sections'] ?: 'None', ENT_QUOTES, 'UTF-8') ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
       </div>
 
+      <!-- Live Active Session Detection Banner -->
+      <?php if ($activeSession): ?>
+        <div class="rounded-2xl p-5 border <?= $isSectionMatch ? 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border-emerald-300 shadow-sm' : 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border-amber-300' ?> flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full <?= $isSectionMatch ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75' ?>"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 <?= $isSectionMatch ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
+              </span>
+              <span class="text-xs font-bold uppercase tracking-wider <?= $isSectionMatch ? 'text-emerald-800' : 'text-amber-800' ?>">
+                <?= $isSectionMatch ? 'Live Attendance Session in Progress' : 'Active Session (Section Mismatch Warning)' ?>
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white border border-slate-200 text-slate-700 shadow-xs">
+                Section <?= htmlspecialchars($activeSession['section'], ENT_QUOTES, 'UTF-8') ?>
+              </span>
+            </div>
+            <p class="text-sm font-semibold text-slate-800">
+              <?= htmlspecialchars($activeSession['course_title'] ?? 'Web Systems and Technologies', ENT_QUOTES, 'UTF-8') ?>
+              <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($activeSession['course_code'] ?? 'IT301', ENT_QUOTES, 'UTF-8') ?>)</span>
+            </p>
+            <p class="text-xs text-slate-600">
+              Instructor: <strong class="text-slate-800"><?= htmlspecialchars($activeSession['teacher_name'], ENT_QUOTES, 'UTF-8') ?></strong> • Room <?= htmlspecialchars($activeSession['room_number'] ?? '402', ENT_QUOTES, 'UTF-8') ?>
+              <?php if (!$isSectionMatch): ?>
+                • <span class="text-amber-700 font-medium">Your assigned section is <?= htmlspecialchars(implode(', ', $studentSections), ENT_QUOTES, 'UTF-8') ?>.</span>
+              <?php endif; ?>
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            <div class="text-left sm:text-right">
+              <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block">Session Closes In</span>
+              <span id="session-countdown-timer" class="font-mono font-bold text-base text-slate-800" data-seconds="<?= $remainingSec ?>">
+                <?= sprintf('%02d:%02d', floor($remainingSec / 60), $remainingSec % 60) ?>
+              </span>
+            </div>
+            <button type="button" onclick="autofillToken('<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>')" class="btn btn-sm px-3.5 py-2 rounded-xl text-xs font-bold text-white <?= $isSectionMatch ? 'bg-emerald-600 hover:bg-emerald-700 shadow-sm' : 'bg-amber-600 hover:bg-amber-700 shadow-sm' ?> transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <span>Autofill Code (<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>)</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+          </div>
+        </div>
+      <?php else: ?>
+        <div class="rounded-2xl p-4 bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <span class="text-slate-400">ℹ️</span>
+            <span><strong>No Active Live Session:</strong> Instructors generate live attendance QR sessions from their Teacher Portal. You can still scan or submit tokens below to test validation states.</span>
+          </div>
+          <a href="<?php echo url('teacher/live-session'); ?>" class="text-indigo-600 hover:text-indigo-700 font-semibold whitespace-nowrap text-xs flex items-center gap-1">
+            <span>Teacher Live Session</span> →
+          </a>
+        </div>
+      <?php endif; ?>
+
+      <!-- Main Scanning & Manual Entry Grid -->
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         <!-- Main Scanner Viewfinder (7 cols) -->
         <div class="md:col-span-7 space-y-4">
@@ -59,7 +216,7 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>Camera: <strong id="camera-status-text" class="text-white">Active (Back)</strong></span>
               </div>
-              <button type="button" class="text-indigo-400 hover:text-indigo-300 transition cursor-pointer" onclick="toggleCamera()">Switch Camera</button>
+              <button type="button" class="text-indigo-400 hover:text-indigo-300 transition cursor-pointer font-medium" onclick="toggleCamera()">Switch Camera</button>
             </div>
           </div>
         </div>
@@ -74,7 +231,7 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
             <form id="token-attendance-form" onsubmit="submitTokenAttendance(event)" class="space-y-3">
               <div>
                 <label for="manual-token" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">6-Digit Session Token</label>
-                <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 7X9K2M" required class="w-full px-3.5 py-2.5 text-center font-mono font-bold text-lg uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 focus:bg-white">
+                <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 748291" required class="w-full px-3.5 py-2.5 text-center font-mono font-bold text-lg uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 focus:bg-white">
               </div>
 
               <div id="token-error-msg" class="hidden text-xs text-rose-600 font-medium bg-rose-50 border border-rose-200 p-2.5 rounded-lg text-center"></div>
@@ -103,28 +260,28 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
                 <span class="text-[11px] text-emerald-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
 
-              <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition text-xs group">
+              <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition text-xs group">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span class="font-semibold text-slate-700">Test Duplicate Check-in</span>
+                </div>
+                <span class="text-[11px] text-blue-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
+              </a>
+
+              <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition text-xs group">
                 <div class="flex items-center gap-2">
                   <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span class="font-semibold text-slate-700">Test Duplicate Check-in</span>
+                  <span class="font-semibold text-slate-700">Test Wrong Section Reject</span>
                 </div>
                 <span class="text-[11px] text-amber-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
 
-              <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span class="font-semibold text-slate-700">Test Wrong Section Reject</span>
-                </div>
-                <span class="text-[11px] text-rose-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
-              </a>
-
               <a href="<?php echo url('student/scan-result?status=expired'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition text-xs group">
                 <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
                   <span class="font-semibold text-slate-700">Test Expired QR Token</span>
                 </div>
-                <span class="text-[11px] text-slate-500 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
+                <span class="text-[11px] text-rose-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
               </a>
             </div>
           </div>
@@ -139,6 +296,14 @@ $studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['student_id'] ?
 let html5QrScanner = null;
 let currentCameraFacingMode = "environment";
 let isScanningActive = false;
+
+function autofillToken(token) {
+  const tokenInput = document.getElementById('manual-token');
+  if (tokenInput) {
+    tokenInput.value = token;
+    tokenInput.focus();
+  }
+}
 
 async function initLiveScanner() {
   const readerElement = document.getElementById('camera-stream-box');
@@ -255,7 +420,7 @@ async function processAttendanceCheckIn(token) {
       let statusParam = 'expired';
       if (data.scan_code === 'DUPLICATE' || resp.status === 409) {
         statusParam = 'duplicate';
-      } else if (data.scan_code === 'WRONG_SECTION') {
+      } else if (data.scan_code === 'WRONG_SECTION' || resp.status === 403) {
         statusParam = 'wrong_section';
       }
       try {
@@ -280,8 +445,28 @@ async function processAttendanceCheckIn(token) {
   }
 }
 
+// Session countdown timer ticker
 document.addEventListener('DOMContentLoaded', () => {
   initLiveScanner();
+
+  const timerEl = document.getElementById('session-countdown-timer');
+  if (timerEl) {
+    let sec = parseInt(timerEl.getAttribute('data-seconds'), 10) || 0;
+    if (sec > 0) {
+      const interval = setInterval(() => {
+        sec--;
+        if (sec <= 0) {
+          clearInterval(interval);
+          timerEl.textContent = '00:00 (Expired)';
+          timerEl.classList.add('text-rose-600');
+        } else {
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+      }, 1000);
+    }
+  }
 });
 </script>
 

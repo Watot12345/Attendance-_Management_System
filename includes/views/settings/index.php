@@ -28,15 +28,35 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </p>
         </div>
 
-        <!-- Action Button (Save) -->
+        <!-- Action Buttons -->
         <div class="flex items-center gap-2.5 shrink-0">
+          <a href="<?php echo url('personal-settings'); ?>" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>My Personal Settings</span>
+          </a>
           <button type="button" onclick="saveSettings()" id="save-btn-top" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 group cursor-pointer">
             <svg class="w-4 h-4 text-blue-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
-            <span>Save Changes</span>
+            <span>Save System Changes</span>
           </button>
         </div>
+      </div>
+
+      <!-- Notice: Institutional Settings vs Personal Settings -->
+      <div class="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+            🏛
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-800">Campus Institutional Configuration</h4>
+            <p class="text-[11px] text-slate-500">Parameters modified here affect all faculty, students, automated scans, and reports campus-wide.</p>
+          </div>
+        </div>
+        <a href="<?php echo url('personal-settings'); ?>" class="text-xs font-bold text-blue-600 hover:underline shrink-0">
+          Edit Personal Preferences →
+        </a>
       </div>
 
       <form id="system-settings-form" onsubmit="event.preventDefault(); saveSettings();" class="max-w-4xl space-y-6">

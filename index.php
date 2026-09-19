@@ -13,6 +13,8 @@ if (php_sapi_name() === 'cli-server') {
     }
 }
 
+date_default_timezone_set('Asia/Manila');
+
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
 }

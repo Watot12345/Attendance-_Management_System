@@ -618,4 +618,44 @@ body.confirm-modal-open .page-body {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-}
+}
+
+/* ── Alignment Utilities ──────────────────────────────────── */
+.text-center { text-align: center !important; }
+.text-left   { text-align: left !important; }
+.text-right  { text-align: right !important; }
+
+/* ── 5-Column Responsive KPI Grid ─────────────────────────── */
+.kpi-row-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+@media (max-width: 1100px) {
+  .kpi-row-5 {
+    gap: 0.625rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-row-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-row-5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-row-5 {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+

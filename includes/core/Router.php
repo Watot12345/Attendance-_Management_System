@@ -146,6 +146,7 @@ class Router {
         '/api/excuses/bulk-delete' => 'ExcuseController@bulkDelete',
         '/api/excuses/list'      => 'ExcuseController@listStudent',
         '/api/excuses/review'    => 'ExcuseController@review',
+        '/api/teacher/roster/resolve-section' => 'StudentController@apiResolveSection',
         '/api/teacher/roster/validate' => 'StudentController@validateRoster',
         '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
         '/api/teacher/dashboard/overview' => 'TeacherController@apiDashboardOverview',
@@ -153,12 +154,14 @@ class Router {
         '/api/teacher/qr-session/active'   => 'AttendanceController@getActiveQrSession',
         '/api/teacher/qr-session/close'    => 'AttendanceController@closeQrSession',
         '/api/teacher/attendance/live-feed'=> 'AttendanceController@getLiveAttendanceFeed',
+        '/api/teacher/attendance/void-proxy'=> 'AttendanceController@voidProxyAttendance',
         '/api/attendance/check-in'         => 'AttendanceController@recordCheckIn',
         '/api/attendance/daily'            => 'AttendanceController@apiDailyAttendance',
         '/api/attendance/manual-entry'     => 'AttendanceController@apiManualEntry',
         '/api/teacher/roster/students'     => 'AttendanceController@apiGetRosterStudents',
-        '/api/teacher/awards/calculate'    => 'AttendanceController@apiCalculateAwards',
-        '/api/teacher/awards/seed-sample'  => 'AttendanceController@apiSeedAwardsSample',
+        '/api/teacher/awards/calculate'        => 'AttendanceController@apiCalculateAwards',
+        '/api/teacher/awards/update-candidate' => 'AttendanceController@apiUpdateAwardCandidate',
+        '/api/teacher/awards/seed-sample'      => 'AttendanceController@apiSeedAwardsSample',
 
         // Teachers Master & Bulk Import API
         '/api/teachers'                 => 'TeacherController@handleRoot',
@@ -172,6 +175,13 @@ class Router {
         // System Settings API
         '/api/settings'                 => 'SettingsController@apiIndex',
         '/api/settings/save'            => 'SettingsController@apiSave',
+
+        // User Profile & Personal Preferences API
+        '/api/user/profile'             => 'UserController@apiProfile',
+        '/api/user/profile/update'      => 'UserController@apiUpdateProfile',
+        '/api/user/password/update'     => 'UserController@apiUpdatePassword',
+        '/api/user/preferences'         => 'SettingsController@apiUserPreferences',
+        '/api/user/preferences/save'    => 'SettingsController@apiSaveUserPreferences',
 
         // Overview Dashboard API
         '/api/dashboard/overview'       => 'DashboardController@apiOverview',
@@ -192,6 +202,7 @@ class Router {
 
         // Settings
         '/settings'              => 'settings/index.php',
+        '/personal-settings'     => 'settings/personal.php',
 
         // Awards & Exports
         '/awards'                => 'awards/index.php',
