@@ -1,6 +1,25 @@
 <?php
 $page_title = 'Import Class Roster';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
+require_once dirname(__DIR__, 2) . '/controllers/StudentController.php';
+require_once dirname(__DIR__, 2) . '/controllers/SettingsController.php';
+
+// Fetch active term / semester policy configured in admin settings
+$activeTermRaw = (string) SettingsController::get('semester', 'first semester');
+$academicYearRaw = (string) SettingsController::get('academic_year', '2025-2026');
+$activeSemesterNum = (stripos($activeTermRaw, 'second') !== false || stripos($activeTermRaw, '2') !== false) ? 2 : 1;
+$activeSemesterLabel = ($activeSemesterNum === 2) ? '2nd Semester' : '1st Semester';
+$headerTermDisplay = "{$activeSemesterLabel} AY {$academicYearRaw}";
+
+$db = Database::getConnection();
+$initialSection = StudentController::resolveSection($db, 'BSIT', 3, $activeSemesterNum);
+
+// Get initial section capacity count
+$cntStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec OR section = :sec_legacy");
+$cntStmt->execute([':sec' => $initialSection, ':sec_legacy' => 'BSIT ' . $initialSection]);
+$initialSectionCount = (int) $cntStmt->fetchColumn();
+
 require_once dirname(__DIR__) . '/partials/header.php';
 ?>
 
@@ -68,10 +87,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
                 <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Target Class &amp; Section Details</h3>
               </div>
-              <span class="text-xs text-slate-500 font-medium bg-white px-2.5 py-1 rounded-full border border-slate-200">1st Semester AY 2025–2026</span>
+              <span id="header-semester-badge" class="text-xs text-slate-500 font-medium bg-white px-2.5 py-1 rounded-full border border-slate-200"><?php echo htmlspecialchars($headerTermDisplay); ?></span>
             </div>
 
-              <!-- Row 1: Course (BSIT/BSIS), Year Level, Section Number, Major -->
+              <!-- Hidden Active Semester from Admin Settings -->
+              <input type="hidden" id="target-semester" name="semester" value="<?php echo $activeSemesterNum; ?>">
+
+              <!-- Row 1: Course, Year Level, Section, Major / Track -->
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                 <!-- 1. Course Option (BSIT, BSIS) -->
                 <div>
@@ -89,7 +111,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <label for="target-year-level" class="form-label text-xs font-semibold uppercase tracking-wider mb-1 block text-slate-700">
                     Year Level <span class="text-red-500">*</span>
                   </label>
-                  <select id="target-year-level" name="year_level" class="form-input form-select text-xs" required>
+                  <select id="target-year-level" name="year_level" class="form-input form-select text-xs" required onchange="handleClassAttributeChange()">
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
                     <option value="3rd Year" selected>3rd Year</option>
@@ -97,20 +119,22 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   </select>
                 </div>
 
-                <!-- 3. Section (Number) -->
+                <!-- 3. Section (5-Digit School Policy) -->
                 <div>
-                  <label for="target-section-num" class="form-label text-xs font-semibold uppercase tracking-wider mb-1 block text-slate-700">
-                    Section (Number) <span class="text-red-500">*</span>
+                  <label for="target-section-display" class="form-label text-xs font-semibold uppercase tracking-wider mb-1 block text-slate-700">
+                    Section <span class="text-red-500">*</span>
                   </label>
-                  <input type="number" id="target-section-num" name="section_num" min="1" max="99" class="form-input text-xs" placeholder="e.g. 1" value="1" required>
+                  <input type="text" id="target-section-display" name="section_display" class="form-input text-xs font-mono font-bold uppercase" placeholder="e.g. 31001" value="<?php echo htmlspecialchars($initialSection); ?>" oninput="handleSectionManualInput(this.value)" required>
+                  <input type="hidden" id="target-section" name="section" value="<?php echo htmlspecialchars($initialSection); ?>">
+                  <input type="hidden" id="target-section-num" name="section_num" value="<?php echo substr($initialSection, 2); ?>">
                 </div>
 
-                <!-- 4. Major (Option based on Course: NA, IM, IS for IT) -->
+                <!-- 4. Major / Track -->
                 <div>
                   <label for="target-major" class="form-label text-xs font-semibold uppercase tracking-wider mb-1 block text-slate-700">
                     Major / Track <span class="text-red-500">*</span>
                   </label>
-                  <select id="target-major" name="major" class="form-input form-select text-xs" required>
+                  <select id="target-major" name="major" class="form-input form-select text-xs" required onchange="updatePreviewSummary()">
                     <option value="NA" selected>NA (Network Administration)</option>
                     <option value="IM">IM (Information Management)</option>
                     <option value="IS">IS (Information Security / Systems)</option>
@@ -177,7 +201,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
               <div class="p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-lg text-[11px] text-blue-900 flex items-center gap-2">
                 <span class="font-bold text-blue-800">Class Identifier Preview:</span>
-                <span id="class-preview-summary" class="font-semibold text-blue-950 font-mono">BSIT 3-1 (NA) · IT301: Web Systems and Technologies (Room 402)</span>
+                <span id="class-preview-summary" class="font-semibold text-blue-950 font-mono">BSIT <?php echo htmlspecialchars($initialSection); ?> (NA) · IT301: Web Systems and Technologies (Room 402 · Monday 08:00 AM)</span>
               </div>
             </div>
 
@@ -420,14 +444,109 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <option value="Core">None / Core General</option>
         `;
       }
+      handleClassAttributeChange();
+    }
+
+    async function handleClassAttributeChange() {
+      const course = document.getElementById('target-course-program')?.value || 'BSIT';
+      const yearInput = document.getElementById('target-year-level')?.value || '3';
+      const yearLevel = yearInput.replace(/[^0-9]/g, '') || '3';
+      const semesterVal = document.getElementById('target-semester')?.value || '<?php echo $activeSemesterNum; ?>';
+      const semester = semesterVal.replace(/[^0-9]/g, '') || '<?php echo $activeSemesterNum; ?>';
+
+      // Immediate client-side fallback based on school 5-digit policy: [Year][Semester]001
+      const fallbackSection = `${yearLevel}${semester}001`;
+      const displayEl = document.getElementById('target-section-display');
+      const hiddenEl = document.getElementById('target-section');
+      const hiddenNumEl = document.getElementById('target-section-num');
+      const capacityPill = document.getElementById('target-section-capacity-pill');
+
+      // Optimistic update to avoid UI latency
+      if (displayEl) displayEl.value = fallbackSection;
+      if (hiddenEl) hiddenEl.value = fallbackSection;
+      if (hiddenNumEl) hiddenNumEl.value = '001';
       updatePreviewSummary();
+
+      // Query server for exact next available section with 50-student rollover capacity
+      try {
+        const url = '<?php echo url("api/teacher/roster/resolve-section"); ?>' +
+                    `?course=${encodeURIComponent(course)}&year_level=${encodeURIComponent(yearLevel)}&semester=${encodeURIComponent(semester)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.section) {
+            if (displayEl) displayEl.value = data.section;
+            if (hiddenEl) hiddenEl.value = data.section;
+            if (hiddenNumEl) hiddenNumEl.value = data.section.slice(2);
+            if (capacityPill) {
+              const count = data.current_count || 0;
+              const maxCap = data.max_capacity || 50;
+              if (count >= maxCap) {
+                capacityPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200';
+                capacityPill.textContent = `${count}/${maxCap} Enrolled (Full)`;
+              } else {
+                capacityPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+                capacityPill.textContent = `${count}/${maxCap} Enrolled`;
+              }
+            }
+            updatePreviewSummary();
+          }
+        }
+      } catch (err) {
+        console.warn('Could not query live section status, using policy fallback', err);
+      }
+    }
+
+    let sectionCheckTimeout = null;
+    function handleSectionManualInput(val) {
+      val = (val || '').trim();
+      const hiddenEl = document.getElementById('target-section');
+      const hiddenNumEl = document.getElementById('target-section-num');
+      if (hiddenEl) hiddenEl.value = val;
+      if (hiddenNumEl) hiddenNumEl.value = val.length >= 3 ? val.slice(2) : val;
+      updatePreviewSummary();
+
+      clearTimeout(sectionCheckTimeout);
+      sectionCheckTimeout = setTimeout(() => {
+        checkManualSectionCapacity(val);
+      }, 400);
+    }
+
+    async function checkManualSectionCapacity(sec) {
+      if (!sec) return;
+      const course = document.getElementById('target-course-program')?.value || 'BSIT';
+      const yearInput = document.getElementById('target-year-level')?.value || '3';
+      const yearLevel = yearInput.replace(/[^0-9]/g, '') || '3';
+      const semesterVal = document.getElementById('target-semester')?.value || '1';
+      const semester = semesterVal.replace(/[^0-9]/g, '') || '1';
+      const capacityPill = document.getElementById('target-section-capacity-pill');
+
+      try {
+        const url = '<?php echo url("api/teacher/roster/resolve-section"); ?>' +
+                    `?course=${encodeURIComponent(course)}&year_level=${encodeURIComponent(yearLevel)}&semester=${encodeURIComponent(semester)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (capacityPill && data) {
+            const count = data.current_count || 0;
+            const maxCap = data.max_capacity || 50;
+            if (count >= maxCap) {
+              capacityPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200';
+              capacityPill.textContent = `${count}/${maxCap} Enrolled (Full)`;
+            } else {
+              capacityPill.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+              capacityPill.textContent = `${count}/${maxCap} Enrolled`;
+            }
+          }
+        }
+      } catch (err) {}
     }
 
     function updatePreviewSummary() {
       const details = getTargetClassDetails();
       const majorStr = (details.major && details.major !== 'Core') ? ` (${details.major})` : '';
       const schedStr = ` · ${details.schedule_day} ${formatTimeToAmPm(details.scheduled_time)}`;
-      const summaryText = `${details.course} ${details.year_level}-${details.section_num}${majorStr} · ${details.course_code}: ${details.course_title} (Room ${details.room_num}${schedStr})`;
+      const summaryText = `${details.course} ${details.section}${majorStr} · ${details.course_code}: ${details.course_title} (Room ${details.room_num}${schedStr})`;
 
       const el = document.getElementById('class-preview-summary');
       if (el) el.textContent = summaryText;
@@ -450,7 +569,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
       const course = document.getElementById('target-course-program')?.value || 'BSIT';
       const yearInput = document.getElementById('target-year-level')?.value || '3';
       const yearLevel = yearInput.replace(/[^0-9]/g, '') || '3';
-      const sectionNum = document.getElementById('target-section-num')?.value || '1';
+      const semesterVal = document.getElementById('target-semester')?.value || '<?php echo $activeSemesterNum; ?>';
+      const semester = semesterVal.replace(/[^0-9]/g, '') || '<?php echo $activeSemesterNum; ?>';
+      const displayVal = document.getElementById('target-section-display')?.value?.trim();
+      const section = displayVal || document.getElementById('target-section')?.value || `${yearLevel}${semester}001`;
+      const sectionNum = document.getElementById('target-section-num')?.value || (section.length >= 3 ? section.slice(2) : '001');
       const major = document.getElementById('target-major')?.value || '';
       const courseCode = (document.getElementById('target-course-code')?.value || 'IT301').trim().toUpperCase();
       const courseTitle = (document.getElementById('target-course-title')?.value || 'Web Systems and Technologies').trim();
@@ -461,8 +584,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
       return {
         course: course,
         year_level: yearLevel,
+        semester: semester,
         section_num: sectionNum,
-        section: `${course} ${yearLevel}-${sectionNum}`,
+        section: section,
         major: (major && major !== 'Core') ? major : '',
         course_code: courseCode,
         course_title: courseTitle,
@@ -475,7 +599,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
     // Attach input listeners for live preview
     document.addEventListener('DOMContentLoaded', () => {
-      ['target-course-program', 'target-year-level', 'target-section-num', 'target-major', 'target-course-code', 'target-course-title', 'target-schedule-day', 'target-scheduled-time', 'target-room-num'].forEach(id => {
+      ['target-course-program', 'target-year-level', 'target-section-display', 'target-major', 'target-course-code', 'target-course-title', 'target-schedule-day', 'target-scheduled-time', 'target-room-num'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
           input.addEventListener('input', updatePreviewSummary);
@@ -989,6 +1113,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         if (typeof APP !== 'undefined' && APP.toast) {
           APP.toast(`Warning: ${skippedNotes.join(' and ')} will be skipped automatically.`, 'warning', 5000);
+        }
+      } else if (data.would_exceed_capacity) {
+        if (warnBanner) {
+          warnBanner.className = 'p-4 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-3 mb-6 text-xs text-amber-900 shadow-2xs';
+          warnBanner.classList.remove('hidden');
+        }
+        if (warnTitle) warnTitle.textContent = 'Section Capacity Advisory (Policy Limit: 50)';
+        if (warnMsg) warnMsg.textContent = `Section ${classDetails.section} already has ${data.section_enrolled_count || 0} student(s) enrolled. Enrolling ${valid_count} additional student(s) will exceed the 50-student section policy (${(data.section_enrolled_count || 0) + valid_count}/50).`;
+
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.className = 'btn btn-primary flex items-center gap-2';
+          confirmBtn.innerHTML = `<span>Confirm &amp; Import ${valid_count} Students</span>`;
         }
       } else {
         if (warnBanner) warnBanner.classList.add('hidden');

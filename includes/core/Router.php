@@ -138,6 +138,7 @@ class Router {
         '/api/excuses/bulk-delete' => 'ExcuseController@bulkDelete',
         '/api/excuses/list'      => 'ExcuseController@listStudent',
         '/api/excuses/review'    => 'ExcuseController@review',
+        '/api/teacher/roster/resolve-section' => 'StudentController@apiResolveSection',
         '/api/teacher/roster/validate' => 'StudentController@validateRoster',
         '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
         '/api/teacher/dashboard/overview' => 'TeacherController@apiDashboardOverview',

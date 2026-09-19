@@ -90,14 +90,29 @@ class StudentController {
     }
 
     /**
-     * Resolve assigned section according to 5-digit Year1001 convention and 50-student capacity rollover
-     * e.g. 1st Year: 11001, 2nd Year: 21001, 3rd Year: 31001, 4th Year: 41001. Rolls over to 41002 once 50 students is reached.
-     * Pure 5 digits (no course prefix, since table header is ASSIGNED SECTION).
+     * Resolve assigned section according to 5-digit [Year][Semester][Sequence] convention and 50-student capacity rollover
+     * Format: [Year (1-4)][Semester (1-2)][Sequence (001-999)]
+     * e.g.
+     * 1st Year, 1st Sem: 11001 (rolls over to 11002 once 50 students reached)
+     * 1st Year, 2nd Sem: 12001 (rolls over to 12002 once 50 students reached)
+     * 2nd Year, 1st Sem: 21001 | 2nd Sem: 22001
+     * 3rd Year, 1st Sem: 31001 | 2nd Sem: 32001
+     * 4th Year, 1st Sem: 41001 | 2nd Sem: 42001
+     * Pure 5 digits (no course prefix).
      */
-    public static function resolveSection(PDO $db, string $course, int $yearLevel, string $requested = ''): string {
+    public static function resolveSection(PDO $db, string $course, int $yearLevel, $semesterOrRequested = 1, string $requested = ''): string {
         $course = strtoupper(trim($course));
         if ($yearLevel < 1 || $yearLevel > 4) {
             $yearLevel = 1;
+        }
+
+        // Handle backward compatibility: resolveSection($db, $course, $yearLevel, $requestedString)
+        $semester = 1;
+        if (is_numeric($semesterOrRequested)) {
+            $semVal = (int)$semesterOrRequested;
+            $semester = ($semVal === 2) ? 2 : 1;
+        } elseif (is_string($semesterOrRequested) && !empty($semesterOrRequested)) {
+            $requested = $semesterOrRequested;
         }
 
         // Clean requested: strip any leading non-digits/course prefix if entered (e.g. "BSIT 31001" -> "31001")
@@ -113,10 +128,10 @@ class StudentController {
             }
         }
 
-        // Auto-assign next available sequence in [Year]1XXX series (e.g. 11001, 21001, 31001, 41001)
+        // Auto-assign next available sequence in [Year][Semester]XXX series (e.g. 11001, 12001, etc.)
         $seq = 1;
         while ($seq <= 999) {
-            $candidate = sprintf('%d1%03d', $yearLevel, $seq);
+            $candidate = sprintf('%d%d%03d', $yearLevel, $semester, $seq);
             $chkStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec OR section = :sec_legacy");
             $chkStmt->execute([':sec' => $candidate, ':sec_legacy' => $course . ' ' . $candidate]);
             $cnt = (int) $chkStmt->fetchColumn();
@@ -126,7 +141,7 @@ class StudentController {
             $seq++;
         }
 
-        return sprintf('%d1001', $yearLevel);
+        return sprintf('%d%d001', $yearLevel, $semester);
     }
 
     /**
@@ -637,6 +652,56 @@ class StudentController {
     }
 
     /**
+     * GET/POST /api/teacher/roster/resolve-section
+     * Resolves the next available 5-digit section and its current capacity under the school section policy
+     */
+    public function apiResolveSection(): void {
+        header('Content-Type: application/json; charset=utf-8');
+
+        require_once dirname(__DIR__) . '/controllers/SettingsController.php';
+        $activeTermSetting = strtolower(trim((string)SettingsController::get('semester', 'first semester')));
+        $defaultSemester = (str_contains($activeTermSetting, 'second') || str_contains($activeTermSetting, '2')) ? 2 : 1;
+
+        $course = strtoupper(trim($_GET['course'] ?? $_POST['course'] ?? 'BSIT'));
+        $yearLevel = (int)preg_replace('/\D/', '', (string)($_GET['year_level'] ?? $_POST['year_level'] ?? 3)) ?: 3;
+        $semesterParam = $_GET['semester'] ?? $_POST['semester'] ?? null;
+        $semester = !empty($semesterParam) ? ((int)preg_replace('/\D/', '', (string)$semesterParam) ?: $defaultSemester) : $defaultSemester;
+
+        if ($yearLevel < 1 || $yearLevel > 4) $yearLevel = 3;
+        if ($semester < 1 || $semester > 2) $semester = $defaultSemester;
+
+        try {
+            $db = Database::getConnection();
+            $section = self::resolveSection($db, $course, $yearLevel, $semester);
+
+            $cntStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :sec OR section = :sec_legacy");
+            $cntStmt->execute([':sec' => $section, ':sec_legacy' => $course . ' ' . $section]);
+            $currentCount = (int) $cntStmt->fetchColumn();
+
+            echo json_encode([
+                'success'         => true,
+                'course'          => $course,
+                'year_level'      => $yearLevel,
+                'semester'        => $semester,
+                'section'         => $section,
+                'current_count'   => $currentCount,
+                'max_capacity'    => 50,
+                'available_slots' => max(0, 50 - $currentCount)
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode([
+                'success'         => false,
+                'message'         => 'Error resolving section: ' . $e->getMessage(),
+                'section'         => sprintf('%d%d001', $yearLevel, $semester),
+                'current_count'   => 0,
+                'max_capacity'    => 50,
+                'available_slots' => 50
+            ]);
+        }
+        exit;
+    }
+
+    /**
      * POST /api/teacher/roster/validate
      * Validates an uploaded student list against users and class_roster for duplicates
      */
@@ -652,6 +717,7 @@ class StudentController {
         }
 
         $courseCode = strtoupper(trim($input['course_code'] ?? 'IT301'));
+        $course = strtoupper(trim($input['course'] ?? 'BSIT'));
         $section = trim($input['section'] ?? '1');
         $teacherId = !empty($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : (!empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (!empty($input['teacher_id']) ? (int)$input['teacher_id'] : 2));
         $students = $input['students'] ?? [];
@@ -743,19 +809,27 @@ class StudentController {
                 ];
             }
 
+            $secCountStmt = $db->prepare("SELECT COUNT(*) FROM class_roster WHERE section = :section OR section = :sec_legacy");
+            $secCountStmt->execute([':section' => $section, ':sec_legacy' => $course . ' ' . $section]);
+            $currentSectionEnrolled = (int)$secCountStmt->fetchColumn();
+
             echo json_encode([
-                'success'           => true,
-                'status'            => 'success',
-                'teacher_id'        => $teacherId,
-                'course_code'       => $courseCode,
-                'section'           => $section,
-                'students'          => $validatedRows,
-                'total'             => count($students),
-                'valid_count'       => $validCount,
-                'duplicate_count'   => $duplicateCount,
-                'unregistered_count'=> $unregisteredCount,
-                'all_duplicate'     => (count($students) > 0 && $duplicateCount === count($students)),
-                'all_unregistered'  => (count($students) > 0 && $unregisteredCount === count($students)),
+                'success'                => true,
+                'status'                 => 'success',
+                'teacher_id'             => $teacherId,
+                'course_code'            => $courseCode,
+                'section'                => $section,
+                'section_enrolled_count' => $currentSectionEnrolled,
+                'max_capacity'           => 50,
+                'available_slots'        => max(0, 50 - $currentSectionEnrolled),
+                'would_exceed_capacity'  => (($currentSectionEnrolled + $validCount) > 50),
+                'students'               => $validatedRows,
+                'total'                  => count($students),
+                'valid_count'            => $validCount,
+                'duplicate_count'        => $duplicateCount,
+                'unregistered_count'     => $unregisteredCount,
+                'all_duplicate'          => (count($students) > 0 && $duplicateCount === count($students)),
+                'all_unregistered'       => (count($students) > 0 && $unregisteredCount === count($students)),
             ]);
             exit;
 
@@ -780,9 +854,10 @@ class StudentController {
             exit;
         }
 
-        $course      = trim($input['course'] ?? 'BSIT');
+        $course      = strtoupper(trim($input['course'] ?? 'BSIT'));
         $yearLevel   = (int)preg_replace('/\D/', '', (string)($input['year_level'] ?? '3')) ?: 3;
-        $section     = trim($input['section'] ?? '1');
+        $semester    = (int)preg_replace('/\D/', '', (string)($input['semester'] ?? '1')) ?: 1;
+        $section     = trim($input['section'] ?? '');
         $major       = trim($input['major'] ?? '');
         $courseCode  = strtoupper(trim($input['course_code'] ?? 'IT301'));
         $courseTitle = trim($input['course_title'] ?? 'Web Systems and Technologies');
@@ -801,6 +876,10 @@ class StudentController {
         }
 
         $db = Database::getConnection();
+
+        if (empty($section)) {
+            $section = self::resolveSection($db, $course, $yearLevel, $semester);
+        }
 
         try {
             $db->beginTransaction();
