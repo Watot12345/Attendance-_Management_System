@@ -150,8 +150,9 @@ class Router {
         '/api/attendance/daily'            => 'AttendanceController@apiDailyAttendance',
         '/api/attendance/manual-entry'     => 'AttendanceController@apiManualEntry',
         '/api/teacher/roster/students'     => 'AttendanceController@apiGetRosterStudents',
-        '/api/teacher/awards/calculate'    => 'AttendanceController@apiCalculateAwards',
-        '/api/teacher/awards/seed-sample'  => 'AttendanceController@apiSeedAwardsSample',
+        '/api/teacher/awards/calculate'        => 'AttendanceController@apiCalculateAwards',
+        '/api/teacher/awards/update-candidate' => 'AttendanceController@apiUpdateAwardCandidate',
+        '/api/teacher/awards/seed-sample'      => 'AttendanceController@apiSeedAwardsSample',
 
         // Teachers Master & Bulk Import API
         '/api/teachers'                 => 'TeacherController@handleRoot',

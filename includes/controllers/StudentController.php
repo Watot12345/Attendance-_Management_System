@@ -991,6 +991,9 @@ class StudentController {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             session_start();
         }
+        if (!empty($_GET['student_id']) && is_numeric($_GET['student_id'])) {
+            return (int)$_GET['student_id'];
+        }
         if (!empty($_SESSION['student_id'])) {
             return (int)$_SESSION['student_id'];
         }
@@ -1024,7 +1027,6 @@ class StudentController {
             sprintf('%04d-08-21', $year) => ['name' => "Ninoy Aquino Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
             sprintf('%04d-08-31', $year) => ['name' => "National Heroes Day", 'type' => 'holiday', 'desc' => 'Regular Public Holiday'],
             // School Suspensions & Academic Breaks
-            sprintf('%04d-09-03', $year) => ['name' => "Class Suspension (Inclement Weather / Typhoon)", 'type' => 'suspension', 'desc' => 'DepEd/CHED & LGU Weather Class Suspension'],
             sprintf('%04d-09-21', $year) => ['name' => "BCP Institutional Foundation Day", 'type' => 'suspension', 'desc' => 'College-wide Non-Working Academic Break'],
             sprintf('%04d-11-01', $year) => ['name' => "All Saints' Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Holiday'],
             sprintf('%04d-11-02', $year) => ['name' => "All Souls' Day", 'type' => 'holiday', 'desc' => 'Special Non-Working Day'],
@@ -1127,13 +1129,13 @@ class StudentController {
             }
         } catch (Exception $e) {}
 
-        // 4. Fetch Approved Excuse Slips for this month
+        // 4. Fetch Excuse Slips for this month
         $excuseMap = [];
         try {
             $eStmt = $db->prepare("
                 SELECT excuse_slip_id, subject, date_of_absence, reason, explanation, status
                 FROM excuse_slips
-                WHERE student_id = ? AND status = 'approved' AND date_of_absence BETWEEN ? AND ?
+                WHERE student_id = ? AND date_of_absence BETWEEN ? AND ?
             ");
             $eStmt->execute([$studentId, $startDate, $endDate]);
             $eRows = $eStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1178,45 +1180,8 @@ class StudentController {
             $details = '';
             $bgClass = 'bg-white border-slate-200/80 hover:bg-slate-50';
 
-            // Check Precedence 1: Holiday or School Suspension
-            if (isset($events[$dateStr])) {
-                $ev = $events[$dateStr];
-                $noClassDays++;
-                if ($ev['type'] === 'suspension') {
-                    $status = 'suspension';
-                    $badgeText = 'Suspended';
-                    $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
-                    $bgClass = 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/50';
-                    $details = "School Suspension: {$ev['name']} ({$ev['desc']})";
-                } else {
-                    $status = 'holiday';
-                    $badgeText = 'Holiday';
-                    $badgeClass = 'bg-purple-100 text-purple-800 border-purple-200';
-                    $bgClass = 'bg-purple-50/70 border-purple-200 hover:bg-purple-100/50';
-                    $details = "Official Holiday: {$ev['name']} ({$ev['desc']})";
-                }
-            }
-            // Check Precedence 2: Weekend
-            elseif ($isWeekend) {
-                $status = 'weekend';
-                $badgeText = 'No Class';
-                $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
-                $bgClass = 'bg-slate-50/80 border-slate-200/60 text-slate-400';
-                $details = 'Weekend — No scheduled classes';
-                $noClassDays++;
-            }
-            // Check Precedence 3: Approved Excuse Slip
-            elseif (isset($excuseMap[$dateStr])) {
-                $status = 'excused';
-                $badgeText = 'Excused ✉';
-                $badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
-                $bgClass = 'bg-blue-50/80 border-blue-200 hover:scale-[1.02] shadow-xs';
-                $sl = $excuseMap[$dateStr];
-                $details = "Excused Slip Approved: {$sl['reason']}";
-                $excusedDays++;
-            }
-            // Check Precedence 4: Attendance Log
-            elseif (isset($attendanceMap[$dateStr])) {
+            // Precedence 1: Actual Attendance Log Recorded in Database
+            if (isset($attendanceMap[$dateStr])) {
                 $recs = $attendanceMap[$dateStr];
                 $hasPresent = false;
                 $hasTardy = false;
@@ -1224,7 +1189,7 @@ class StudentController {
                 $subjList = [];
 
                 foreach ($recs as $r) {
-                    $timeFormatted = !empty($r['time']) ? date('h:i A', strtotime($r['time'])) : '';
+                    $timeFormatted = !empty($r['time']) && $r['time'] !== '00:00:00' ? date('h:i A', strtotime($r['time'])) : '';
                     $subjList[] = "{$r['subject']} ({$r['status']}" . ($timeFormatted ? " at {$timeFormatted}" : "") . ")";
                     if ($r['status'] === 'present') $hasPresent = true;
                     if ($r['status'] === 'tardy') $hasTardy = true;
@@ -1246,15 +1211,71 @@ class StudentController {
                     $details = implode(' • ', $subjList);
                     $tardyDays++;
                 } else {
-                    $status = 'absent';
-                    $badgeText = 'Absent';
-                    $badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
-                    $bgClass = 'bg-rose-50/80 border-rose-200 hover:scale-[1.02] shadow-xs';
-                    $details = implode(' • ', $subjList);
-                    $absentDays++;
+                    // Logged Absent — check if an approved excuse slip covers this absence
+                    if (isset($excuseMap[$dateStr]) && $excuseMap[$dateStr]['status'] === 'approved') {
+                        $sl = $excuseMap[$dateStr];
+                        $status = 'excused';
+                        $badgeText = 'Excused ✉';
+                        $badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+                        $bgClass = 'bg-blue-50/80 border-blue-200 hover:scale-[1.02] shadow-xs';
+                        $details = "Excused Absence: {$sl['reason']} (" . implode(' • ', $subjList) . ")";
+                        $excusedDays++;
+                    } elseif (isset($excuseMap[$dateStr]) && $excuseMap[$dateStr]['status'] === 'pending') {
+                        $sl = $excuseMap[$dateStr];
+                        $status = 'absent';
+                        $badgeText = 'Pending Slip';
+                        $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                        $bgClass = 'bg-amber-50/60 border-amber-200 hover:scale-[1.02] shadow-xs';
+                        $details = "Absence with Excuse Slip Pending Faculty Review: {$sl['reason']}";
+                        $absentDays++;
+                    } else {
+                        $status = 'absent';
+                        $badgeText = 'Absent';
+                        $badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+                        $bgClass = 'bg-rose-50/80 border-rose-200 hover:scale-[1.02] shadow-xs';
+                        $details = implode(' • ', $subjList);
+                        $absentDays++;
+                    }
                 }
             }
-            // Check Precedence 5: Future or Current Day
+            // Precedence 2: Standalone Approved Excuse Slip
+            elseif (isset($excuseMap[$dateStr]) && $excuseMap[$dateStr]['status'] === 'approved') {
+                $status = 'excused';
+                $badgeText = 'Excused ✉';
+                $badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
+                $bgClass = 'bg-blue-50/80 border-blue-200 hover:scale-[1.02] shadow-xs';
+                $sl = $excuseMap[$dateStr];
+                $details = "Excused Slip Approved: {$sl['reason']}";
+                $excusedDays++;
+            }
+            // Precedence 3: Holiday or Institutional Suspension
+            elseif (isset($events[$dateStr])) {
+                $ev = $events[$dateStr];
+                $noClassDays++;
+                if ($ev['type'] === 'suspension') {
+                    $status = 'suspension';
+                    $badgeText = 'Suspended';
+                    $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                    $bgClass = 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/50';
+                    $details = "School Suspension: {$ev['name']} ({$ev['desc']})";
+                } else {
+                    $status = 'holiday';
+                    $badgeText = 'Holiday';
+                    $badgeClass = 'bg-purple-100 text-purple-800 border-purple-200';
+                    $bgClass = 'bg-purple-50/70 border-purple-200 hover:bg-purple-100/50';
+                    $details = "Official Holiday: {$ev['name']} ({$ev['desc']})";
+                }
+            }
+            // Precedence 4: Weekend (No scheduled classes)
+            elseif ($isWeekend) {
+                $status = 'weekend';
+                $badgeText = 'No Class';
+                $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
+                $bgClass = 'bg-slate-50/80 border-slate-200/60 text-slate-400';
+                $details = 'Weekend — No scheduled classes';
+                $noClassDays++;
+            }
+            // Precedence 5: Future or Current Day
             elseif ($isFuture) {
                 $status = 'upcoming';
                 $badgeText = 'Upcoming';

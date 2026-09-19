@@ -1703,5 +1703,105 @@ class AttendanceController {
             exit;
         }
     }
+
+    /**
+     * POST /api/teacher/awards/update-candidate
+     * Allows teacher to correct candidate student details (name, student number, email, section, course title)
+     */
+    public function apiUpdateAwardCandidate(): void {
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        try {
+            $db = Database::getConnection();
+            $teacherId = $this->resolveTeacherId($db);
+
+            $studentId = (int)($_POST['student_id'] ?? 0);
+            if ($studentId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid student ID.']);
+                exit;
+            }
+
+            $firstName = trim($_POST['first_name'] ?? '');
+            $lastName  = trim($_POST['last_name'] ?? '');
+            $studentNumber = trim($_POST['student_number'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $section = trim($_POST['section'] ?? '');
+            $courseTitle = trim($_POST['course_title'] ?? '');
+
+            if ($firstName === '' || $lastName === '') {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'First name and last name are required.']);
+                exit;
+            }
+
+            // Update users table
+            $userUpdateSql = "UPDATE users SET first_name = :fn, last_name = :ln";
+            $userParams = [
+                ':fn'  => $firstName,
+                ':ln'  => $lastName,
+                ':uid' => $studentId
+            ];
+
+            if ($studentNumber !== '') {
+                $userUpdateSql .= ", student_id = :sn";
+                $userParams[':sn'] = (int)$studentNumber;
+            }
+            if ($email !== '') {
+                $userUpdateSql .= ", email = :em";
+                $userParams[':em'] = $email;
+            }
+            $userUpdateSql .= " WHERE user_id = :uid";
+            $stmt = $db->prepare($userUpdateSql);
+            $stmt->execute($userParams);
+
+            // Update class_roster table for this teacher and student
+            $rosterUpdateSql = "UPDATE class_roster SET first_name = :fn, last_name = :ln";
+            $rosterParams = [
+                ':fn'  => $firstName,
+                ':ln'  => $lastName,
+                ':sid' => $studentId,
+                ':tid' => $teacherId
+            ];
+            if ($section !== '') {
+                $rosterUpdateSql .= ", section = :sec";
+                $rosterParams[':sec'] = $section;
+            }
+            if ($courseTitle !== '') {
+                $rosterUpdateSql .= ", course_title = :ct";
+                $rosterParams[':ct'] = $courseTitle;
+            }
+            $rosterUpdateSql .= " WHERE student_id = :sid AND teacher_id = :tid";
+            $stmtRoster = $db->prepare($rosterUpdateSql);
+            $stmtRoster->execute($rosterParams);
+
+            echo json_encode([
+                'status'         => 'success',
+                'message'        => 'Student information updated successfully.',
+                'student_id'     => $studentId,
+                'first_name'     => $firstName,
+                'last_name'      => $lastName,
+                'full_name'      => $lastName . ', ' . $firstName,
+                'student_number' => $studentNumber,
+                'email'          => $email,
+                'section'        => $section,
+                'course_title'   => $courseTitle
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            if (!headers_sent()) {
+                http_response_code(500);
+            }
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Failed to update student info: ' . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 }
+
 

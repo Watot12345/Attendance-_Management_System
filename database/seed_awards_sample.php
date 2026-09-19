@@ -47,14 +47,19 @@ function seedAwardsSampleData(PDO $db, int $teacherId = 2): array {
         ]);
 
         // 2. Maria Santos (Student 4): 100% Present (Flawless 10/10)
+        // 2. Maria Santos (Student 4): 9 Present, 1 Absent on 2026-09-08
+        $mariaStatus = ($date === '2026-09-08') ? 'absent' : 'present';
+        $mariaTime   = ($date === '2026-09-08') ? '00:00:00' : '07:58:00';
         $insAtt->execute([
             ':student_id'    => 4,
             ':teacher_id'    => $teacherId,
             ':qr_session_id' => null,
             ':date'          => $date,
             ':time'          => '07:58:00',
+            ':time'          => $mariaTime,
             ':subject'       => $subject,
             ':status'        => 'present',
+            ':status'        => $mariaStatus,
             ':schedule_date' => $date
         ]);
 

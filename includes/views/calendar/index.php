@@ -185,7 +185,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
                   <?php if ($day['status'] === 'present'): ?>
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <?php elseif ($day['status'] === 'tardy'): ?>
+                  <?php elseif ($day['status'] === 'tardy' || $day['status'] === 'late'): ?>
                     <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                   <?php elseif ($day['status'] === 'absent'): ?>
                     <span class="w-2 h-2 rounded-full bg-rose-500"></span>
@@ -294,7 +294,7 @@ function showCalendarDayInfo(date, status, details, rawStatus) {
     if (rawStatus === 'present') {
       modalBadge.className += 'bg-emerald-100 text-emerald-800 border-emerald-200';
       if (iconContainer) iconContainer.innerHTML = '✓';
-    } else if (rawStatus === 'tardy') {
+    } else if (rawStatus === 'tardy' || rawStatus === 'late') {
       modalBadge.className += 'bg-amber-100 text-amber-800 border-amber-200';
       if (iconContainer) iconContainer.innerHTML = '⏱';
     } else if (rawStatus === 'absent') {

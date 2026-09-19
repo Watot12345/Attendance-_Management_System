@@ -181,10 +181,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <!-- Class Section Selector -->
           <div>
             <label for="award-section" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Target Assigned Class</label>
-            <select id="award-section" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
-              <option value="ALL">All My Assigned Classes</option>
+            <select id="award-section" onchange="calculateAwards()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
+              <option value="ALL" selected>All My Assigned Classes</option>
               <?php foreach ($assignedSections as $sec): ?>
-                <option value="<?= htmlspecialchars($sec['section'], ENT_QUOTES, 'UTF-8') ?>" selected>
+                <option value="<?= htmlspecialchars($sec['section'], ENT_QUOTES, 'UTF-8') ?>">
                   Section <?= htmlspecialchars($sec['section'], ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($sec['course_title'], ENT_QUOTES, 'UTF-8') ?>
                 </option>
               <?php endforeach; ?>
@@ -194,7 +194,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <!-- Evaluation Period -->
           <div>
             <label for="award-period" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Evaluation Period</label>
-            <select id="award-period" onchange="handlePeriodChange(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
+            <select id="award-period" onchange="handlePeriodChange(this.value); calculateAwards();" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
               <option value="month" selected>Monthly Honors (September 2026)</option>
               <option value="last_month">Previous Month (August 2026)</option>
               <option value="sem">Full 1st Semester (AY 2025–2026)</option>
@@ -205,7 +205,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <!-- Strictness -->
           <div>
             <label for="award-strictness" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Threshold Standard</label>
-            <select id="award-strictness" onchange="updateThresholdBadge(this.value)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
+            <select id="award-strictness" onchange="updateThresholdBadge(this.value); calculateAwards();" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-800 outline-none">
               <option value="100" selected>100% Flawless Attendance (0 Absences, 0 Lates)</option>
               <option value="98">98%+ High Honors (Max 1 Excused Slip)</option>
             </select>
@@ -216,21 +216,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <div id="custom-date-row" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100 mb-4">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Date</label>
-            <input type="date" id="award-start-date" value="<?= date('Y-m-01') ?>" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium">
+            <input type="date" id="award-start-date" value="<?= date('Y-m-01') ?>" onchange="calculateAwards()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">End Date</label>
-            <input type="date" id="award-end-date" value="<?= date('Y-m-d') ?>" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium">
+            <input type="date" id="award-end-date" value="<?= date('Y-m-d') ?>" onchange="calculateAwards()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium">
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2">
-          <!-- Load Sample Data button -->
-          <button type="button" onclick="seedSampleData()" id="btn-seed-sample" class="px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
-            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-            <span id="btn-seed-sample-text">Load Sample Data</span>
-          </button>
-
+        <div class="flex items-center justify-end pt-2">
           <button type="button" id="btn-calculate-awards" onclick="calculateAwards()" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             <span id="btn-calculate-text">Scan &amp; Calculate Eligible Awardees</span>
@@ -438,6 +432,10 @@ function renderCandidatesTable(data) {
         </td>
         <td class="py-3.5 px-4 text-right">
           <div class="inline-flex items-center gap-1.5 justify-end">
+            <button type="button" onclick="editCandidate(${idx})" class="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-[11px] transition cursor-pointer inline-flex items-center gap-1" title="Edit student info or certificate details">
+              <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              <span>Edit</span>
+            </button>
             <button type="button" onclick="previewCertificate(${idx})" class="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-[11px] transition cursor-pointer inline-flex items-center gap-1" title="Preview certificate modal">
               <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
               <span>Preview</span>
@@ -472,7 +470,8 @@ function buildCertificateHtml(candidate, periodText) {
   const course = escapeHtml(candidate.course_title || 'Web Systems and Technologies');
   const rate = candidate.effective_rate !== undefined ? candidate.effective_rate : (candidate.attendance_rate || 100);
   const issueDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const teacherName = <?= json_encode($teacherName) ?>;
+  const teacherName = candidate.signatory_name || <?= json_encode($teacherName) ?>;
+  const awardTitle = candidate.award_title || 'Certificate of Perfect Attendance';
   const logoSrc = <?= json_encode($bcpLogoDataUri) ?> || ((typeof window.url === 'function') ? window.url('assets/images/bcp-logo.png') : '/assets/images/bcp-logo.png');
 
   return `
@@ -504,7 +503,7 @@ function buildCertificateHtml(candidate, periodText) {
             Office of Academic Affairs • Certificate of Recognition
           </span>
           <h2 class="text-2xl sm:text-3xl font-black tracking-wider text-slate-900 mt-2 font-serif uppercase">
-            Certificate of Perfect Attendance
+            ${escapeHtml(awardTitle)}
           </h2>
           <div class="w-36 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mt-2"></div>
         </div>
@@ -1133,43 +1132,154 @@ function generateBatchCertificates() {
   }
 }
 
-async function seedSampleData() {
-  const btn = document.getElementById('btn-seed-sample');
-  const btnText = document.getElementById('btn-seed-sample-text');
-  if (btn) btn.disabled = true;
-  if (btnText) btnText.textContent = 'Loading Sample...';
+function editCandidate(idx) {
+  if (!currentCandidates || !currentCandidates[idx]) return;
+  const cand = currentCandidates[idx];
+
+  const modalTitle = `Edit Candidate: ${cand.full_name || 'Student'}`;
+  const defaultTeacherName = <?= json_encode($teacherName) ?>;
+  const currentSignatory = cand.signatory_name || defaultTeacherName;
+  const currentAwardTitle = cand.award_title || 'Certificate of Perfect Attendance';
+
+  const bodyHTML = `
+    <form id="form-edit-candidate" onsubmit="event.preventDefault(); saveCandidateEdit(${idx});" class="space-y-4">
+      <input type="hidden" id="edit-student-id" value="${cand.student_id}">
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">First Name</label>
+          <input type="text" id="edit-first-name" value="${escapeHtml(cand.first_name || '')}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Last Name</label>
+          <input type="text" id="edit-last-name" value="${escapeHtml(cand.last_name || '')}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Student Number / ID</label>
+          <input type="text" id="edit-student-number" value="${escapeHtml(cand.student_number || '')}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+          <input type="email" id="edit-email" value="${escapeHtml(cand.email || '')}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Class Section</label>
+          <input type="text" id="edit-section" value="${escapeHtml(cand.section || '')}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Course / Subject</label>
+          <input type="text" id="edit-course-title" value="${escapeHtml(cand.course_title || '')}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Instructor Signatory</label>
+          <input type="text" id="edit-signatory-name" value="${escapeHtml(currentSignatory)}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Award Title</label>
+          <input type="text" id="edit-award-title" value="${escapeHtml(currentAwardTitle)}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+      </div>
+
+      <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed">
+        <strong>Notice:</strong> Saved changes will update student records directly in the database and be reflected on preview and generated certificates.
+      </div>
+    </form>
+  `;
+
+  const footerHTML = `
+    <button type="button" class="btn btn-secondary btn-sm" onclick="APP.closeModal()">Cancel</button>
+    <button type="button" id="btn-save-edit" onclick="saveCandidateEdit(${idx})" class="btn btn-primary btn-sm inline-flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <span id="btn-save-edit-text">Save Changes</span>
+    </button>
+  `;
+
+  APP.openModal(modalTitle, bodyHTML, footerHTML);
+}
+
+async function saveCandidateEdit(idx) {
+  if (!currentCandidates || !currentCandidates[idx]) return;
+  const cand = currentCandidates[idx];
+
+  const firstName = (document.getElementById('edit-first-name')?.value || '').trim();
+  const lastName = (document.getElementById('edit-last-name')?.value || '').trim();
+  const studentNumber = (document.getElementById('edit-student-number')?.value || '').trim();
+  const email = (document.getElementById('edit-email')?.value || '').trim();
+  const section = (document.getElementById('edit-section')?.value || '').trim();
+  const courseTitle = (document.getElementById('edit-course-title')?.value || '').trim();
+  const signatoryName = (document.getElementById('edit-signatory-name')?.value || '').trim();
+  const awardTitle = (document.getElementById('edit-award-title')?.value || '').trim();
+
+  if (!firstName || !lastName) {
+    if (typeof APP !== 'undefined' && APP.showToast) {
+      APP.showToast('First name and last name are required.', 'warning');
+    }
+    return;
+  }
+
+  const saveBtn = document.getElementById('btn-save-edit');
+  const saveBtnText = document.getElementById('btn-save-edit-text');
+  if (saveBtn) saveBtn.disabled = true;
+  if (saveBtnText) saveBtnText.textContent = 'Saving...';
 
   try {
+    const formData = new FormData();
+    formData.append('student_id', cand.student_id);
+    formData.append('first_name', firstName);
+    formData.append('last_name', lastName);
+    formData.append('student_number', studentNumber);
+    formData.append('email', email);
+    formData.append('section', section);
+    formData.append('course_title', courseTitle);
+
     const endpoint = (typeof window.url === 'function')
-      ? window.url('api/teacher/awards/seed-sample')
-      : '/api/teacher/awards/seed-sample';
+      ? window.url('api/teacher/awards/update-candidate')
+      : '/api/teacher/awards/update-candidate';
 
-    const resp = await fetch(endpoint, { method: 'POST' });
-    const data = await resp.json();
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      body: formData
+    });
+    const result = await resp.json();
 
-    if (resp.ok && data.status === 'success') {
+    if (resp.ok && result.status === 'success') {
+      cand.first_name = firstName;
+      cand.last_name = lastName;
+      cand.full_name = `${lastName}, ${firstName}`;
+      cand.student_number = studentNumber;
+      cand.email = email;
+      cand.section = section;
+      cand.course_title = courseTitle || cand.course_title;
+      cand.signatory_name = signatoryName;
+      cand.award_title = awardTitle;
+
+      renderCandidatesTable(currentMeta);
+      APP.closeModal();
       if (typeof APP !== 'undefined' && APP.showToast) {
-        APP.showToast('Test sample data loaded: 10 class sessions for September 2026!', 'success');
+        APP.showToast('Student information and award details updated successfully!', 'success');
       }
-      const periodSel = document.getElementById('award-period');
-      if (periodSel) {
-        periodSel.value = 'month';
-        handlePeriodChange('month');
-      }
-      await calculateAwards();
     } else {
       if (typeof APP !== 'undefined' && APP.showToast) {
-        APP.showToast(data.message || 'Failed to seed test data.', 'error');
+        APP.showToast(result.message || 'Failed to update student details.', 'error');
       }
     }
   } catch (err) {
-    console.error('Seed error:', err);
+    console.error('Update candidate error:', err);
     if (typeof APP !== 'undefined' && APP.showToast) {
-      APP.showToast('Network error while generating test sample.', 'error');
+      APP.showToast('Network error while saving changes.', 'error');
     }
   } finally {
-    if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = 'Load Sample Data';
+    if (saveBtn) saveBtn.disabled = false;
+    if (saveBtnText) saveBtnText.textContent = 'Save Changes';
   }
 }
 

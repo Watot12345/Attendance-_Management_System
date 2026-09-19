@@ -952,7 +952,8 @@ class TeacherController {
             'tardy_count'     => 0,
             'absent_count'    => 0,
             'total_records'   => 0,
-            'is_all_time'     => false
+            'is_all_time'     => false,
+            'all_time_rate'   => 0.0
         ];
         try {
             $aStmt = $db->prepare("
@@ -978,7 +979,8 @@ class TeacherController {
                     'tardy_count'     => $tardy,
                     'absent_count'    => $absent,
                     'total_records'   => $total,
-                    'is_all_time'     => false
+                    'is_all_time'     => false,
+                    'all_time_rate'   => 0.0
                 ];
             } else {
                 // If no records today, calculate all-time average rate for this teacher as contextual fallback
@@ -997,13 +999,16 @@ class TeacherController {
                     $tot = (int)$allRow['total'];
                     $pres = (int)($allRow['present_count'] ?? 0);
                     $tar = (int)($allRow['tardy_count'] ?? 0);
+                    $allTimePct = round((($pres + $tar) / $tot) * 100, 1);
                     $todayAttendance = [
-                        'rate_percentage' => round((($pres + $tar) / $tot) * 100, 1),
+                        'rate_percentage' => $allTimePct,
                         'present_count'   => $pres,
                         'tardy_count'     => $tar,
                         'absent_count'    => (int)($allRow['absent_count'] ?? 0),
-                        'total_records'   => $tot,
-                        'is_all_time'     => true
+                        'total_records'   => 0,
+                        'total_all_time'  => $tot,
+                        'is_all_time'     => true,
+                        'all_time_rate'   => $allTimePct
                     ];
                 }
             }
@@ -1021,36 +1026,36 @@ class TeacherController {
         ];
         try {
             $sStmt = $db->prepare("
-                SELECT qr_session_id, qr_code, start, end 
+                SELECT qr_session_id, qr_code, start, end, section 
                 FROM qr_sessions 
-                WHERE teacher_id = ? AND end > NOW() 
+                WHERE teacher_id = ? AND is_active = 1 AND end > NOW() 
                 ORDER BY start DESC 
                 LIMIT 1
             ");
             $sStmt->execute([$teacherId]);
             $sessionRow = $sStmt->fetch(PDO::FETCH_ASSOC);
             if ($sessionRow) {
-                // Resolve course from class_roster
+                // Resolve course from class_roster for this section
                 $rStmt = $db->prepare("
                     SELECT course_code, course_title, section, room_number
                     FROM class_roster
-                    WHERE teacher_id = ?
+                    WHERE teacher_id = ? AND section = ?
                     LIMIT 1
                 ");
-                $rStmt->execute([$teacherId]);
-                $rInfo = $rStmt->fetch(PDO::FETCH_ASSOC) ?: [
-                    'course_code'  => 'IT301',
-                    'course_title' => 'Web Systems and Technologies',
-                    'section'      => 'BSIT 3-A'
-                ];
+                $rStmt->execute([$teacherId, $sessionRow['section']]);
+                $rInfo = $rStmt->fetch(PDO::FETCH_ASSOC);
+                $courseCode = $rInfo['course_code'] ?? 'Class';
+                $courseTitle = $rInfo['course_title'] ?? 'Session Active';
+                $sec = $sessionRow['section'] ?? ($rInfo['section'] ?? '');
+
                 $activeSession = [
                     'is_active'     => true,
                     'qr_session_id' => (int)$sessionRow['qr_session_id'],
                     'qr_code'       => $sessionRow['qr_code'],
-                    'course_code'   => $rInfo['course_code'],
-                    'course_title'  => $rInfo['course_title'],
-                    'section'       => $rInfo['section'],
-                    'description'   => "{$rInfo['course_code']} ({$rInfo['section']})"
+                    'course_code'   => $courseCode,
+                    'course_title'  => $courseTitle,
+                    'section'       => $sec,
+                    'description'   => "{$courseCode} ({$sec})"
                 ];
             }
         } catch (Exception $e) {}
@@ -1069,8 +1074,21 @@ class TeacherController {
             $atRiskCount = count($riskStmt->fetchAll(PDO::FETCH_ASSOC));
         } catch (Exception $e) {}
 
-        // 6. Today's Class Schedule
+        // 6. Metric: Pending Excuse Slips
+        $pendingExcusesCount = 0;
+        try {
+            $exStmt = $db->prepare("
+                SELECT COUNT(*) 
+                FROM excuse_slips 
+                WHERE teacher_id = ? AND status = 'pending'
+            ");
+            $exStmt->execute([$teacherId]);
+            $pendingExcusesCount = (int)$exStmt->fetchColumn();
+        } catch (Exception $e) {}
+
+        // 7. Today's Class Schedule (and weekly schedule context)
         $schedule = [];
+        $isTodaySchedule = true;
         try {
             $dayName = date('l'); // e.g. "Monday", "Tuesday"
             $schStmt = $db->prepare("
@@ -1088,8 +1106,9 @@ class TeacherController {
             $schStmt->execute([$teacherId, $dayName]);
             $schedule = $schStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Fallback: If no classes match today's specific day name, load all unique classes for this teacher
+            // If no classes match today's specific day name, load weekly schedule
             if (empty($schedule)) {
+                $isTodaySchedule = false;
                 $allSchStmt = $db->prepare("
                     SELECT DISTINCT 
                         course_code, 
@@ -1100,7 +1119,7 @@ class TeacherController {
                         schedule_day
                     FROM class_roster
                     WHERE teacher_id = ?
-                    ORDER BY scheduled_time ASC
+                    ORDER BY FIELD(schedule_day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), scheduled_time ASC
                 ");
                 $allSchStmt->execute([$teacherId]);
                 $schedule = $allSchStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1117,18 +1136,19 @@ class TeacherController {
                 $enrStmt->execute([$teacherId, $item['course_code'], $item['section']]);
                 $item['enrolled_count'] = (int)$enrStmt->fetchColumn();
 
-                // Scanned today count
+                // Scanned today count for this section
                 $scnStmt = $db->prepare("
                     SELECT COUNT(*)
-                    FROM attendance
-                    WHERE teacher_id = ? AND date = CURRENT_DATE() 
-                      AND (subject = ? OR subject = ?)
+                    FROM attendance a
+                    INNER JOIN class_roster r ON r.student_id = a.student_id AND r.teacher_id = a.teacher_id AND r.section = ?
+                    WHERE a.teacher_id = ? AND a.date = CURRENT_DATE() 
+                      AND (a.subject = ? OR a.subject = ?)
                 ");
-                $scnStmt->execute([$teacherId, $item['course_code'], $item['course_title']]);
+                $scnStmt->execute([$item['section'], $teacherId, $item['course_code'], $item['course_title']]);
                 $item['scanned_today'] = (int)$scnStmt->fetchColumn();
 
                 // Status tag: active if activeSession matches, otherwise upcoming
-                if ($activeSession['is_active'] && $activeSession['course_code'] === $item['course_code']) {
+                if ($activeSession['is_active'] && $activeSession['section'] === $item['section']) {
                     $item['status'] = 'active';
                 } else {
                     $item['status'] = 'upcoming';
@@ -1137,7 +1157,7 @@ class TeacherController {
             unset($item);
         } catch (Exception $e) {}
 
-        // 7. My Assigned Classes Overview
+        // 8. My Assigned Classes Overview (section-specific attendance rates)
         $classesOverview = [];
         try {
             $ovStmt = $db->prepare("
@@ -1154,35 +1174,37 @@ class TeacherController {
             $classesOverview = $ovStmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($classesOverview as &$cItem) {
-                // Sessions held count
+                // Sessions held count for this specific section
                 $sessStmt = $db->prepare("
-                    SELECT COUNT(DISTINCT date) 
-                    FROM attendance 
-                    WHERE teacher_id = ? AND (subject = ? OR subject = ?)
+                    SELECT COUNT(DISTINCT a.date) 
+                    FROM attendance a
+                    INNER JOIN class_roster r ON r.student_id = a.student_id AND r.teacher_id = a.teacher_id AND r.section = ?
+                    WHERE a.teacher_id = ? AND (a.subject = ? OR a.subject = ?)
                 ");
-                $sessStmt->execute([$teacherId, $cItem['course_code'], $cItem['course_title']]);
+                $sessStmt->execute([$cItem['section'], $teacherId, $cItem['course_code'], $cItem['course_title']]);
                 $cItem['sessions_held'] = (int)$sessStmt->fetchColumn();
 
-                // Average attendance rate
+                // Average attendance rate for this specific section
                 $avgStmt = $db->prepare("
                     SELECT 
                         COUNT(*) AS total,
-                        SUM(status = 'present') AS present_count
-                    FROM attendance 
-                    WHERE teacher_id = ? AND (subject = ? OR subject = ?)
+                        SUM(a.status = 'present') AS present_count
+                    FROM attendance a
+                    INNER JOIN class_roster r ON r.student_id = a.student_id AND r.teacher_id = a.teacher_id AND r.section = ?
+                    WHERE a.teacher_id = ? AND (a.subject = ? OR a.subject = ?)
                 ");
-                $avgStmt->execute([$teacherId, $cItem['course_code'], $cItem['course_title']]);
+                $avgStmt->execute([$cItem['section'], $teacherId, $cItem['course_code'], $cItem['course_title']]);
                 $avgRow = $avgStmt->fetch(PDO::FETCH_ASSOC);
                 if ($avgRow && (int)$avgRow['total'] > 0) {
                     $cItem['avg_rate'] = round(((int)$avgRow['present_count'] / (int)$avgRow['total']) * 100, 1);
                 } else {
-                    $cItem['avg_rate'] = 95.0; // Clean nominal fallback
+                    $cItem['avg_rate'] = 0.0;
                 }
             }
             unset($cItem);
         } catch (Exception $e) {}
 
-        // 8. Live Attendance Feed (Recent check-ins)
+        // 9. Live Attendance Feed (Recent check-ins, only_full_group_by safe)
         $liveFeed = [];
         try {
             $feedStmt = $db->prepare("
@@ -1192,17 +1214,18 @@ class TeacherController {
                     a.time, 
                     a.status, 
                     a.date,
-                    COALESCE(u.first_name, r.first_name, 'Student') AS first_name,
-                    COALESCE(u.last_name, r.last_name, '') AS last_name,
-                    COALESCE(u.student_id, r.student_id) AS student_code,
-                    COALESCE(r.section, 'BSIT 3-A') AS section
+                    COALESCE(u.first_name, 'Student') AS first_name,
+                    COALESCE(u.last_name, '') AS last_name,
+                    COALESCE(u.student_id, '') AS student_code,
+                    COALESCE(
+                        (SELECT r.section FROM class_roster r WHERE r.student_id = a.student_id AND r.teacher_id = a.teacher_id LIMIT 1),
+                        'BSIT 3-A'
+                    ) AS section
                 FROM attendance a
                 LEFT JOIN users u ON u.user_id = a.student_id
-                LEFT JOIN class_roster r ON r.student_id = a.student_id AND r.teacher_id = a.teacher_id
                 WHERE a.teacher_id = ?
-                GROUP BY a.attendance_id
                 ORDER BY a.date DESC, a.time DESC
-                LIMIT 6
+                LIMIT 8
             ");
             $feedStmt->execute([$teacherId]);
             $liveFeed = $feedStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1213,16 +1236,45 @@ class TeacherController {
             unset($f);
         } catch (Exception $e) {}
 
+        // 10. Recent Excuse Slips for review
+        $recentExcuses = [];
+        try {
+            $exListStmt = $db->prepare("
+                SELECT 
+                    e.excuse_slip_id,
+                    e.student_id,
+                    e.subject,
+                    e.date_of_absence,
+                    e.reason,
+                    e.explanation,
+                    e.status,
+                    e.created_at,
+                    COALESCE(u.first_name, 'Student') AS first_name,
+                    COALESCE(u.last_name, '') AS last_name,
+                    COALESCE(u.student_id, '') AS student_code
+                FROM excuse_slips e
+                LEFT JOIN users u ON u.user_id = e.student_id
+                WHERE e.teacher_id = ?
+                ORDER BY (e.status = 'pending') DESC, e.created_at DESC
+                LIMIT 4
+            ");
+            $exListStmt->execute([$teacherId]);
+            $recentExcuses = $exListStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
+
         return [
-            'teacher'          => $teacherInfo,
-            'classes_metric'   => $classesMetric,
-            'today_attendance' => $todayAttendance,
-            'active_session'   => $activeSession,
-            'at_risk_count'    => $atRiskCount,
-            'schedule'         => $schedule,
-            'classes_overview' => $classesOverview,
-            'live_feed'        => $liveFeed,
-            'current_day'      => date('l, F j, Y')
+            'teacher'               => $teacherInfo,
+            'classes_metric'        => $classesMetric,
+            'today_attendance'      => $todayAttendance,
+            'active_session'        => $activeSession,
+            'at_risk_count'         => $atRiskCount,
+            'pending_excuses_count' => $pendingExcusesCount,
+            'schedule'              => $schedule,
+            'is_today_schedule'     => $isTodaySchedule,
+            'classes_overview'      => $classesOverview,
+            'live_feed'             => $liveFeed,
+            'recent_excuses'        => $recentExcuses,
+            'current_day'           => date('l, F j, Y')
         ];
     }
 
