@@ -59,8 +59,13 @@ class Router {
         '/logout'                => 'AuthController@logout',
         '/auth/login'            => 'AuthController@login',
         '/api/auth/login'        => 'AuthController@login',
-        '/api/auth/logout'       => 'AuthController@logout',
-        '/api/auth/me'           => 'AuthController@me',
+        '/api/auth/verify-otp'   => 'AuthController@verifyOtp',
+        '/api/auth/resend-otp'   => 'AuthController@resendOtp',
+        '/api/auth/check-remembered' => 'AuthController@checkRemembered',
+        '/api/auth/forgot-password'  => 'AuthController@forgotPassword',
+        '/api/auth/reset-password'   => 'AuthController@resetPassword',
+        '/api/auth/logout'           => 'AuthController@logout',
+        '/api/auth/me'               => 'AuthController@me',
 
         // Dashboard & Portals
         '/dashboard'             => 'dashboard/index.php',
@@ -71,6 +76,9 @@ class Router {
 
         // Teacher Portal
         '/teacher/dashboard'     => 'teacher/dashboard.php',
+        '/teacher/consecutive-absences' => 'teacher/consecutive-absences.php',
+        '/teacher/dropout-watchlist'    => 'teacher/consecutive-absences.php',
+        '/teacher/at-risk'              => 'teacher/consecutive-absences.php',
         '/teacher/classes'       => 'teacher/classes.php',
         '/teacher/import-roster' => 'teacher/import-roster.php',
         '/teacher/import-roster/template' => 'StudentController@downloadRosterTemplate',
@@ -167,6 +175,15 @@ class Router {
 
         // Overview Dashboard API
         '/api/dashboard/overview'       => 'DashboardController@apiOverview',
+
+        // Machine Learning & Analytics API
+        '/api/analytics/all'            => 'AnalyticsController@apiAll',
+        '/api/analytics/overview'       => 'AnalyticsController@apiOverview',
+        '/api/analytics/patterns'       => 'AnalyticsController@apiPatterns',
+        '/api/analytics/at-risk'        => 'AnalyticsController@apiAtRisk',
+        '/api/analytics/retrain'        => 'AnalyticsController@apiRetrain',
+        '/api/analytics/intervene'      => 'AnalyticsController@apiIntervene',
+        '/api/analytics/apply-pattern-action' => 'AnalyticsController@apiApplyPatternAction',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',
@@ -444,23 +461,6 @@ class Router {
             exit;
         }
 
-
-        // 0. Quick switch-role endpoint
-        if ($path === '/switch-role') {
-            $role = $_GET['role'] ?? 'admin';
-            if (!in_array($role, ['admin', 'teacher', 'student'], true)) {
-                $role = 'admin';
-            }
-            self::syncSessionUserForRole($role);
-
-            $dest = match ($role) {
-                'teacher' => url('teacher/dashboard'),
-                'student' => url('student/calendar'),
-                default   => url('dashboard'),
-            };
-            header('Location: ' . $dest);
-            exit;
-        }
 
         // Redirect any direct /includes/views/... requests to clean URLs
         if (strpos($path, '/includes/views/') === 0) {

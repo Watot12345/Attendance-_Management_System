@@ -72,8 +72,8 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
   </div>
 
   <!-- Role Status Pill & 1-Click Switch -->
-  <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800/80 shrink-0">
-    <div class="flex items-center justify-between mb-2">
+  <div class="px-4 py-3 bg-slate-900/90 border-b border-slate-800/80 shrink-0">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -86,12 +86,6 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
         Active
       </span>
-    </div>
-    <!-- Quick 1-Click Role Switcher in Sidebar -->
-    <div class="grid grid-cols-3 gap-1">
-      <a href="<?php echo url('switch-role?role=admin'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isAdmin ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Administrator Portal">Admin</a>
-      <a href="<?php echo url('switch-role?role=teacher'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isTeacher ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Faculty / Teacher Portal">Teacher</a>
-      <a href="<?php echo url('switch-role?role=student'); ?>" class="text-center py-1 text-[11px] font-semibold rounded-lg transition <?php echo $isStudent ? 'bg-blue-600 text-white shadow-xs font-bold' : 'bg-slate-800/70 text-slate-400 hover:text-slate-200 hover:bg-slate-800'; ?>" title="Switch to Student Portal">Student</a>
     </div>
   </div>
 
@@ -115,6 +109,12 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       <a href="<?php echo url('teacher/import-roster'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo isActiveLink('teacher/import-roster', $pathOnly) ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         <span>Import Class Roster</span>
+      </a>
+
+      <!-- 3+ Consecutive Absences Dropout Watchlist -->
+      <a href="<?php echo url('teacher/consecutive-absences'); ?>" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition group <?php echo (isActiveLink('teacher/consecutive-absences', $pathOnly) || isActiveLink('teacher/dropout-watchlist', $pathOnly) || isActiveLink('teacher/at-risk', $pathOnly)) ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 font-bold' : 'text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-500/20'; ?>">
+        <svg class="w-4 h-4 shrink-0 <?php echo (isActiveLink('teacher/consecutive-absences', $pathOnly) || isActiveLink('teacher/dropout-watchlist', $pathOnly)) ? 'text-white' : 'text-rose-400 group-hover:text-rose-300'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>Dropout / Consecutive Absences</span>
       </a>
 
       <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Attendance Operations</div>

@@ -17,13 +17,19 @@ CREATE TABLE IF NOT EXISTS `users` (
   `avatar_path` VARCHAR(500) DEFAULT NULL,
   `status` ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active',
   `last_login_at` DATETIME DEFAULT NULL,
+  `remember_token` VARCHAR(255) DEFAULT NULL,
+  `remember_expires_at` DATETIME DEFAULT NULL,
+  `remember_user_agent` VARCHAR(500) DEFAULT NULL,
+  `otp_code` VARCHAR(10) DEFAULT NULL,
+  `otp_expires_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `idx_users_email` (`email`),
   KEY `idx_users_role` (`role`),
-  KEY `idx_users_status` (`status`)
+  KEY `idx_users_status` (`status`),
+  KEY `idx_users_remember` (`remember_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. Students Table (Role extension for students)

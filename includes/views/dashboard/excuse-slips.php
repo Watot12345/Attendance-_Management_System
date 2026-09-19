@@ -346,6 +346,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     </td>
                   </tr>
                 <?php endforeach; ?>
+                <tr id="no-filter-results-row" class="hidden">
+                  <td colspan="6" class="py-12 text-center text-slate-400">
+                    <div class="w-10 h-10 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <p class="font-semibold text-slate-700 text-xs">No excuse slips match your filter</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Try adjusting your search keyword, status filter, or class selection.</p>
+                    <button type="button" onclick="resetFilters()" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition cursor-pointer">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      <span>Reset Filters</span>
+                    </button>
+                  </td>
+                </tr>
               <?php endif; ?>
 
             </tbody>
@@ -536,6 +549,27 @@ function filterSlips() {
 
   const countEl = document.getElementById('visible-count');
   if (countEl) countEl.textContent = visible;
+
+  const noResultsRow = document.getElementById('no-filter-results-row');
+  if (noResultsRow) {
+    if (visible === 0 && rows.length > 0) {
+      noResultsRow.classList.remove('hidden');
+    } else {
+      noResultsRow.classList.add('hidden');
+    }
+  }
+}
+
+function resetFilters() {
+  const filterStatus = document.getElementById('filter-status');
+  const filterClass = document.getElementById('filter-class');
+  const searchInput = document.getElementById('search-student');
+
+  if (filterStatus) filterStatus.value = 'all';
+  if (filterClass) filterClass.value = 'all';
+  if (searchInput) searchInput.value = '';
+
+  filterSlips();
 }
 
 function setTeacherFilterStatus(statusVal) {

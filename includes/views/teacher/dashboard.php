@@ -49,6 +49,31 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
 
+      <?php if ($atRiskCount > 0): ?>
+        <!-- Dropout Warning Banner for Faculty -->
+        <div class="rounded-2xl p-4 sm:p-5 bg-rose-50 border border-rose-200 text-rose-900 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 text-rose-700 flex items-center justify-center font-bold text-lg shrink-0">
+              ⚠️
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-sm font-black text-rose-950">3+ Consecutive Absence Dropout Alert</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-200 text-rose-900">
+                  <?= $atRiskCount ?> Students Flagged
+                </span>
+              </div>
+              <p class="text-xs text-rose-800 mt-1 leading-relaxed">
+                Students have reached the critical 3+ consecutive unexcused absence threshold. Automated parent summary emails can be dispatched to initiate academic consultation.
+              </p>
+            </div>
+          </div>
+          <a href="<?php echo url('teacher/consecutive-absences'); ?>" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition shrink-0 flex items-center gap-1.5 self-start sm:self-auto">
+            <span>Review Watchlist &amp; Email Parents →</span>
+          </a>
+        </div>
+      <?php endif; ?>
+
       <!-- Quick Metrics Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Metric 1: Assigned Classes -->
@@ -109,19 +134,22 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </p>
         </div>
 
-        <!-- Metric 4: At-Risk Alerts -->
-        <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+        <!-- Metric 4: At-Risk Dropout Watchlist -->
+        <a href="<?php echo url('teacher/consecutive-absences'); ?>" class="bg-white rounded-xl p-5 border border-slate-100 hover:border-rose-300 shadow-sm transition group block">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">At-Risk Alerts</span>
-            <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+            <span class="text-xs font-semibold text-rose-600 uppercase tracking-wider group-hover:underline">Dropout Watchlist</span>
+            <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </span>
           </div>
           <div class="text-2xl font-bold <?php echo $atRiskCount > 0 ? 'text-rose-600' : 'text-slate-800'; ?> mt-2" id="kpi-risk-count">
             <?php echo "{$atRiskCount} " . ($atRiskCount === 1 ? 'Student' : 'Students'); ?>
           </div>
-          <p class="text-xs text-slate-500 mt-1">≥ 3 recorded absences</p>
-        </div>
+          <p class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>≥ 3 consecutive absences</span>
+            <span class="text-rose-600 font-bold group-hover:translate-x-0.5 transition">View →</span>
+          </p>
+        </a>
       </div>
 
       <!-- Main Columns -->

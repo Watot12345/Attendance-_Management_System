@@ -54,6 +54,62 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
 
+      <?php if (!empty($calendarData['consecutive_absences']) && $calendarData['consecutive_absences'] >= 3): ?>
+        <!-- CRITICAL: 3+ Consecutive Absence Dropout Indicator Banner -->
+        <div class="mb-6 p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-sm text-slate-800">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <div class="w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
+                !
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider bg-rose-600 text-white">
+                    3+ Consecutive Absence Dropout Indicator
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                    <?php echo (int)$calendarData['consecutive_absences']; ?> Consecutive Unexcused Absences
+                  </span>
+                </div>
+                <h3 class="text-base font-black text-rose-900 mt-1.5">
+                  Academic Alert: You are flagged on the Dropout Risk Watchlist
+                </h3>
+                <p class="text-xs text-rose-700 mt-1 leading-relaxed max-w-3xl">
+                  Under college institutional policy, having <strong>3 or more consecutive unexcused absences</strong> flags a student for severe dropout vulnerability. Automated summary notices are submitted to your instructor and registered parent email. To prevent unofficial dropping or academic disqualification, please file a medical or official excuse slip immediately or consult your instructor.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+              <a href="<?php echo url('student/excuse-slips'); ?>" class="w-full md:w-auto text-center px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition">
+                File Excuse Slip Now
+              </a>
+            </div>
+          </div>
+        </div>
+      <?php elseif (!empty($calendarData['has_dropout_warning'])): ?>
+        <!-- MODERATE: Attendance Caution Banner -->
+        <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-slate-800 shadow-xs">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-sm shrink-0">
+                ⚠
+              </div>
+              <div>
+                <div class="text-xs font-bold text-amber-900">
+                  Attendance Advisory: <?php echo (int)($calendarData['total_all_absences'] ?? $kpis['absent_days']); ?> Total Absences Recorded
+                </div>
+                <p class="text-[11px] text-amber-700 mt-0.5">
+                  Maintain regular attendance to avoid triggering the 3+ Consecutive Absence Dropout Watchlist. Be sure to submit verified excuse slips for valid absences.
+                </p>
+              </div>
+            </div>
+            <a href="<?php echo url('student/excuse-slips'); ?>" class="text-xs font-bold text-amber-800 hover:text-amber-900 underline whitespace-nowrap">
+              Submit Excuse Slip →
+            </a>
+          </div>
+        </div>
+      <?php endif; ?>
+
       <!-- Quick Attendance Status Summary -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <!-- Present Days -->

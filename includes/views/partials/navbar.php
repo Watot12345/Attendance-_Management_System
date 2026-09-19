@@ -64,14 +64,8 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
     </div>
 
   </div>
-  <!-- Right: Quick Role Switcher, Notification & Profile -->
+  <!-- Right: Notification & Profile -->
   <div class="flex items-center gap-2.5">
-    <!-- Quick Role Switch Pill -->
-    <div class="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shadow-2xs">
-      <a href="<?php echo url('switch-role?role=admin'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isAdmin ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Admin Portal">Admin</a>
-      <a href="<?php echo url('switch-role?role=teacher'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isTeacher ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Faculty Portal">Teacher</a>
-      <a href="<?php echo url('switch-role?role=student'); ?>" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition <?php echo $isStudent ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'; ?>" title="Switch to Student Portal">Student</a>
-    </div>
 
     <!-- Notification Bell -->
     <div class="relative">

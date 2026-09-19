@@ -1,0 +1,880 @@
+{
+  "status": "success",
+  "model_specs": {
+    "algorithm": "RandomForestClassifier",
+    "accuracy": 100.0,
+    "roc_auc": 1.0,
+    "training_samples": 2520,
+    "confusion_matrix": [
+      [
+        29,
+        0
+      ],
+      [
+        0,
+        7
+      ]
+    ],
+    "last_retrained": "Sep 20, 2026 04:22 AM"
+  },
+  "feature_importances": {
+    "absent_count": 27.3,
+    "absence_rate": 22.0,
+    "present_count": 21.3,
+    "attendance_rate": 14.7,
+    "consecutive_absences": 4.6,
+    "tardy_rate": 3.2,
+    "monday_absence_ratio": 2.6,
+    "tardy_count": 2.4,
+    "excuse_coverage_rate": 1.1,
+    "tardy_streak_score": 0.5,
+    "grade_level": 0.4,
+    "total_sessions": 0.0
+  },
+  "cluster_profiles": [
+    {
+      "cluster_id": 0,
+      "name": "Consistent High Achievers",
+      "badge": "High Attendance",
+      "color": "#059669",
+      "bg": "#ecfdf5",
+      "count": 13,
+      "avg_attendance": 92.4,
+      "avg_tardy": 4.5,
+      "description": "Exhibits regular attendance above 92% with low tardy rates and negligible consecutive absences."
+    },
+    {
+      "cluster_id": 1,
+      "name": "Chronic Monday Absentees",
+      "badge": "Day-Pattern Alert",
+      "color": "#dc2626",
+      "bg": "#fef2f2",
+      "count": 15,
+      "avg_attendance": 85.7,
+      "avg_tardy": 5.4,
+      "description": "High concentration of unexcused absences occurring specifically on Mondays."
+    },
+    {
+      "cluster_id": 2,
+      "name": "Morning Tardy Cohort",
+      "badge": "Tardy Spike",
+      "color": "#d97706",
+      "bg": "#fffbeb",
+      "count": 5,
+      "avg_attendance": 42.0,
+      "avg_tardy": 8.6,
+      "description": "Consistent attendance but high tardiness frequency (>15% of sessions)."
+    },
+    {
+      "cluster_id": 3,
+      "name": "Severe Dropout / At-Risk",
+      "badge": "Immediate Intervention",
+      "color": "#7c2d12",
+      "bg": "#fef2f2",
+      "count": 3,
+      "avg_attendance": 61.0,
+      "avg_tardy": 35.7,
+      "description": "Critical absenteeism rate (>20%) paired with consecutive absence streaks."
+    }
+  ],
+  "overview": {
+    "trend": {
+      "labels": [
+        "Jun 15",
+        "Jun 22",
+        "Jun 29",
+        "Jul 06",
+        "Jul 13",
+        "Jul 20",
+        "Jul 27",
+        "Aug 03",
+        "Aug 10",
+        "Aug 17",
+        "Aug 24",
+        "Aug 31",
+        "Sep 07",
+        "Sep 14",
+        "Sep 18"
+      ],
+      "actual": [
+        75.0,
+        69.4,
+        61.1,
+        75.0,
+        77.8,
+        75.0,
+        66.7,
+        77.8,
+        66.7,
+        66.7,
+        75.0,
+        69.4,
+        72.2,
+        66.7,
+        77.8
+      ],
+      "benchmark": [
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0,
+        92.0
+      ]
+    },
+    "day_breakdown": {
+      "labels": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "absences": [
+        108,
+        46,
+        43,
+        56,
+        48
+      ],
+      "tardies": [
+        38,
+        34,
+        29,
+        35,
+        67
+      ],
+      "monday_spike_alert": true
+    },
+    "grade_comparison": {
+      "labels": [
+        "1st Year",
+        "2nd Year",
+        "3rd Year",
+        "4th Year"
+      ],
+      "absence_rates": [
+        16.2,
+        11.9,
+        10.7,
+        8.8
+      ],
+      "tardy_rates": [
+        8.0,
+        6.0,
+        8.7,
+        10.4
+      ]
+    },
+    "status_composition": {
+      "present": 80.0,
+      "tardy": 8.1,
+      "excused": 0.6,
+      "unexcused_absent": 11.4
+    }
+  },
+  "at_risk_students": [
+    {
+      "student_id": 30,
+      "name": "Marcus Vance",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 45.7,
+      "absence_count": 34,
+      "tardy_count": 4,
+      "consecutive_absences": 13,
+      "risk_score": 100.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "13 Consecutive Absences",
+      "risk_factors": [
+        "13 Consecutive Absences",
+        "48.6% Total Absence Rate"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 31,
+      "name": "Elena Rostova",
+      "section": "31001",
+      "grade_level": 2,
+      "attendance_rate": 47.1,
+      "absence_count": 33,
+      "tardy_count": 4,
+      "consecutive_absences": 13,
+      "risk_score": 100.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "13 Consecutive Absences",
+      "risk_factors": [
+        "13 Consecutive Absences",
+        "47.1% Total Absence Rate"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 33,
+      "name": "Sarah Jenkins",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 35.7,
+      "absence_count": 40,
+      "tardy_count": 5,
+      "consecutive_absences": 13,
+      "risk_score": 100.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "13 Consecutive Absences",
+      "risk_factors": [
+        "13 Consecutive Absences",
+        "57.1% Total Absence Rate"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 34,
+      "name": "Lucas Alcantara",
+      "section": "31002",
+      "grade_level": 1,
+      "attendance_rate": 38.6,
+      "absence_count": 34,
+      "tardy_count": 9,
+      "consecutive_absences": 16,
+      "risk_score": 100.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "16 Consecutive Absences",
+      "risk_factors": [
+        "16 Consecutive Absences",
+        "48.6% Total Absence Rate"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 35,
+      "name": "Amara Chen",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 77.1,
+      "absence_count": 12,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 100.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "17.1% Total Absence Rate",
+      "risk_factors": [
+        "17.1% Total Absence Rate",
+        "67.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 32,
+      "name": "David Kim",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 42.9,
+      "absence_count": 32,
+      "tardy_count": 8,
+      "consecutive_absences": 13,
+      "risk_score": 99.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "13 Consecutive Absences",
+      "risk_factors": [
+        "13 Consecutive Absences",
+        "45.7% Total Absence Rate"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 37,
+      "name": "Jenny Lim",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 77.1,
+      "absence_count": 11,
+      "tardy_count": 5,
+      "consecutive_absences": 1,
+      "risk_score": 96.0,
+      "risk_level": "High Risk",
+      "risk_color": "red",
+      "primary_factor": "15.7% Total Absence Rate",
+      "risk_factors": [
+        "15.7% Total Absence Rate",
+        "64.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Immediate Counselor & Parent Conference"
+    },
+    {
+      "student_id": 42,
+      "name": "Kyle Alvarez",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 80.0,
+      "absence_count": 10,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 28.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "14.3% Total Absence Rate",
+      "risk_factors": [
+        "14.3% Total Absence Rate",
+        "70.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 45,
+      "name": "Samantha Lee",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 50.0,
+      "absence_count": 4,
+      "tardy_count": 31,
+      "consecutive_absences": 1,
+      "risk_score": 18.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "44.3% Tardy Rate",
+      "risk_factors": [
+        "44.3% Tardy Rate"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 43,
+      "name": "Bianca Torres",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 71.4,
+      "absence_count": 2,
+      "tardy_count": 18,
+      "consecutive_absences": 1,
+      "risk_score": 16.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "50.0% Monday Absence Bias",
+      "risk_factors": [
+        "50.0% Monday Absence Bias",
+        "25.7% Tardy Rate"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 44,
+      "name": "Nathaniel Diaz",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 61.4,
+      "absence_count": 1,
+      "tardy_count": 26,
+      "consecutive_absences": 1,
+      "risk_score": 14.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "37.1% Tardy Rate",
+      "risk_factors": [
+        "37.1% Tardy Rate"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 38,
+      "name": "Alex Moreno",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 81.4,
+      "absence_count": 9,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 5.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "12.9% Total Absence Rate",
+      "risk_factors": [
+        "12.9% Total Absence Rate",
+        "67.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 40,
+      "name": "Chloe Tan",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 81.4,
+      "absence_count": 8,
+      "tardy_count": 5,
+      "consecutive_absences": 2,
+      "risk_score": 1.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "2 Consecutive Absences",
+      "risk_factors": [
+        "2 Consecutive Absences",
+        "62.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 41,
+      "name": "Leo Ramos",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 84.3,
+      "absence_count": 8,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 1.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "62.0% Monday Absence Bias",
+      "risk_factors": [
+        "62.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 1,
+      "name": "jj Dela Cruz",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 97.1,
+      "absence_count": 0,
+      "tardy_count": 2,
+      "consecutive_absences": 0,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 4,
+      "name": "Maria Santos",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 94.3,
+      "absence_count": 3,
+      "tardy_count": 1,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 5,
+      "name": "Gabriel Fernandez",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 95.7,
+      "absence_count": 1,
+      "tardy_count": 2,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "100.0% Monday Absence Bias",
+      "risk_factors": [
+        "100.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 6,
+      "name": "Pedro Reyes",
+      "section": "31003",
+      "grade_level": 3,
+      "attendance_rate": 87.1,
+      "absence_count": 4,
+      "tardy_count": 5,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "75.0% Monday Absence Bias",
+      "risk_factors": [
+        "75.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 7,
+      "name": "Ana Gonzales",
+      "section": "31001",
+      "grade_level": 4,
+      "attendance_rate": 92.9,
+      "absence_count": 1,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 28,
+      "name": "Juan Dela Cruz",
+      "section": "31002",
+      "grade_level": 1,
+      "attendance_rate": 97.1,
+      "absence_count": 1,
+      "tardy_count": 1,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "100.0% Monday Absence Bias",
+      "risk_factors": [
+        "100.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 36,
+      "name": "Robert Cruz",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 82.9,
+      "absence_count": 7,
+      "tardy_count": 5,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "100.0% Monday Absence Bias",
+      "risk_factors": [
+        "100.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 39,
+      "name": "Eric Villanueva",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 84.3,
+      "absence_count": 7,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "71.0% Monday Absence Bias",
+      "risk_factors": [
+        "71.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 46,
+      "name": "Christian Bautista",
+      "section": "31001",
+      "grade_level": 2,
+      "attendance_rate": 84.3,
+      "absence_count": 6,
+      "tardy_count": 5,
+      "consecutive_absences": 2,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "2 Consecutive Absences",
+      "risk_factors": [
+        "2 Consecutive Absences",
+        "67.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 47,
+      "name": "Patricia Morales",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 90.0,
+      "absence_count": 4,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 48,
+      "name": "Joshua Garcia",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 97.1,
+      "absence_count": 0,
+      "tardy_count": 2,
+      "consecutive_absences": 0,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 49,
+      "name": "Camille Navarro",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 85.7,
+      "absence_count": 5,
+      "tardy_count": 5,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "40.0% Monday Absence Bias",
+      "risk_factors": [
+        "40.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 50,
+      "name": "Daniel Padilla",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 92.9,
+      "absence_count": 2,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 51,
+      "name": "Kathryn Bernardo",
+      "section": "31001",
+      "grade_level": 1,
+      "attendance_rate": 92.9,
+      "absence_count": 2,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 52,
+      "name": "Liza Soberano",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 91.4,
+      "absence_count": 1,
+      "tardy_count": 5,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 53,
+      "name": "Enrique Gil",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 88.6,
+      "absence_count": 2,
+      "tardy_count": 6,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 54,
+      "name": "James Reid",
+      "section": "31002",
+      "grade_level": 2,
+      "attendance_rate": 92.9,
+      "absence_count": 1,
+      "tardy_count": 4,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 55,
+      "name": "Nadine Lustre",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 95.7,
+      "absence_count": 2,
+      "tardy_count": 1,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 56,
+      "name": "Alden Richards",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 92.9,
+      "absence_count": 2,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "50.0% Monday Absence Bias",
+      "risk_factors": [
+        "50.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 57,
+      "name": "Maine Mendoza",
+      "section": "31001",
+      "grade_level": 2,
+      "attendance_rate": 87.1,
+      "absence_count": 5,
+      "tardy_count": 4,
+      "consecutive_absences": 2,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "2 Consecutive Absences",
+      "risk_factors": [
+        "2 Consecutive Absences"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 58,
+      "name": "Dingdong Dantes",
+      "section": "31002",
+      "grade_level": 4,
+      "attendance_rate": 94.3,
+      "absence_count": 2,
+      "tardy_count": 2,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "50.0% Monday Absence Bias",
+      "risk_factors": [
+        "50.0% Monday Absence Bias"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    },
+    {
+      "student_id": 59,
+      "name": "Marian Rivera",
+      "section": "31001",
+      "grade_level": 3,
+      "attendance_rate": 88.6,
+      "absence_count": 5,
+      "tardy_count": 3,
+      "consecutive_absences": 1,
+      "risk_score": 0.0,
+      "risk_level": "Low Risk",
+      "risk_color": "emerald",
+      "primary_factor": "Standard Baseline Adherence",
+      "risk_factors": [
+        "Standard Baseline Adherence"
+      ],
+      "recommended_action": "Standard Routine Monitoring"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "pat_mon_spike",
+      "title": "Monday Absence Anomaly (2.2\u00d7 Weekday Average)",
+      "type": "day_anomaly",
+      "severity": "high",
+      "confidence": "94.2%",
+      "affected_cohort": "Campus-Wide / 1st & 2nd Year",
+      "description": "Scikit-Learn anomaly detector identified statistically significant absence clustering on Mondays from MySQL attendance table.",
+      "recommendation": "Deploy automated Monday morning attendance summary email to parents at 7:30 AM."
+    },
+    {
+      "id": "pat_freshman_transition",
+      "title": "1st Year College Transition Friction",
+      "type": "cohort_variance",
+      "severity": "medium",
+      "confidence": "88.6%",
+      "affected_cohort": "1st Year Freshmen",
+      "description": "1st Year college students exhibit higher initial absence variance compared to upper year levels based on class roster records.",
+      "recommendation": "Assign academic mentors to 1st Year students showing >2 unexcused absences in first 30 days."
+    },
+    {
+      "id": "pat_consec_drop",
+      "title": "3+ Consecutive Absence Dropout Indicator",
+      "type": "predictive_risk",
+      "severity": "critical",
+      "confidence": "91.8%",
+      "affected_cohort": "5 Students Flagged",
+      "description": "RandomForest feature importance identifies consecutive unexcused absences from attendance records as highest risk factor.",
+      "recommendation": "Deploy urgent attendance warning email notice to parents summarizing consecutive unexcused absences and required consultation."
+    }
+  ],
+  "generated_at": "2026-09-20T04:22:37.884853"
+}
