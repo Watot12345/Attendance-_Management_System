@@ -53,7 +53,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       </div>
 
       <!-- Quick Metrics Cards (All 5 in 1 Grid Row) -->
-      <div class="kpi-row-5 mb-6">
+      <div class="kpi-row-5 mb-6" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.875rem;">
         <!-- Metric 1: Assigned Classes -->
         <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition flex flex-col justify-between min-h-[114px]">
           <div class="flex items-center justify-between gap-1">
