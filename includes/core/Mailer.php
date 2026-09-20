@@ -54,10 +54,16 @@ class Mailer {
     }
 
     /**
-     * Send an HTML Email via SMTP with automatic Port 465 (SSL) -> Port 587 (STARTTLS) fallback
+     * Send an HTML Email via HTTPS REST API (Port 443) or SMTP fallback (Port 465/587)
      */
     public static function send(string $toEmail, string $subject, string $htmlBody): array {
-        // Resolve SMTP credentials (supports Email, EMAIL, SMTP_USER, APP_PASSWORD, SMTP_PASS)
+        // 1. Try HTTPS REST API first (Port 443 - 100% allowed on Railway, Render, Heroku)
+        $httpResult = self::deliverViaHttpApi($toEmail, $subject, $htmlBody);
+        if ($httpResult['attempted'] && $httpResult['success']) {
+            return $httpResult;
+        }
+
+        // 2. Fallback to Gmail SMTP (Ports 465/587)
         $smtpUser = self::getEnv('Email') 
                  ?: self::getEnv('SMTP_USER') 
                  ?: self::getEnv('EMAIL') 
@@ -97,6 +103,117 @@ class Mailer {
             'success' => false,
             'error'   => "SMTP Delivery failed across all ports: {$lastError}"
         ];
+    }
+
+    /**
+     * Sends email via HTTPS REST APIs (Port 443)
+     * Supports: Resend, Brevo (Sendinblue), SendGrid
+     */
+    private static function deliverViaHttpApi(string $toEmail, string $subject, string $htmlBody): array {
+        // Provider 1: Resend (https://resend.com)
+        $resendKey = self::getEnv('RESEND_API_KEY') ?: self::getEnv('RESEND_KEY');
+        if (!empty($resendKey)) {
+            $from = self::getEnv('RESEND_FROM', 'Bestlink Attendance Portal <onboarding@resend.dev>');
+            $payload = [
+                'from'    => $from,
+                'to'      => [$toEmail],
+                'subject' => $subject,
+                'html'    => $htmlBody
+            ];
+
+            $ch = curl_init('https://api.resend.com/emails');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Bearer ' . trim($resendKey),
+                'Content-Type: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $resp = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                return ['attempted' => true, 'success' => true, 'provider' => 'resend'];
+            }
+            error_log("[Resend API Error] HTTP {$httpCode}: {$resp} {$err}");
+        }
+
+        // Provider 2: Brevo / Sendinblue (https://brevo.com)
+        $brevoKey = self::getEnv('BREVO_API_KEY') ?: self::getEnv('SENDINBLUE_API_KEY');
+        if (!empty($brevoKey)) {
+            $fromEmail = self::getEnv('BREVO_FROM_EMAIL', self::getEnv('Email', 'managementattendance6@gmail.com'));
+            $fromName  = self::getEnv('BREVO_FROM_NAME', 'BCP Attendance Management System');
+
+            $payload = [
+                'sender'      => ['name' => $fromName, 'email' => $fromEmail],
+                'to'          => [['email' => $toEmail]],
+                'subject'     => $subject,
+                'htmlContent' => $htmlBody
+            ];
+
+            $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'api-key: ' . trim($brevoKey),
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $resp = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                return ['attempted' => true, 'success' => true, 'provider' => 'brevo'];
+            }
+            error_log("[Brevo API Error] HTTP {$httpCode}: {$resp} {$err}");
+        }
+
+        // Provider 3: SendGrid (https://sendgrid.com)
+        $sendgridKey = self::getEnv('SENDGRID_API_KEY');
+        if (!empty($sendgridKey)) {
+            $fromEmail = self::getEnv('SENDGRID_FROM_EMAIL', 'managementattendance6@gmail.com');
+            $payload = [
+                'personalizations' => [['to' => [['email' => $toEmail]]]],
+                'from'             => ['email' => $fromEmail, 'name' => 'BCP Attendance System'],
+                'subject'          => $subject,
+                'content'          => [['type' => 'text/html', 'value' => $htmlBody]]
+            ];
+
+            $ch = curl_init('https://api.sendgrid.com/v3/mail/send');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Bearer ' . trim($sendgridKey),
+                'Content-Type: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $resp = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                return ['attempted' => true, 'success' => true, 'provider' => 'sendgrid'];
+            }
+        }
+
+        return ['attempted' => false, 'success' => false];
     }
 
     /**
