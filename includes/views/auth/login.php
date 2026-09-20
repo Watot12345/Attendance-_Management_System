@@ -1697,6 +1697,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       } catch (err) {
         showModalAlert('Connection error resending code.');
         btn.disabled = false;
+      }
     }
 
     function startModalResendCountdown() {
