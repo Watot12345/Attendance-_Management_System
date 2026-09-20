@@ -106,7 +106,7 @@ class Mailer {
         $host = $transport['host'];
         $port = $transport['port'];
         $mode = $transport['mode'];
-        $timeout = 12;
+        $timeout = 3;
 
         $context = stream_context_create([
             'ssl' => [
