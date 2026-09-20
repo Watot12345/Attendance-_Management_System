@@ -93,12 +93,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <!-- Search box -->
           <div class="relative w-full sm:w-80">
-            <input type="text" id="search-student" placeholder="Search by name, student ID, email..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="filterStudents()">
+            <input type="text" id="search-student" placeholder="Search by name, student ID, email..." class="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="debouncedFilterStudents()">
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <!-- Loading Spinner (shown while debouncing / filtering) -->
+            <div id="search-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600">
+              <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+            </div>
           </div>
 
           <!-- Program filter -->
-          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
+          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Programs &amp; Courses</option>
             <option value="BSIT">BS Information Technology (BSIT)</option>
             <option value="BSIS">BS Information Systems (BSIS)</option>
@@ -107,7 +114,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </select>
 
           <!-- Year Level Filter -->
-          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
+          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Year Levels</option>
             <option value="1">1st Year</option>
             <option value="2">2nd Year</option>
@@ -116,7 +123,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </select>
 
           <!-- Status filter -->
-          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="filterStudents()">
+          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Statuses</option>
             <option value="active">Active Accounts Only</option>
             <option value="inactive">Inactive / Suspended</option>
@@ -223,6 +230,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <?php endif; ?>
             </tbody>
           </table>
+        </div>
+
+        <!-- Student Master Table Pagination Footer Bar -->
+        <div id="student-pagination-bar" class="px-5 py-3.5 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <!-- Left: Showing X to Y of Z student record(s) -->
+          <div class="text-slate-500 font-medium" id="student-pagination-info">
+            Showing <span id="pagination-start" class="font-bold text-slate-800">1</span> to <span id="pagination-end" class="font-bold text-slate-800"><?= min(15, count($students)) ?></span> of <span id="pagination-total" class="font-bold text-slate-800"><?= count($students) ?></span> student record(s)
+          </div>
+
+          <!-- Right: Pagination Buttons & Navigation Controls -->
+          <div class="flex items-center gap-1.5 flex-wrap" id="student-pagination-controls">
+            <!-- Dynamically populated by renderStudentPagination -->
+          </div>
         </div>
       </div>
     </main>
@@ -467,15 +487,42 @@ require_once dirname(__DIR__) . '/partials/header.php';
 </div>
 
 <script>
-// Filter students live
+// Pagination configuration & state
+const PAGE_SIZE = 15;
+const WINDOW_SIZE = 30;
+let studentCurrentPage = 1;
+let filterDebounceTimer = null;
+
+// Debounced filter handler (0.3 seconds / 300ms delay) with live search spinner
+function debouncedFilterStudents() {
+  clearTimeout(filterDebounceTimer);
+
+  // Activate loading spinner and subtle table fade immediately on keystroke
+  const searchSpinner = document.getElementById('search-spinner');
+  const tableBody = document.getElementById('students-table-body');
+  if (searchSpinner) searchSpinner.classList.remove('hidden');
+  if (tableBody) tableBody.classList.add('opacity-50', 'transition-opacity');
+
+  filterDebounceTimer = setTimeout(() => {
+    studentCurrentPage = 1; // Reset to page 1 whenever search query or filter changes
+    applyStudentFiltersAndPagination();
+  }, 300);
+}
+
+// Backward-compatible alias
 function filterStudents() {
+  debouncedFilterStudents();
+}
+
+// Core filtering and pagination engine
+function applyStudentFiltersAndPagination() {
   const program = (document.getElementById('filter-program')?.value || 'all').trim();
   const year = (document.getElementById('filter-year')?.value || 'all').trim();
   const status = (document.getElementById('filter-status')?.value || 'all').trim().toLowerCase();
   const query = (document.getElementById('search-student')?.value || '').toLowerCase().trim();
 
-  const rows = document.querySelectorAll('.student-row');
-  let visible = 0;
+  const rows = Array.from(document.querySelectorAll('.student-row'));
+  const matchingRows = [];
 
   rows.forEach(row => {
     const rowProg = (row.getAttribute('data-program') || '').toUpperCase();
@@ -506,27 +553,213 @@ function filterStudents() {
     const matchQuery = (!query || rowText.includes(query));
 
     if (matchProg && matchYear && matchStatus && matchQuery) {
-      row.style.display = '';
-      visible++;
-    } else {
-      row.style.display = 'none';
+      matchingRows.push(row);
     }
   });
 
+  const totalMatching = matchingRows.length;
+  const totalPages = Math.ceil(totalMatching / PAGE_SIZE) || 1;
+
+  // Clamp current page within valid bounds
+  if (studentCurrentPage > totalPages) {
+    studentCurrentPage = totalPages;
+  }
+  if (studentCurrentPage < 1) {
+    studentCurrentPage = 1;
+  }
+
+  const startIdx = (studentCurrentPage - 1) * PAGE_SIZE;
+  const endIdx = Math.min(startIdx + PAGE_SIZE, totalMatching);
+
+  // Hide all rows, then display only the matching rows belonging to the active page
+  rows.forEach(row => {
+    row.style.display = 'none';
+  });
+
+  matchingRows.slice(startIdx, endIdx).forEach(row => {
+    row.style.display = '';
+  });
+
+  // Update top visible counter
   const countElem = document.getElementById('visible-count');
   if (countElem) {
-    countElem.textContent = visible;
+    countElem.textContent = totalMatching;
   }
 
   // Toggle empty results row
   const noResultsRow = document.getElementById('no-filter-results');
   if (noResultsRow) {
-    if (visible === 0 && rows.length > 0) {
+    if (totalMatching === 0 && rows.length > 0) {
       noResultsRow.classList.remove('hidden');
     } else {
       noResultsRow.classList.add('hidden');
     }
   }
+
+  // Render bottom pagination controls
+  renderStudentPagination(totalMatching, startIdx, endIdx, totalPages);
+
+  // Deactivate loading state once filtering and rendering is complete
+  const searchSpinner = document.getElementById('search-spinner');
+  const tableBody = document.getElementById('students-table-body');
+  if (searchSpinner) searchSpinner.classList.add('hidden');
+  if (tableBody) tableBody.classList.remove('opacity-50');
+}
+
+// Change active page and re-slice table
+function changeStudentPage(newPage) {
+  studentCurrentPage = newPage;
+  applyStudentFiltersAndPagination();
+
+  // Smooth scroll back to table top on page switch
+  const tableContainer = document.getElementById('students-table-body');
+  if (tableContainer) {
+    tableContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// Render pagination buttons with 30-page chunk navigation
+function renderStudentPagination(totalMatching, startIdx, endIdx, totalPages) {
+  const bar = document.getElementById('student-pagination-bar');
+  const startEl = document.getElementById('pagination-start');
+  const endEl = document.getElementById('pagination-end');
+  const totalEl = document.getElementById('pagination-total');
+  const controls = document.getElementById('student-pagination-controls');
+
+  if (!bar || !controls) return;
+
+  // The pagination bar remains permanently visible so users always see page context
+  bar.classList.remove('hidden');
+
+  if (totalMatching === 0) {
+    if (startEl) startEl.textContent = '0';
+    if (endEl) endEl.textContent = '0';
+    if (totalEl) totalEl.textContent = '0';
+
+    controls.innerHTML = `
+      <button type="button" disabled title="Previous Page" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-300 bg-slate-50 text-xs font-bold flex items-center gap-1 cursor-not-allowed">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <span>Prev</span>
+      </button>
+      <button type="button" disabled class="w-8 h-8 rounded-lg border border-slate-200 bg-slate-100 text-xs font-bold text-slate-400 cursor-not-allowed">
+        1
+      </button>
+      <button type="button" disabled title="Next Page" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-300 bg-slate-50 text-xs font-bold flex items-center gap-1 cursor-not-allowed">
+        <span>Next</span>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    `;
+    return;
+  }
+
+  if (startEl) startEl.textContent = (startIdx + 1).toLocaleString();
+  if (endEl) endEl.textContent = endIdx.toLocaleString();
+  if (totalEl) totalEl.textContent = totalMatching.toLocaleString();
+
+  let html = '';
+
+  // Previous Page Button
+  const prevDisabled = studentCurrentPage <= 1;
+  html += `
+    <button type="button" 
+            onclick="changeStudentPage(${studentCurrentPage - 1})" 
+            ${prevDisabled ? 'disabled' : ''} 
+            title="Previous Page"
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${
+              prevDisabled 
+                ? 'border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed' 
+                : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'
+            }">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      <span>Prev</span>
+    </button>
+  `;
+
+  // 30-Page Windowing calculation
+  // Displays page numbers in chunks of 30 (1–30, 31–60, 61–90...)
+  const currentChunk = Math.floor((studentCurrentPage - 1) / WINDOW_SIZE);
+  const windowStart = currentChunk * WINDOW_SIZE + 1;
+  const windowEnd = Math.min(totalPages, windowStart + WINDOW_SIZE - 1);
+
+  // If beyond chunk 1 (e.g. on page 31+), provide First Page and Jump-Back-30 button
+  if (windowStart > 1) {
+    html += `
+      <button type="button" 
+              onclick="changeStudentPage(1)" 
+              title="Go to Page 1"
+              class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer shadow-2xs">
+        1
+      </button>
+      <button type="button" 
+              onclick="changeStudentPage(${windowStart - 1})" 
+              title="Previous 30 Pages"
+              class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-500 transition cursor-pointer shadow-2xs">
+        «
+      </button>
+    `;
+  }
+
+  // Always render numbered page buttons for the active window
+  // e.g. when filtered to 1 page: renders [1]
+  // e.g. when filtered to 2 pages: renders [1] [2] (reduced from 3)
+  // e.g. when 3 pages: renders [1] [2] [3]
+  for (let p = windowStart; p <= windowEnd; p++) {
+    const isActive = p === studentCurrentPage;
+    if (isActive) {
+      html += `
+        <button type="button" 
+                class="w-8 h-8 rounded-lg border border-blue-600 bg-blue-600 text-xs font-black text-white shadow-xs">
+          ${p}
+        </button>
+      `;
+    } else {
+      html += `
+        <button type="button" 
+                onclick="changeStudentPage(${p})" 
+                class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer shadow-2xs">
+          ${p}
+        </button>
+      `;
+    }
+  }
+
+  // If more pages exist past the current 30-page window, provide Jump-Forward-30 and Last Page button
+  if (windowEnd < totalPages) {
+    html += `
+      <button type="button" 
+              onclick="changeStudentPage(${windowEnd + 1})" 
+              title="Next 30 Pages"
+              class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-500 transition cursor-pointer shadow-2xs">
+        »
+      </button>
+      <button type="button" 
+              onclick="changeStudentPage(${totalPages})" 
+              title="Go to Page ${totalPages}"
+              class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer shadow-2xs">
+        ${totalPages}
+      </button>
+    `;
+  }
+
+  // Next Page Button
+  // When on page 30 and user clicks Next, changeStudentPage(31) automatically transitions to the next 30-page chunk
+  const nextDisabled = studentCurrentPage >= totalPages;
+  html += `
+    <button type="button" 
+            onclick="changeStudentPage(${studentCurrentPage + 1})" 
+            ${nextDisabled ? 'disabled' : ''} 
+            title="Next Page"
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${
+              nextDisabled 
+                ? 'border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed' 
+                : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'
+            }">
+      <span>Next</span>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+  `;
+
+  controls.innerHTML = html;
 }
 
 // Auto-generate new unique student ID (format: 23011XXXX)
@@ -957,6 +1190,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
+
+  // Initialize client-side 15-per-page pagination and debounced filter state on load
+  applyStudentFiltersAndPagination();
 });
 </script>
 
