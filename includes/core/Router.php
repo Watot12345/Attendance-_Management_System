@@ -320,6 +320,7 @@ class Router {
             '/api/auth/logout',
             '/api/auth/me',
             '/healthcheck',
+            '/mailcheck',
             '/403',
             '/404',
             '/500',
@@ -529,6 +530,29 @@ class Router {
                 $result['db_connection'] = 'FAILED: ' . $e->getMessage();
             }
             echo json_encode($result, JSON_PRETTY_PRINT);
+            exit;
+        }
+
+        // Live Mail & SMTP diagnostic endpoint for Railway
+        if ($path === '/mailcheck') {
+            header('Content-Type: application/json; charset=utf-8');
+            require_once dirname(__DIR__) . '/core/Mailer.php';
+            
+            $testTo = $_GET['to'] ?? Mailer::getEnv('Email') ?: 'managementattendance6@gmail.com';
+            $smtpUser = Mailer::getEnv('Email') ?: Mailer::getEnv('SMTP_USER', '(not set)');
+            $hasPass  = !empty(Mailer::getEnv('APP_PASSWORD') ?: Mailer::getEnv('SMTP_PASS', ''));
+
+            $res = Mailer::sendOtp($testTo, '999888', 'login', 'Railway Diagnostic');
+            
+            echo json_encode([
+                'timestamp'        => date('Y-m-d H:i:s T'),
+                'php_version'      => PHP_VERSION,
+                'openssl_loaded'   => extension_loaded('openssl'),
+                'smtp_user_set'    => $smtpUser,
+                'smtp_pass_set'    => $hasPass,
+                'target_recipient' => $testTo,
+                'delivery_result'  => $res,
+            ], JSON_PRETTY_PRINT);
             exit;
         }
 

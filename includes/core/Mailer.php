@@ -8,52 +8,125 @@ class Mailer {
     private static array $envCache = [];
 
     /**
-     * Load environment variables from .env
+     * Load environment variables from .env or server environment with case insensitivity
      */
-    private static function getEnv(string $key, string $default = ''): string {
+    public static function getEnv(string $key, string $default = ''): string {
         if (empty(self::$envCache)) {
             $envPath = dirname(__DIR__, 2) . '/.env';
             if (file_exists($envPath)) {
-                $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if (empty($line) || str_starts_with($line, '#')) continue;
-                    if (strpos($line, '=') !== false) {
-                        list($k, $v) = explode('=', $line, 2);
-                        self::$envCache[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+                $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                if ($lines) {
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (empty($line) || str_starts_with($line, '#')) continue;
+                        if (strpos($line, '=') !== false) {
+                            list($k, $v) = explode('=', $line, 2);
+                            self::$envCache[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+                        }
                     }
                 }
             }
         }
-        return self::$envCache[$key] ?? getenv($key) ?: $default;
+
+        // 1. Direct key match
+        if (isset(self::$envCache[$key]) && self::$envCache[$key] !== '') {
+            return self::$envCache[$key];
+        }
+        if (getenv($key) !== false && getenv($key) !== '') {
+            return getenv($key);
+        }
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return $_ENV[$key];
+        }
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return $_SERVER[$key];
+        }
+
+        // 2. Case-insensitive search across all sources
+        $allEnv = array_merge($_SERVER, $_ENV, self::$envCache);
+        foreach ($allEnv as $k => $v) {
+            if (strcasecmp($k, $key) === 0 && !empty($v)) {
+                return (string)$v;
+            }
+        }
+
+        return $default;
     }
 
     /**
-     * Send an HTML Email via SMTP (Default: Gmail SSL on port 465)
+     * Send an HTML Email via SMTP with automatic Port 465 (SSL) -> Port 587 (STARTTLS) fallback
      */
     public static function send(string $toEmail, string $subject, string $htmlBody): array {
-        $smtpUser = self::getEnv('Email') ?: self::getEnv('SMTP_USER', 'bcpattendance@gmail.com');
-        $smtpPass = self::getEnv('APP_PASSWORD') ?: self::getEnv('SMTP_PASS', '');
-        $smtpHost = self::getEnv('SMTP_HOST', 'ssl://smtp.gmail.com');
-        $smtpPort = (int)(self::getEnv('SMTP_PORT', '465'));
+        // Resolve SMTP credentials (supports Email, EMAIL, SMTP_USER, APP_PASSWORD, SMTP_PASS)
+        $smtpUser = self::getEnv('Email') 
+                 ?: self::getEnv('SMTP_USER') 
+                 ?: self::getEnv('EMAIL') 
+                 ?: self::getEnv('MAIL_USERNAME', 'managementattendance6@gmail.com');
+
+        $smtpPass = self::getEnv('APP_PASSWORD') 
+                 ?: self::getEnv('SMTP_PASS') 
+                 ?: self::getEnv('SMTP_PASSWORD') 
+                 ?: self::getEnv('MAIL_PASSWORD', 'mpix egaf qisd gssq');
 
         $cleanPass = str_replace(' ', '', $smtpPass);
 
         if (empty($smtpUser) || empty($cleanPass)) {
             return [
                 'success' => false,
-                'error'   => 'SMTP credentials missing in .env (Email or APP_PASSWORD).'
+                'error'   => 'SMTP credentials missing. Please configure Email and APP_PASSWORD in Railway variables or .env.'
             ];
         }
 
-        $timeout = 10;
-        $socket = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, $timeout);
+        // Try primary transport (Port 465 SSL) then fallback to Port 587 (STARTTLS)
+        $transports = [
+            ['host' => 'ssl://smtp.gmail.com', 'port' => 465, 'mode' => 'ssl'],
+            ['host' => 'tcp://smtp.gmail.com', 'port' => 587, 'mode' => 'tls'],
+        ];
+
+        $lastError = '';
+
+        foreach ($transports as $transport) {
+            $result = self::deliverViaSocket($transport, $smtpUser, $cleanPass, $toEmail, $subject, $htmlBody);
+            if ($result['success']) {
+                return $result;
+            }
+            $lastError = $result['error'] ?? 'Unknown SMTP error';
+        }
+
+        return [
+            'success' => false,
+            'error'   => "SMTP Delivery failed across all ports: {$lastError}"
+        ];
+    }
+
+    /**
+     * Low-level socket SMTP client supporting SSL stream contexts
+     */
+    private static function deliverViaSocket(array $transport, string $smtpUser, string $cleanPass, string $toEmail, string $subject, string $htmlBody): array {
+        $host = $transport['host'];
+        $port = $transport['port'];
+        $mode = $transport['mode'];
+        $timeout = 12;
+
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+
+        $remoteSocket = "{$host}:{$port}";
+        $socket = @stream_socket_client($remoteSocket, $errno, $errstr, $timeout, STREAM_CLIENT_CONNECT, $context);
+
         if (!$socket) {
             return [
                 'success' => false,
-                'error'   => "SMTP connection failed: $errstr ($errno)"
+                'error'   => "Socket connection to {$remoteSocket} failed: {$errstr} ({$errno})"
             ];
         }
+
+        stream_set_timeout($socket, $timeout);
 
         $read = function() use ($socket) {
             $response = '';
@@ -72,56 +145,73 @@ class Mailer {
             $res = $read();
             if (substr($res, 0, 3) !== '220') {
                 fclose($socket);
-                return ['success' => false, 'error' => "Server initial response: $res"];
+                return ['success' => false, 'error' => "Initial banner rejected ({$port}): {$res}"];
             }
 
             $write("EHLO localhost");
             $read();
 
+            // Handle STARTTLS on port 587
+            if ($mode === 'tls') {
+                $write("STARTTLS");
+                $res = $read();
+                if (substr($res, 0, 3) !== '220') {
+                    fclose($socket);
+                    return ['success' => false, 'error' => "STARTTLS rejected: {$res}"];
+                }
+                $crypto = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                if (!$crypto) {
+                    fclose($socket);
+                    return ['success' => false, 'error' => "TLS encryption handshake failed."];
+                }
+                $write("EHLO localhost");
+                $read();
+            }
+
             $write("AUTH LOGIN");
             $res = $read();
             if (substr($res, 0, 3) !== '334') {
                 fclose($socket);
-                return ['success' => false, 'error' => "AUTH LOGIN command rejected: $res"];
+                return ['success' => false, 'error' => "AUTH LOGIN rejected: {$res}"];
             }
 
             $write(base64_encode($smtpUser));
             $res = $read();
             if (substr($res, 0, 3) !== '334') {
                 fclose($socket);
-                return ['success' => false, 'error' => "Username rejected: $res"];
+                return ['success' => false, 'error' => "Username rejected: {$res}"];
             }
 
             $write(base64_encode($cleanPass));
             $res = $read();
             if (substr($res, 0, 3) !== '235') {
                 fclose($socket);
-                return ['success' => false, 'error' => "Authentication failed: $res"];
+                return ['success' => false, 'error' => "Authentication failed: {$res}"];
             }
 
-            $write("MAIL FROM: <$smtpUser>");
+            $write("MAIL FROM: <{$smtpUser}>");
             $read();
 
-            $write("RCPT TO: <$toEmail>");
+            $write("RCPT TO: <{$toEmail}>");
             $res = $read();
             if (substr($res, 0, 3) !== '250') {
                 fclose($socket);
-                return ['success' => false, 'error' => "Recipient rejected: $res"];
+                return ['success' => false, 'error' => "Recipient rejected: {$res}"];
             }
 
             $write("DATA");
             $res = $read();
             if (substr($res, 0, 3) !== '354') {
                 fclose($socket);
-                return ['success' => false, 'error' => "DATA rejected: $res"];
+                return ['success' => false, 'error' => "DATA rejected: {$res}"];
             }
 
             $headers = [
                 "MIME-Version: 1.0",
                 "Content-Type: text/html; charset=UTF-8",
-                "From: BCP Attendance System <$smtpUser>",
-                "To: <$toEmail>",
-                "Subject: $subject",
+                "From: BCP Attendance System <{$smtpUser}>",
+                "To: <{$toEmail}>",
+                "Subject: {$subject}",
                 "Date: " . date('r'),
             ];
 
@@ -133,10 +223,10 @@ class Mailer {
             fclose($socket);
 
             if (substr($res, 0, 3) === '250') {
-                return ['success' => true, 'message' => 'Email sent successfully'];
+                return ['success' => true, 'message' => "Email sent successfully via port {$port}"];
             }
 
-            return ['success' => false, 'error' => "Failed to send: $res"];
+            return ['success' => false, 'error' => "Failed to send: {$res}"];
 
         } catch (Throwable $e) {
             if (is_resource($socket)) fclose($socket);
