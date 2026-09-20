@@ -110,41 +110,7 @@ class Mailer {
      * Supports: Resend, Brevo (Sendinblue), SendGrid
      */
     private static function deliverViaHttpApi(string $toEmail, string $subject, string $htmlBody): array {
-        // Provider 1: Resend (https://resend.com)
-        $resendKey = self::getEnv('RESEND_API_KEY') ?: self::getEnv('RESEND_KEY');
-        if (!empty($resendKey)) {
-            $from = self::getEnv('RESEND_FROM', 'Bestlink Attendance Portal <onboarding@resend.dev>');
-            $payload = [
-                'from'    => $from,
-                'to'      => [$toEmail],
-                'subject' => $subject,
-                'html'    => $htmlBody
-            ];
-
-            $ch = curl_init('https://api.resend.com/emails');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . trim($resendKey),
-                'Content-Type: application/json'
-            ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-            $resp = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            if ($httpCode >= 200 && $httpCode < 300) {
-                return ['attempted' => true, 'success' => true, 'provider' => 'resend'];
-            }
-            error_log("[Resend API Error] HTTP {$httpCode}: {$resp} {$err}");
-        }
-
-        // Provider 2: Brevo / Sendinblue (https://brevo.com)
+        // Provider 1: Brevo / Sendinblue (https://brevo.com) — Supports ALL recipient emails with 0 domain setup
         $brevoKey = self::getEnv('BREVO_API_KEY') ?: self::getEnv('SENDINBLUE_API_KEY');
         if (!empty($brevoKey)) {
             $fromEmail = self::getEnv('BREVO_FROM_EMAIL', self::getEnv('Email', 'managementattendance6@gmail.com'));
@@ -179,6 +145,40 @@ class Mailer {
                 return ['attempted' => true, 'success' => true, 'provider' => 'brevo'];
             }
             error_log("[Brevo API Error] HTTP {$httpCode}: {$resp} {$err}");
+        }
+
+        // Provider 2: Resend (https://resend.com)
+        $resendKey = self::getEnv('RESEND_API_KEY') ?: self::getEnv('RESEND_KEY');
+        if (!empty($resendKey)) {
+            $from = self::getEnv('RESEND_FROM', 'Bestlink Attendance Portal <onboarding@resend.dev>');
+            $payload = [
+                'from'    => $from,
+                'to'      => [$toEmail],
+                'subject' => $subject,
+                'html'    => $htmlBody
+            ];
+
+            $ch = curl_init('https://api.resend.com/emails');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Bearer ' . trim($resendKey),
+                'Content-Type: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $resp = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err = curl_error($ch);
+            curl_close($ch);
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                return ['attempted' => true, 'success' => true, 'provider' => 'resend'];
+            }
+            error_log("[Resend API Error] HTTP {$httpCode}: {$resp} {$err}");
         }
 
         // Provider 3: SendGrid (https://sendgrid.com)
