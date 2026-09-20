@@ -685,6 +685,78 @@ class AuthController {
     }
 
     /**
+     * POST /api/auth/verify-reset-otp
+     * Validates that the 6-digit reset OTP for the specified email is correct and unexpired
+     */
+    public function verifyResetOtp(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $raw = file_get_contents('php://input');
+        $input = !empty($raw) ? json_decode($raw, true) : null;
+        if (!is_array($input)) {
+            $input = $_POST;
+        }
+
+        $email = trim((string)($input['email'] ?? ''));
+        $otp   = trim((string)($input['otp'] ?? ''));
+
+        if (empty($email) || empty($otp)) {
+            $this->respondError('Both email and 6-digit verification code are required.', 400);
+            return;
+        }
+
+        if (strlen($otp) < 6) {
+            $this->respondError('Please enter the full 6-digit verification code.', 400);
+            return;
+        }
+
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("
+                SELECT user_id, email, status FROM users 
+                WHERE LOWER(email) = LOWER(:email) 
+                  AND otp_code = :otp 
+                  AND otp_expires_at > NOW() 
+                LIMIT 1
+            ");
+            $stmt->execute([
+                ':email' => $email,
+                ':otp'   => $otp
+            ]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                $this->respondError('Invalid or expired verification code. Please check the code or request a new one.', 401);
+                return;
+            }
+
+            if ($user['status'] !== 'active') {
+                $this->respondError('This user account is inactive or disabled.', 403);
+                return;
+            }
+
+            $_SESSION['verified_password_reset'] = [
+                'user_id'   => (int)$user['user_id'],
+                'email'     => $user['email'],
+                'otp'       => $otp,
+                'timestamp' => time()
+            ];
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'status'  => 'success',
+                'message' => 'Verification code confirmed. You may now create your new password.',
+            ]);
+            exit;
+
+        } catch (Throwable $e) {
+            $this->respondError('Verification service error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * POST /api/auth/reset-password
      * Verifies reset OTP and updates user's password with strict security requirements:
      * - Minimum 6 characters

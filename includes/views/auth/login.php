@@ -966,7 +966,7 @@
             Reset Your Password
           </h3>
           <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
-            Enter your registered institutional email to receive a password reset code.
+            Enter your registered institutional email to receive a 6-digit security code.
           </p>
         </div>
 
@@ -991,33 +991,65 @@
         </form>
       </div>
 
-      <!-- Modal Step 2: Enter OTP & New Password -->
-      <div id="modal-step-new-pass" style="display: none;">
+      <!-- Modal Step 2: Enter & Verify 6-Digit OTP -->
+      <div id="modal-step-otp" style="display: none;">
         <div style="margin-bottom: 20px;">
           <span style="font-size: 10.5px; font-weight: 800; color: var(--primary-pink); letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-bottom: 4px;">
             SECURITY VERIFICATION
           </span>
           <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #0F172A;">
-            Set New Password
+            Verify Security Code
           </h3>
           <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
             Enter the 6-digit code sent to <strong id="modal-masked-email" style="color: #0F172A;">your email</strong>.
           </p>
         </div>
 
-        <form onsubmit="event.preventDefault(); handleUpdateNewPassword();">
-          
-          <!-- 6-digit OTP Input -->
-          <div class="form-group" style="margin-bottom: 14px;">
+        <form onsubmit="event.preventDefault(); handleVerifyResetOtp();">
+          <div class="form-group" style="margin-bottom: 18px;">
             <label for="reset-otp-input" class="form-label-text">6-Digit Verification Code</label>
             <div class="custom-field-box">
               <svg class="field-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
               </svg>
-              <input type="text" id="reset-otp-input" class="custom-input-field" maxlength="6" placeholder="e.g. 123456" required inputmode="numeric" style="letter-spacing: 3px; font-weight: 700;">
+              <input type="text" id="reset-otp-input" class="custom-input-field" maxlength="6" placeholder="e.g. 123456" required inputmode="numeric" style="letter-spacing: 4px; font-weight: 700; font-size: 16px;">
             </div>
           </div>
 
+          <button type="submit" id="btn-verify-reset-otp" class="btn-auth-submit" style="margin-bottom: 12px;">
+            <span id="btn-verify-otp-text">Verify Code &amp; Continue</span>
+            <svg id="btn-verify-otp-spinner" style="display: none; width: 16px; height: 16px; animation: spin 1s linear infinite;" fill="none" viewBox="0 0 24 24">
+              <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 4px 2px;">
+            <button type="button" onclick="backToResetEmailStep()" style="background: none; border: none; color: #64748B; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline;">
+              ← Change Email
+            </button>
+            <button type="button" id="modal-resend-btn" onclick="handleResendResetOtp()" style="background: none; border: none; color: var(--primary-pink); font-weight: 700; cursor: pointer; padding: 0;">
+              Resend Code <span id="modal-resend-timer"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Modal Step 3: Enter New Password & Confirm New Password (shown ONLY after OTP is verified) -->
+      <div id="modal-step-new-pass" style="display: none;">
+        <div style="margin-bottom: 20px;">
+          <span style="font-size: 10.5px; font-weight: 800; color: #10B981; letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-bottom: 4px;">
+            ✓ IDENTITY VERIFIED
+          </span>
+          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #0F172A;">
+            Set New Password
+          </h3>
+          <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+            Create a secure new password for <strong id="modal-verified-email" style="color: #0F172A;">your account</strong>.
+          </p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); handleUpdateNewPassword();">
           <!-- New Password -->
           <div class="form-group" style="margin-bottom: 8px;">
             <label for="new-pass-input" class="form-label-text">New Password</label>
@@ -1083,7 +1115,10 @@
   <script>
     let resendCountdown = 60;
     let resendInterval = null;
+    let modalResendCountdown = 60;
+    let modalResendInterval = null;
     let resetActiveEmail = '';
+    let resetActiveOtp = '';
 
     // Password Visibility Toggle
     function togglePasswordVisibility(inputId, iconId) {
@@ -1402,15 +1437,26 @@
     function openForgotPasswordModal() {
       hideAlert();
       hideModalAlert();
+      resetActiveEmail = '';
+      resetActiveOtp = '';
       document.getElementById('modal-step-email').style.display = 'block';
+      document.getElementById('modal-step-otp').style.display = 'none';
       document.getElementById('modal-step-new-pass').style.display = 'none';
+
       document.getElementById('reset-email-input').value = document.getElementById('login-identifier').value || '';
+      document.getElementById('reset-otp-input').value = '';
+      document.getElementById('new-pass-input').value = '';
+      document.getElementById('confirm-pass-input').value = '';
+
+      if (modalResendInterval) clearInterval(modalResendInterval);
+
       document.getElementById('forgot-password-modal').classList.add('open');
     }
 
     function closeForgotPasswordModal() {
       document.getElementById('forgot-password-modal').classList.remove('open');
       hideModalAlert();
+      if (modalResendInterval) clearInterval(modalResendInterval);
     }
 
     // Modal Step 1: Send Reset OTP
@@ -1446,8 +1492,13 @@
           resetActiveEmail = email;
           document.getElementById('modal-masked-email').textContent = data.masked_email || email;
           document.getElementById('modal-step-email').style.display = 'none';
-          document.getElementById('modal-step-new-pass').style.display = 'block';
-          showModalAlert(`Password reset verification code has been sent to ${data.masked_email}. Please check your inbox.`, false);
+          document.getElementById('modal-step-otp').style.display = 'block';
+          document.getElementById('modal-step-new-pass').style.display = 'none';
+          document.getElementById('reset-otp-input').value = '';
+          document.getElementById('reset-otp-input').focus();
+          
+          startModalResendCountdown();
+          showModalAlert(`Verification code sent to ${data.masked_email}. Please check your inbox.`, false);
         } else {
           showModalAlert(data.message || 'No user account found with this email.');
         }
@@ -1456,6 +1507,126 @@
       } finally {
         btn.disabled = false;
         text.textContent = 'Send Verification Code';
+        if (spinner) spinner.style.display = 'none';
+      }
+    }
+
+    // Modal Step 2: Go back to Email Step
+    function backToResetEmailStep() {
+      hideModalAlert();
+      document.getElementById('modal-step-otp').style.display = 'none';
+      document.getElementById('modal-step-new-pass').style.display = 'none';
+      document.getElementById('modal-step-email').style.display = 'block';
+      document.getElementById('reset-email-input').focus();
+    }
+
+    // Modal Step 2: Resend Reset OTP
+    async function handleResendResetOtp() {
+      const btn = document.getElementById('modal-resend-btn');
+      if (!resetActiveEmail) return;
+
+      btn.disabled = true;
+      hideModalAlert();
+
+      try {
+        const res = await fetch('<?php echo url("api/auth/forgot-password"); ?>', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email: resetActiveEmail })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          showModalAlert(`A fresh verification code has been sent to ${data.masked_email}.`, false);
+          startModalResendCountdown();
+        } else {
+          showModalAlert(data.message || 'Unable to resend code.');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        showModalAlert('Connection error resending code.');
+        btn.disabled = false;
+      }
+    }
+
+    function startModalResendCountdown() {
+      if (modalResendInterval) clearInterval(modalResendInterval);
+      modalResendCountdown = 60;
+      const resendBtn = document.getElementById('modal-resend-btn');
+      const timerText = document.getElementById('modal-resend-timer');
+
+      resendBtn.disabled = true;
+      timerText.textContent = `(${modalResendCountdown}s)`;
+
+      modalResendInterval = setInterval(() => {
+        modalResendCountdown--;
+        if (modalResendCountdown <= 0) {
+          clearInterval(modalResendInterval);
+          resendBtn.disabled = false;
+          timerText.textContent = '';
+        } else {
+          timerText.textContent = `(${modalResendCountdown}s)`;
+        }
+      }, 1000);
+    }
+
+    // Modal Step 2: Verify OTP
+    async function handleVerifyResetOtp() {
+      const otp = document.getElementById('reset-otp-input').value.trim();
+      const btn = document.getElementById('btn-verify-reset-otp');
+      const text = document.getElementById('btn-verify-otp-text');
+      const spinner = document.getElementById('btn-verify-otp-spinner');
+
+      if (!otp || otp.length < 6) {
+        showModalAlert('Please enter the full 6-digit verification code.');
+        return;
+      }
+
+      btn.disabled = true;
+      text.textContent = 'Verifying Code...';
+      if (spinner) spinner.style.display = 'inline-block';
+      hideModalAlert();
+
+      try {
+        const res = await fetch('<?php echo url("api/auth/verify-reset-otp"); ?>', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            email: resetActiveEmail,
+            otp: otp
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+          resetActiveOtp = otp;
+          // Transition to Step 3 (New Password + Confirm Password)
+          document.getElementById('modal-verified-email').textContent = resetActiveEmail;
+          document.getElementById('modal-step-email').style.display = 'none';
+          document.getElementById('modal-step-otp').style.display = 'none';
+          document.getElementById('modal-step-new-pass').style.display = 'block';
+
+          document.getElementById('new-pass-input').value = '';
+          document.getElementById('confirm-pass-input').value = '';
+          document.getElementById('new-pass-input').focus();
+          validatePasswordLive();
+
+          showModalAlert('Code verified! Please create your new password.', false);
+        } else {
+          showModalAlert(data.message || 'Invalid or expired verification code.');
+        }
+      } catch (err) {
+        showModalAlert('Verification service error. Please try again.');
+      } finally {
+        btn.disabled = false;
+        text.textContent = 'Verify Code & Continue';
         if (spinner) spinner.style.display = 'none';
       }
     }
@@ -1488,20 +1659,15 @@
       return isLongEnough && hasCapital;
     }
 
-    // Modal Step 2: Save New Password
+    // Modal Step 3: Save New Password (after OTP is verified)
     async function handleUpdateNewPassword() {
-      const otp = document.getElementById('reset-otp-input').value.trim();
+      const otp = resetActiveOtp || document.getElementById('reset-otp-input').value.trim();
       const newPassword = document.getElementById('new-pass-input').value;
       const confirmPass = document.getElementById('confirm-pass-input').value;
 
       const btn = document.getElementById('btn-save-new-pass');
       const text = document.getElementById('btn-save-pass-text');
       const spinner = document.getElementById('btn-save-pass-spinner');
-
-      if (!otp || otp.length < 6) {
-        showModalAlert('Please enter the 6-digit verification code.');
-        return;
-      }
 
       if (!validatePasswordLive()) {
         showModalAlert('Password must be at least 6 characters and contain at least 1 capital letter.');
@@ -1527,7 +1693,7 @@
           },
           body: JSON.stringify({
             email: resetActiveEmail,
-            otp,
+            otp: otp,
             new_password: newPassword,
             confirm_password: confirmPass
           })

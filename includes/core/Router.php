@@ -63,6 +63,7 @@ class Router {
         '/api/auth/resend-otp'   => 'AuthController@resendOtp',
         '/api/auth/check-remembered' => 'AuthController@checkRemembered',
         '/api/auth/forgot-password'  => 'AuthController@forgotPassword',
+        '/api/auth/verify-reset-otp' => 'AuthController@verifyResetOtp',
         '/api/auth/reset-password'   => 'AuthController@resetPassword',
         '/api/auth/logout'           => 'AuthController@logout',
         '/api/auth/me'               => 'AuthController@me',
