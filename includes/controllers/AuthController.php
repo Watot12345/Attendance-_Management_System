@@ -130,7 +130,42 @@ class AuthController {
                 return;
             }
 
-            // Generate 6-digit One-Time Password (OTP)
+            // Check if this device is remembered/trusted for this user
+            $rememberToken = $_COOKIE['ams_remember_token'] ?? '';
+            if (!empty($rememberToken)) {
+                $trustedStmt = $db->prepare("
+                    SELECT * FROM users 
+                    WHERE user_id = :uid 
+                      AND remember_token = :token 
+                      AND remember_expires_at > NOW() 
+                      AND status = 'active'
+                    LIMIT 1
+                ");
+                $trustedStmt->execute([
+                    ':uid'   => $user['user_id'],
+                    ':token' => $rememberToken
+                ]);
+                $trustedUser = $trustedStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($trustedUser) {
+                    // Device is remembered: bypass OTP challenge and log in directly!
+                    $upStmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL, last_login_at = NOW() WHERE user_id = ?");
+                    $upStmt->execute([$user['user_id']]);
+
+                    $this->establishUserSession($user);
+
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'status'       => 'authenticated',
+                        'message'      => 'Authentication successful! Redirecting to workspace...',
+                        'redirect_url' => $this->getRoleRedirectUrl($user['role']),
+                        'user'         => $_SESSION['user']
+                    ]);
+                    exit;
+                }
+            }
+
+            // Device is NOT remembered -> Generate and dispatch 2FA OTP
             $otp = (string)random_int(100000, 999999);
             
             // Save OTP with 10-minute expiry in database
@@ -150,7 +185,6 @@ class AuthController {
                 'user_id'     => (int)$user['user_id'],
                 'role'        => $user['role'],
                 'email'       => $user['email'],
-                'remember_me' => $rememberMe,
                 'user_agent'  => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
                 'created_at'  => time()
             ];
@@ -182,7 +216,7 @@ class AuthController {
 
     /**
      * POST /api/auth/verify-otp
-     * Step 2: Validates OTP and establishes session (+ sets 15-day remember token if enabled)
+     * Step 2: Validates OTP and establishes session (+ sets remember token if enabled on OTP form)
      */
     public function verifyOtp(): void {
         if (session_status() === PHP_SESSION_NONE) {
@@ -196,6 +230,7 @@ class AuthController {
         }
 
         $otp = trim((string)($input['otp'] ?? ''));
+        $rememberMe = !empty($input['remember_me']) && ($input['remember_me'] === true || $input['remember_me'] === '1' || $input['remember_me'] === 'true' || $input['remember_me'] === 'on');
 
         if (empty($_SESSION['pending_auth'])) {
             $this->respondError('Your authentication session has expired. Please sign in again.', 401);
@@ -237,15 +272,17 @@ class AuthController {
             $clearStmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL, last_login_at = NOW() WHERE user_id = ?");
             $clearStmt->execute([$userId]);
 
-            // Handle Remember Me (15 Days with User-Agent fingerprinting)
-            if (!empty($pending['remember_me'])) {
+            $cookiePath = Router::getBasePath() !== '' ? Router::getBasePath() : '/';
+
+            // Handle Remember Me (Remember device for future logins so OTP is skipped)
+            if ($rememberMe) {
                 $rememberToken = bin2hex(random_bytes(32));
                 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 
                 $remStmt = $db->prepare("
                     UPDATE users 
                     SET remember_token = :token, 
-                        remember_expires_at = DATE_ADD(NOW(), INTERVAL 15 DAY), 
+                        remember_expires_at = DATE_ADD(NOW(), INTERVAL 30 DAY), 
                         remember_user_agent = :ua 
                     WHERE user_id = :uid
                 ");
@@ -255,9 +292,8 @@ class AuthController {
                     ':uid'   => $userId
                 ]);
 
-                // Set 15-day cookie
-                $cookieExpire = time() + (15 * 86400);
-                $cookiePath = Router::getBasePath() !== '' ? Router::getBasePath() : '/';
+                // Set 30-day persistent cookie
+                $cookieExpire = time() + (30 * 86400);
                 setcookie('ams_remember_token', $rememberToken, [
                     'expires'  => $cookieExpire,
                     'path'     => $cookiePath,
@@ -279,7 +315,7 @@ class AuthController {
                 'message'      => 'Authentication verified successfully! Loading your portal...',
                 'role'         => $user['role'],
                 'redirect_url' => $redirectUrl,
-                'user'         => $_SESSION['user'],
+                'user'         => $_SESSION['user']
             ]);
             exit;
 

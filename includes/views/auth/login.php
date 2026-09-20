@@ -847,18 +847,14 @@
               </div>
             </div>
 
-            <!-- Remember Me 15 Days Checkbox & Forgot Password Link -->
-            <div class="form-options-row">
-              <label class="remember-label">
-                <input type="checkbox" id="login-remember-me" name="remember_me" class="remember-checkbox">
-                <span>Remember this device for 15 days</span>
-              </label>
+            <!-- Forgot Password Link -->
+            <div class="form-options-row" style="justify-content: flex-end;">
               <button type="button" class="forgot-link-btn" onclick="openForgotPasswordModal()">Forgot password?</button>
             </div>
 
             <!-- Step 1 Submit Button -->
             <button type="submit" id="credentials-submit-btn" class="btn-auth-submit">
-              <span id="btn-login-text">Sign In & Send Code</span>
+              <span id="btn-login-text">Sign In</span>
               <svg id="btn-login-arrow" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
               </svg>
@@ -893,6 +889,14 @@
 
             <!-- Hidden aggregated OTP field -->
             <input type="hidden" id="full-otp-value" name="otp">
+
+            <!-- Remember This Device Checkbox -->
+            <div style="margin-top: 14px; margin-bottom: 12px;">
+              <label class="remember-label" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="otp-remember-me" name="remember_me" class="remember-checkbox" checked>
+                <span style="font-size: 12.5px; color: #475569; font-weight: 600;">Remember this device (Skip OTP on next login)</span>
+              </label>
+            </div>
 
             <div class="otp-footer-controls">
               <span>Didn't receive code?</span>
@@ -1293,7 +1297,6 @@
     async function submitCredentials() {
       const identifier = document.getElementById('login-identifier').value.trim();
       const password   = document.getElementById('login-password').value;
-      const rememberMe = document.getElementById('login-remember-me').checked;
 
       const btn        = document.getElementById('credentials-submit-btn');
       const btnText    = document.getElementById('btn-login-text');
@@ -1320,14 +1323,26 @@
           },
           body: JSON.stringify({ 
             identifier, 
-            password, 
-            remember_me: rememberMe 
+            password
           })
         });
 
         const data = await res.json();
 
-        if (res.ok && data.status === 'otp_required') {
+        if (res.ok && (data.status === 'authenticated' || data.status === 'success')) {
+          showAlert(data.message || 'Authentication successful! Loading workspace...', false);
+          
+          if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+            APP.showLoadingScreen({
+              title: 'Authenticating Workspace...',
+              subtitle: 'Redirecting to your dashboard...'
+            });
+          }
+
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 300);
+        } else if (res.ok && data.status === 'otp_required') {
           showOtpStep(data.masked_email);
         } else {
           showAlert(data.message || 'Invalid institutional ID/email or password.');
@@ -1337,7 +1352,7 @@
         showAlert('Authentication service encountered an error. Please try again.');
       } finally {
         btn.disabled = false;
-        btnText.textContent = 'Sign In & Send Code';
+        btnText.textContent = 'Sign In';
         if (btnArrow) btnArrow.style.display = 'inline-block';
         if (btnSpinner) btnSpinner.style.display = 'none';
       }
@@ -1346,6 +1361,7 @@
     // STEP 2: Submit OTP Verification
     async function submitOtpVerification() {
       const otp = updateFullOtpValue();
+      const rememberMe = document.getElementById('otp-remember-me') ? document.getElementById('otp-remember-me').checked : true;
       const btn        = document.getElementById('otp-submit-btn');
       const btnText    = document.getElementById('btn-otp-text');
       const btnArrow   = document.getElementById('btn-otp-arrow');
@@ -1369,12 +1385,15 @@
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ otp })
+          body: JSON.stringify({ 
+            otp,
+            remember_me: rememberMe
+          })
         });
 
         const data = await res.json();
 
-        if (res.ok && data.status === 'success') {
+        if (res.ok && (data.status === 'success' || data.status === 'authenticated')) {
           showAlert(data.message || 'Verification successful! Loading dashboard...', false);
           
           if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
@@ -1717,29 +1736,6 @@
         if (spinner) spinner.style.display = 'none';
       }
     }
-
-    // Background Check for Remembered 15-Day Session
-    window.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const res = await fetch('<?php echo url("api/auth/check-remembered"); ?>', {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-        const data = await res.json();
-
-        if (data.status === 'authenticated') {
-          showAlert('Remembered device recognized. Redirecting to workspace...', false);
-          setTimeout(() => {
-            window.location.href = data.redirect_url;
-          }, 300);
-        } else if (data.status === 'otp_required_different_device') {
-          showOtpStep(data.masked_email);
-          showAlert('Different device/browser detected from remembered session. Please enter the OTP code sent to your email.');
-        }
-      } catch (err) {
-        // Silently proceed to normal login
-      }
-    });
   </script>
   <!-- Global App JS for Preloader and Utilities -->
   <script src="<?php echo url('assets/js/app.js'); ?>"></script>
