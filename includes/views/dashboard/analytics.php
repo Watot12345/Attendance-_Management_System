@@ -392,10 +392,40 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               <button type="button" class="risk-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer" onclick="filterAtRiskLevel('high', this)">High Risk Only</button>
               <button type="button" class="risk-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer" onclick="filterAtRiskLevel('moderate', this)">Moderate Risk</button>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm flex items-center gap-2 font-bold cursor-pointer" onclick="exportAtRiskCSV()">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              <span>Export Risk List (CSV)</span>
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" class="btn btn-secondary btn-sm flex items-center gap-2 font-bold cursor-pointer" onclick="exportAtRiskCSV()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Export All (CSV)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bulk Actions Context Bar (Active when items selected) -->
+          <div id="at-risk-bulk-bar" class="hidden bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-3.5 sm:p-4 rounded-2xl shadow-lg border border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-400/30 flex items-center justify-center font-bold text-xs">
+                <span id="bulk-selected-count">0</span>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-white tracking-wide">
+                  <span id="bulk-selected-text">0 students selected</span>
+                </div>
+                <div class="text-[11px] text-slate-300">Choose a bulk intervention action to apply across selection</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="btn-bulk-alert-parents" onclick="executeBulkParentAlert()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <span>Bulk Alert Parents (<span id="bulk-btn-count">0</span>)</span>
+              </button>
+              <button type="button" onclick="exportSelectedAtRiskCSV()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Export Selected</span>
+              </button>
+              <button type="button" onclick="clearAtRiskSelection()" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition cursor-pointer">
+                Clear Selection
+              </button>
+            </div>
           </div>
 
           <!-- At-Risk Table -->
@@ -404,6 +434,9 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                    <th scope="col" class="py-3.5 px-4 w-10 text-center">
+                      <input type="checkbox" id="select-all-at-risk" onchange="toggleSelectAllAtRisk(this)" title="Select all on this page" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer">
+                    </th>
                     <th scope="col" class="py-3.5 px-4">Student Name</th>
                     <th scope="col" class="py-3.5 px-4">Section</th>
                     <th scope="col" class="py-3.5 px-4">Attendance Rate</th>
@@ -414,6 +447,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                 </thead>
                 <tbody id="at-risk-table-body" class="divide-y divide-slate-100">
                   <tr class="animate-pulse">
+                    <td class="py-3.5 px-4 text-center"><div class="h-4 w-4 bg-slate-200 rounded mx-auto"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-28 mb-1"></div><div class="h-2 bg-slate-100 rounded w-14"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-24"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-12 mb-1"></div><div class="h-2 bg-slate-100 rounded w-20"></div></td>
@@ -422,6 +456,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                     <td class="py-3.5 px-4 text-right"><div class="h-7 bg-slate-200 rounded-lg w-24 inline-block"></div></td>
                   </tr>
                   <tr class="animate-pulse">
+                    <td class="py-3.5 px-4 text-center"><div class="h-4 w-4 bg-slate-200 rounded mx-auto"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-32 mb-1"></div><div class="h-2 bg-slate-100 rounded w-14"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-20"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-12 mb-1"></div><div class="h-2 bg-slate-100 rounded w-20"></div></td>
@@ -430,6 +465,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                     <td class="py-3.5 px-4 text-right"><div class="h-7 bg-slate-200 rounded-lg w-24 inline-block"></div></td>
                   </tr>
                   <tr class="animate-pulse">
+                    <td class="py-3.5 px-4 text-center"><div class="h-4 w-4 bg-slate-200 rounded mx-auto"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-24 mb-1"></div><div class="h-2 bg-slate-100 rounded w-14"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-24"></div></td>
                     <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-12 mb-1"></div><div class="h-2 bg-slate-100 rounded w-20"></div></td>
@@ -437,24 +473,33 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                     <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-16 mb-1"></div><div class="h-1 bg-slate-200 rounded-full w-24"></div></td>
                     <td class="py-3.5 px-4 text-right"><div class="h-7 bg-slate-200 rounded-lg w-24 inline-block"></div></td>
                   </tr>
-                  <tr class="animate-pulse">
-                    <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-36 mb-1"></div><div class="h-2 bg-slate-100 rounded w-14"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-20"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-12 mb-1"></div><div class="h-2 bg-slate-100 rounded w-20"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-28"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-16 mb-1"></div><div class="h-1 bg-slate-200 rounded-full w-24"></div></td>
-                    <td class="py-3.5 px-4 text-right"><div class="h-7 bg-slate-200 rounded-lg w-24 inline-block"></div></td>
-                  </tr>
-                  <tr class="animate-pulse">
-                    <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-28 mb-1"></div><div class="h-2 bg-slate-100 rounded w-14"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-24"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3.5 bg-slate-200 rounded w-12 mb-1"></div><div class="h-2 bg-slate-100 rounded w-20"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-36"></div></td>
-                    <td class="py-3.5 px-4"><div class="h-3 bg-slate-200 rounded w-16 mb-1"></div><div class="h-1 bg-slate-200 rounded-full w-24"></div></td>
-                    <td class="py-3.5 px-4 text-right"><div class="h-7 bg-slate-200 rounded-lg w-24 inline-block"></div></td>
-                  </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- At-Risk Pagination Footer Bar -->
+            <div id="at-risk-pagination-bar" class="px-4 sm:px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <!-- Left: Info & Rows per page -->
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-slate-500 font-medium" id="at-risk-pagination-info">
+                  Showing <strong class="text-slate-800 font-bold" id="at-risk-page-start">1</strong> to <strong class="text-slate-800 font-bold" id="at-risk-page-end">15</strong> of <strong class="text-slate-800 font-bold" id="at-risk-page-total">0</strong> at-risk students
+                </span>
+                <div class="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                  <label for="at-risk-page-size" class="text-[11px] font-semibold text-slate-500">Per page:</label>
+                  <select id="at-risk-page-size" onchange="changeAtRiskPageSize(this.value)" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer">
+                    <option value="15" selected>15</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="-1">All</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Right: Page Navigation Buttons -->
+              <div class="flex items-center gap-1 self-center sm:self-auto flex-wrap" id="at-risk-pagination-controls">
+                <!-- Buttons dynamically populated by renderAtRiskPagination -->
+              </div>
             </div>
           </div>
         </div>

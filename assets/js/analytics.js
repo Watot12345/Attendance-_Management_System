@@ -824,56 +824,116 @@ function renderPatternsUI(patterns, clusters) {
   }
 }
 
+// ==========================================
+// AT-RISK STUDENTS PAGINATION & BULK ACTIONS
+// ==========================================
+let atRiskCurrentPage = 1;
+let atRiskPageSize = 15;
+let atRiskCurrentFilterLevel = 'all';
+let selectedAtRiskStudentIds = new Set();
+
 /**
- * Render At-Risk Students to DOM
+ * Render At-Risk Students to DOM with Pagination & Bulk Selection
  */
-function renderAtRiskUI(students, highRiskCount) {
+function renderAtRiskUI(students, highRiskCount, resetPage = false) {
   const tbody = document.getElementById('at-risk-table-body');
   const badgeCount = document.getElementById('badge-at-risk-count');
   const teaserHighBadge = document.getElementById('teaser-high-risk-badge');
 
-  currentAtRiskStudents = Array.isArray(students) ? students : [];
+  if (Array.isArray(students)) {
+    currentAtRiskStudents = students;
+  }
 
-  if (badgeCount) badgeCount.textContent = highRiskCount || currentAtRiskStudents.filter(s => s.risk_level === 'High Risk').length;
-  if (teaserHighBadge) teaserHighBadge.textContent = `${highRiskCount || 5} High Risk`;
+  if (resetPage) {
+    atRiskCurrentPage = 1;
+  }
+
+  const allAtRisk = currentAtRiskStudents || [];
+  const highRiskTotal = allAtRisk.filter(s => String(s.risk_level || '').toLowerCase().includes('high')).length;
+
+  if (badgeCount) badgeCount.textContent = highRiskCount || highRiskTotal;
+  if (teaserHighBadge) teaserHighBadge.textContent = `${highRiskCount || highRiskTotal || 5} High Risk`;
 
   if (!tbody) return;
 
-  if (currentAtRiskStudents.length === 0) {
+  // Filter students based on active risk level selection
+  let filteredStudents = allAtRisk;
+  if (atRiskCurrentFilterLevel !== 'all') {
+    filteredStudents = allAtRisk.filter(s => String(s.risk_level || '').toLowerCase().includes(atRiskCurrentFilterLevel.toLowerCase()));
+  }
+
+  const totalFiltered = filteredStudents.length;
+
+  if (totalFiltered === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="py-8 text-center text-slate-400 font-semibold">
-          No students match the current risk filter criteria.
+        <td colspan="7" class="py-12 text-center text-slate-400 font-semibold">
+          <div class="flex flex-col items-center justify-center gap-2">
+            <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>No students match the selected risk criteria.</span>
+          </div>
         </td>
       </tr>
     `;
+    renderAtRiskPagination(0, 0, 0, 1);
+    updateAtRiskSelectionUI([]);
     return;
   }
 
+  // Calculate pagination boundaries
+  const pageSize = parseInt(atRiskPageSize, 10);
+  const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(totalFiltered / (pageSize || 15)));
+  if (atRiskCurrentPage > totalPages) atRiskCurrentPage = totalPages;
+  if (atRiskCurrentPage < 1) atRiskCurrentPage = 1;
+
+  const startIdx = pageSize === -1 ? 0 : (atRiskCurrentPage - 1) * pageSize;
+  const endIdx = pageSize === -1 ? totalFiltered : Math.min(startIdx + pageSize, totalFiltered);
+  const pageSlice = filteredStudents.slice(startIdx, endIdx);
+
   let html = '';
-  currentAtRiskStudents.forEach(s => {
-    const isHigh = s.risk_level === 'High Risk';
-    const badgeClass = isHigh ? 'bg-rose-50 text-rose-700 border-rose-200' : (s.risk_level === 'Moderate Risk' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
-    const barColor = isHigh ? 'bg-rose-500' : (s.risk_level === 'Moderate Risk' ? 'bg-amber-500' : 'bg-emerald-500');
+  pageSlice.forEach(s => {
+    const isHigh = String(s.risk_level || '').toLowerCase().includes('high');
+    const isModerate = String(s.risk_level || '').toLowerCase().includes('moderate');
+    const badgeClass = isHigh ? 'bg-rose-50 text-rose-700 border-rose-200' : (isModerate ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+    const barColor = isHigh ? 'bg-rose-500' : (isModerate ? 'bg-amber-500' : 'bg-emerald-500');
+    const isChecked = selectedAtRiskStudentIds.has(Number(s.student_id));
 
     html += `
-      <tr class="hover:bg-slate-50/80 transition">
+      <tr class="hover:bg-slate-50/80 transition ${isChecked ? 'bg-blue-50/40' : ''}">
+        <!-- Checkbox Column -->
+        <td class="py-3.5 px-4 text-center">
+          <input type="checkbox" 
+                 class="at-risk-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer transition"
+                 data-student-id="${s.student_id}"
+                 ${isChecked ? 'checked' : ''}
+                 onchange="updateAtRiskSelection()">
+        </td>
+
+        <!-- Student Info -->
         <td class="py-3.5 px-4 font-bold text-slate-900">
           ${escapeHtml(s.name)}
           <span class="block text-[10px] font-semibold text-slate-400">ID: #${s.student_id}</span>
         </td>
-        <td class="py-3.5 px-4 font-semibold text-slate-600">${escapeHtml(s.section)} (Year ${s.grade_level})</td>
+
+        <!-- Section -->
+        <td class="py-3.5 px-4 font-semibold text-slate-600">Sec ${escapeHtml(s.section)} (Yr ${s.grade_level || '3'})</td>
+
+        <!-- Attendance Rate -->
         <td class="py-3.5 px-4">
-          <span class="font-black ${s.attendance_rate < 80 ? 'text-rose-600' : 'text-slate-800'}">${s.attendance_rate}%</span>
-          <span class="block text-[10px] text-slate-400">${s.absence_count} absences · ${s.tardy_count} tardy</span>
+          <span class="font-black ${parseFloat(s.attendance_rate) < 80 ? 'text-rose-600' : 'text-slate-800'}">${s.attendance_rate}%</span>
+          <span class="block text-[10px] text-slate-400">${s.absence_count} abs · ${s.tardy_count} tardy</span>
         </td>
+
+        <!-- Risk Factor -->
         <td class="py-3.5 px-4 font-semibold text-slate-700">
           ${escapeHtml(s.primary_factor)}
         </td>
+
+        <!-- ML Risk Score -->
         <td class="py-3.5 px-4">
           <div class="flex items-center gap-2">
             <span class="px-2 py-0.5 rounded-md text-[10px] font-black border uppercase ${badgeClass}">
-              ${s.risk_level}
+              ${escapeHtml(s.risk_level)}
             </span>
             <span class="font-black text-slate-900">${s.risk_score}%</span>
           </div>
@@ -881,13 +941,15 @@ function renderAtRiskUI(students, highRiskCount) {
             <div class="${barColor} h-1 rounded-full" style="width: ${s.risk_score}%"></div>
           </div>
         </td>
+
+        <!-- Actions -->
         <td class="py-3.5 px-4 text-right space-x-1">
           <button type="button" class="btn btn-secondary btn-sm font-bold text-[11px] px-2.5 py-1 cursor-pointer" onclick="openRiskModal(${s.student_id})">
             Diagnostics
           </button>
           <button type="button" class="btn btn-primary btn-sm font-bold text-[11px] px-2.5 py-1 inline-flex items-center gap-1 cursor-pointer" onclick="handleDirectParentAlert(${s.student_id}, '${escapeHtml(s.name)}')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            <span>Alert Parent</span>
+            <span>Alert</span>
           </button>
         </td>
       </tr>
@@ -895,6 +957,284 @@ function renderAtRiskUI(students, highRiskCount) {
   });
 
   tbody.innerHTML = html;
+
+  // Render pagination toolbar
+  renderAtRiskPagination(totalFiltered, startIdx, endIdx, totalPages);
+
+  // Sync bulk selection indicators
+  updateAtRiskSelectionUI(pageSlice);
+}
+
+/**
+ * Render At-Risk Pagination UI Controls
+ */
+function renderAtRiskPagination(totalMatching, startIdx, endIdx, totalPages) {
+  const bar = document.getElementById('at-risk-pagination-bar');
+  const startEl = document.getElementById('at-risk-page-start');
+  const endEl = document.getElementById('at-risk-page-end');
+  const totalEl = document.getElementById('at-risk-page-total');
+  const controls = document.getElementById('at-risk-pagination-controls');
+
+  if (!bar || !controls) return;
+
+  if (totalMatching === 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+
+  if (startEl) startEl.textContent = (startIdx + 1).toLocaleString();
+  if (endEl) endEl.textContent = endIdx.toLocaleString();
+  if (totalEl) totalEl.textContent = totalMatching.toLocaleString();
+
+  const pageSize = parseInt(atRiskPageSize, 10);
+  if (pageSize === -1 || totalPages <= 1) {
+    controls.innerHTML = `<span class="text-[11px] font-semibold text-slate-400 px-2">Page 1 of 1</span>`;
+    return;
+  }
+
+  let html = '';
+
+  // Prev button
+  const prevDisabled = atRiskCurrentPage <= 1;
+  html += `
+    <button type="button" 
+            onclick="changeAtRiskPage(${atRiskCurrentPage - 1})"
+            ${prevDisabled ? 'disabled' : ''}
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      <span>Prev</span>
+    </button>
+  `;
+
+  // Numbered pages (smart window max 5)
+  const maxButtons = 5;
+  let startPage = Math.max(1, atRiskCurrentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button type="button" onclick="changeAtRiskPage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">1</button>`;
+    if (startPage > 2) html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    const isActive = p === atRiskCurrentPage;
+    if (isActive) {
+      html += `<button type="button" class="w-8 h-8 rounded-lg border border-blue-600 bg-blue-600 text-xs font-black text-white shadow-xs">${p}</button>`;
+    } else {
+      html += `<button type="button" onclick="changeAtRiskPage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${p}</button>`;
+    }
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
+    html += `<button type="button" onclick="changeAtRiskPage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${totalPages}</button>`;
+  }
+
+  // Next button
+  const nextDisabled = atRiskCurrentPage >= totalPages;
+  html += `
+    <button type="button" 
+            onclick="changeAtRiskPage(${atRiskCurrentPage + 1})"
+            ${nextDisabled ? 'disabled' : ''}
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+      <span>Next</span>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+  `;
+
+  controls.innerHTML = html;
+}
+
+function changeAtRiskPage(page) {
+  atRiskCurrentPage = page;
+  renderAtRiskUI();
+  const table = document.getElementById('at-risk-table-body');
+  if (table) {
+    table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function changeAtRiskPageSize(newSize) {
+  atRiskPageSize = parseInt(newSize, 10);
+  atRiskCurrentPage = 1;
+  renderAtRiskUI();
+}
+
+/**
+ * Bulk Selection Handlers for At-Risk Table
+ */
+function toggleSelectAllAtRisk(headerCheckbox) {
+  const isChecked = headerCheckbox.checked;
+  const checkboxes = document.querySelectorAll('#at-risk-table-body .at-risk-checkbox');
+
+  checkboxes.forEach(cb => {
+    cb.checked = isChecked;
+    const studentId = Number(cb.getAttribute('data-student-id'));
+    if (isChecked) {
+      selectedAtRiskStudentIds.add(studentId);
+    } else {
+      selectedAtRiskStudentIds.delete(studentId);
+    }
+  });
+
+  updateAtRiskSelectionUI();
+}
+
+function updateAtRiskSelection() {
+  const checkboxes = document.querySelectorAll('#at-risk-table-body .at-risk-checkbox');
+  checkboxes.forEach(cb => {
+    const studentId = Number(cb.getAttribute('data-student-id'));
+    if (cb.checked) {
+      selectedAtRiskStudentIds.add(studentId);
+    } else {
+      selectedAtRiskStudentIds.delete(studentId);
+    }
+  });
+
+  updateAtRiskSelectionUI();
+}
+
+function updateAtRiskSelectionUI(currentSlice = null) {
+  const bulkBar = document.getElementById('at-risk-bulk-bar');
+  const countEl = document.getElementById('bulk-selected-count');
+  const textEl = document.getElementById('bulk-selected-text');
+  const btnCount = document.getElementById('bulk-btn-count');
+  const headerCheckbox = document.getElementById('select-all-at-risk');
+
+  const selectedCount = selectedAtRiskStudentIds.size;
+
+  if (countEl) countEl.textContent = selectedCount;
+  if (textEl) textEl.textContent = `${selectedCount} student${selectedCount === 1 ? '' : 's'} selected`;
+  if (btnCount) btnCount.textContent = selectedCount;
+
+  if (bulkBar) {
+    if (selectedCount > 0) {
+      bulkBar.classList.remove('hidden');
+    } else {
+      bulkBar.classList.add('hidden');
+    }
+  }
+
+  // Update header checkbox state
+  if (headerCheckbox) {
+    const checkboxes = document.querySelectorAll('#at-risk-table-body .at-risk-checkbox');
+    if (checkboxes.length > 0) {
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+      headerCheckbox.checked = allChecked;
+      headerCheckbox.indeterminate = someChecked && !allChecked;
+    } else {
+      headerCheckbox.checked = false;
+      headerCheckbox.indeterminate = false;
+    }
+  }
+}
+
+function clearAtRiskSelection() {
+  selectedAtRiskStudentIds.clear();
+  const checkboxes = document.querySelectorAll('#at-risk-table-body .at-risk-checkbox');
+  checkboxes.forEach(cb => cb.checked = false);
+  const headerCheckbox = document.getElementById('select-all-at-risk');
+  if (headerCheckbox) {
+    headerCheckbox.checked = false;
+    headerCheckbox.indeterminate = false;
+  }
+  updateAtRiskSelectionUI();
+}
+
+/**
+ * Execute Bulk Early-Warning Parent Alerts via API
+ */
+async function executeBulkParentAlert() {
+  const selectedIds = Array.from(selectedAtRiskStudentIds);
+  if (selectedIds.length === 0) {
+    showToastNotification('Please select at least one student first.', 'info');
+    return;
+  }
+
+  const btn = document.getElementById('btn-bulk-alert-parents');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <span>Dispatching ${selectedIds.length} Alerts...</span>
+    `;
+  }
+
+  try {
+    const res = await fetch('/api/analytics/intervene', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_ids: selectedIds,
+        action_type: 'notify_parent'
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      showToastNotification(data.message || `Successfully sent parent alerts for ${selectedIds.length} students!`, 'success');
+      clearAtRiskSelection();
+    } else {
+      showToastNotification(data.message || 'Bulk alert dispatch failed.', 'error');
+    }
+  } catch (err) {
+    showToastNotification('Network error dispatching bulk parent alerts.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+/**
+ * Export only the SELECTED At-Risk Students to CSV
+ */
+function exportSelectedAtRiskCSV() {
+  const selectedIds = selectedAtRiskStudentIds;
+  if (!selectedIds || selectedIds.size === 0) {
+    showToastNotification('No students selected for export.', 'info');
+    return;
+  }
+
+  const selectedList = (currentAtRiskStudents || []).filter(s => selectedIds.has(Number(s.student_id)));
+  if (selectedList.length === 0) {
+    showToastNotification('Selected student records not found.', 'info');
+    return;
+  }
+
+  const headers = ['Student ID', 'Full Name', 'Section', 'Grade Level', 'Attendance Rate (%)', 'Total Absences', 'Tardy Count', 'Consecutive Absences', 'Risk Score (%)', 'Risk Classification', 'Primary Risk Factor', 'Recommended Action'];
+  const rows = selectedList.map(s => [
+    s.student_id,
+    `"${s.name}"`,
+    `"${s.section}"`,
+    s.grade_level || '3',
+    s.attendance_rate,
+    s.absence_count,
+    s.tardy_count,
+    s.consecutive_absences,
+    s.risk_score,
+    `"${s.risk_level}"`,
+    `"${s.primary_factor}"`,
+    `"${s.recommended_action}"`
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `selected_at_risk_students_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showToastNotification(`Exported ${selectedList.length} selected student records to CSV.`, 'success');
 }
 
 /**
@@ -922,8 +1262,9 @@ async function loadAnalyticsPatterns() {
  * Fetch and Render At-Risk Students List (Fallback / Standalone)
  */
 async function loadAnalyticsAtRisk(levelFilter = 'all') {
+  atRiskCurrentFilterLevel = levelFilter;
   if (analyticsMemoryCache?.at_risk_students && levelFilter === 'all') {
-    renderAtRiskUI(analyticsMemoryCache.at_risk_students, analyticsMemoryCache.high_risk_count);
+    renderAtRiskUI(analyticsMemoryCache.at_risk_students, analyticsMemoryCache.high_risk_count, true);
     return;
   }
   renderAtRiskSkeleton();
@@ -933,7 +1274,7 @@ async function loadAnalyticsAtRisk(levelFilter = 'all') {
     const res = await fetch(`/api/analytics/at-risk?grade=${encodeURIComponent(grade)}&section=${encodeURIComponent(section)}&level=${encodeURIComponent(levelFilter)}`);
     const data = await res.json();
     if (data.status === 'success') {
-      renderAtRiskUI(data.students || [], data.high_risk_count);
+      renderAtRiskUI(data.students || [], data.high_risk_count, true);
     }
   } catch (err) {
     console.warn('Could not load at-risk students:', err);
@@ -944,6 +1285,9 @@ async function loadAnalyticsAtRisk(levelFilter = 'all') {
  * Filter At-Risk Table by Risk Classification Level (Instant In-Memory Filter)
  */
 function filterAtRiskLevel(level, btnElem) {
+  atRiskCurrentFilterLevel = level;
+  atRiskCurrentPage = 1;
+
   document.querySelectorAll('.risk-filter-btn').forEach(btn => {
     btn.className = 'risk-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer';
   });
@@ -953,11 +1297,7 @@ function filterAtRiskLevel(level, btnElem) {
 
   // Instant in-memory filter if cached
   if (analyticsMemoryCache?.at_risk_students) {
-    let filtered = analyticsMemoryCache.at_risk_students;
-    if (level !== 'all') {
-      filtered = filtered.filter(s => String(s.risk_level || '').toLowerCase().includes(String(level).toLowerCase()));
-    }
-    renderAtRiskUI(filtered, analyticsMemoryCache.high_risk_count);
+    renderAtRiskUI(analyticsMemoryCache.at_risk_students, analyticsMemoryCache.high_risk_count, true);
     return;
   }
   loadAnalyticsAtRisk(level);
@@ -1191,20 +1531,26 @@ function closePatternActionModal() {
 }
 
 /**
- * Export Current At-Risk List to CSV File
+ * Export Current At-Risk List to CSV File (respects active risk level filter)
  */
 function exportAtRiskCSV() {
-  if (!currentAtRiskStudents || currentAtRiskStudents.length === 0) {
-    showToastNotification('No students available to export.', 'info');
+  const allStudents = currentAtRiskStudents || [];
+  let exportList = allStudents;
+  if (atRiskCurrentFilterLevel !== 'all') {
+    exportList = allStudents.filter(s => String(s.risk_level || '').toLowerCase().includes(atRiskCurrentFilterLevel.toLowerCase()));
+  }
+
+  if (exportList.length === 0) {
+    showToastNotification('No students available to export with current filter.', 'info');
     return;
   }
 
   const headers = ['Student ID', 'Full Name', 'Section', 'Grade Level', 'Attendance Rate (%)', 'Total Absences', 'Tardy Count', 'Consecutive Absences', 'Risk Score (%)', 'Risk Classification', 'Primary Risk Factor', 'Recommended Action'];
-  const rows = currentAtRiskStudents.map(s => [
+  const rows = exportList.map(s => [
     s.student_id,
     `"${s.name}"`,
     `"${s.section}"`,
-    s.grade_level,
+    s.grade_level || '3',
     s.attendance_rate,
     s.absence_count,
     s.tardy_count,
@@ -1219,12 +1565,12 @@ function exportAtRiskCSV() {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `at_risk_students_${new Date().toISOString().slice(0,10)}.csv`);
+  link.setAttribute('download', `at_risk_students_${atRiskCurrentFilterLevel}_${new Date().toISOString().slice(0,10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 
-  showToastNotification('At-Risk Students CSV exported successfully.', 'success');
+  showToastNotification(`Exported ${exportList.length} At-Risk student records to CSV.`, 'success');
 }
 
 /**

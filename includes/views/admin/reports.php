@@ -656,6 +656,32 @@ select {
             </tbody>
           </table>
         </div>
+
+        <!-- Table Pagination Footer Bar -->
+        <div id="roster-pagination-bar" class="px-4 sm:px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <!-- Left: Info & Rows per page -->
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="text-slate-500 font-medium" id="roster-pagination-info">
+              Showing <strong class="text-slate-800 font-bold" id="roster-page-start">1</strong> to <strong class="text-slate-800 font-bold" id="roster-page-end">15</strong> of <strong class="text-slate-800 font-bold" id="roster-page-total"><?php echo count($rosterData); ?></strong> students
+            </span>
+            <div class="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+              <label for="roster-page-size" class="text-[11px] font-semibold text-slate-500">Per page:</label>
+              <select id="roster-page-size" onchange="changeRosterPageSize(this.value)" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer">
+                <option value="15" selected>15</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="-1">All</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right: Page Navigation Buttons -->
+          <div class="flex items-center gap-1 self-center sm:self-auto flex-wrap" id="roster-pagination-controls">
+            <!-- Buttons dynamically populated by renderRosterPagination -->
+          </div>
+        </div>
+
       </div>
 
     </main>
@@ -1043,15 +1069,26 @@ function updateMajorDropdown(selectedCourse) {
   }
 }
 
+// ==========================================
+// ROSTER PAGINATION & FILTER LOGIC
+// ==========================================
+let rosterCurrentPage = 1;
+let rosterPageSize = 15;
+let rosterMatchingRows = [];
+
 function onCourseFilterChange() {
   const courseEl = document.getElementById('filter-course');
   const selectedCourse = courseEl ? courseEl.value : '';
   updateMajorDropdown(selectedCourse);
-  applyFilters();
+  applyFilters(true);
 }
 
-// 3. Client-side instant filter handler & dynamic chart/KPI updater
-function applyFilters() {
+// 3. Client-side instant filter handler & dynamic chart/KPI updater with pagination
+function applyFilters(resetToPageOne = false) {
+  if (resetToPageOne) {
+    rosterCurrentPage = 1;
+  }
+
   const searchEl = document.getElementById('filter-search');
   const courseEl = document.getElementById('filter-course');
   const majorEl = document.getElementById('filter-major');
@@ -1069,6 +1106,7 @@ function applyFilters() {
   const rows = document.querySelectorAll('#roster-table-body tr.roster-row');
   let visibleCount = 0;
   const visibleRecords = [];
+  rosterMatchingRows = [];
 
   rows.forEach(row => {
     const sName = row.getAttribute('data-student-name') || '';
@@ -1104,7 +1142,7 @@ function applyFilters() {
     else if (rateFilter === 'nodata') matchesRate = rateVal < 0;
 
     if (matchesSearch && matchesCourse && matchesMajor && matchesSection && matchesUser && matchesRate) {
-      row.style.display = '';
+      rosterMatchingRows.push(row);
       visibleCount++;
       if (window.AMS_EXPORTS_CACHE.records && window.AMS_EXPORTS_CACHE.records[rowIndex]) {
         visibleRecords.push(window.AMS_EXPORTS_CACHE.records[rowIndex]);
@@ -1113,6 +1151,29 @@ function applyFilters() {
       row.style.display = 'none';
     }
   });
+
+  // Store all filtered records for comprehensive export
+  window.AMS_EXPORTS_CACHE.filteredRecords = visibleRecords;
+
+  // Pagination slicing
+  const pageSize = parseInt(rosterPageSize, 10);
+  const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(visibleCount / (pageSize || 15)));
+  if (rosterCurrentPage > totalPages) rosterCurrentPage = totalPages;
+  if (rosterCurrentPage < 1) rosterCurrentPage = 1;
+
+  const startIdx = pageSize === -1 ? 0 : (rosterCurrentPage - 1) * pageSize;
+  const endIdx = pageSize === -1 ? visibleCount : Math.min(startIdx + pageSize, visibleCount);
+
+  rosterMatchingRows.forEach((row, idx) => {
+    if (idx >= startIdx && idx < endIdx) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  // Render Pagination Bar
+  renderRosterPagination(visibleCount, startIdx, endIdx, totalPages);
 
   // Update visible counts
   const countEl = document.getElementById('filter-visible-count');
@@ -1131,7 +1192,7 @@ function applyFilters() {
     }
   }
 
-  // Recalculate Dynamic Aggregates for Charts & KPIs
+  // Recalculate Dynamic Aggregates for Charts & KPIs across ALL matching records
   let totalStudents = visibleRecords.length;
   let registeredCount = 0;
   let totalPresent = 0;
@@ -1252,6 +1313,119 @@ function applyFilters() {
   }
 }
 
+/**
+ * Render Roster Pagination UI Buttons & Stats
+ */
+function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
+  const bar = document.getElementById('roster-pagination-bar');
+  const startEl = document.getElementById('roster-page-start');
+  const endEl = document.getElementById('roster-page-end');
+  const totalEl = document.getElementById('roster-page-total');
+  const controls = document.getElementById('roster-pagination-controls');
+
+  if (!bar || !controls) return;
+
+  if (totalMatching === 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+
+  if (startEl) startEl.textContent = (startIdx + 1).toLocaleString();
+  if (endEl) endEl.textContent = endIdx.toLocaleString();
+  if (totalEl) totalEl.textContent = totalMatching.toLocaleString();
+
+  const pageSize = parseInt(rosterPageSize, 10);
+  if (pageSize === -1 || totalPages <= 1) {
+    controls.innerHTML = `
+      <span class="text-[11px] font-semibold text-slate-400 px-2">Page 1 of 1</span>
+    `;
+    return;
+  }
+
+  let html = '';
+
+  // Prev button
+  const prevDisabled = rosterCurrentPage <= 1;
+  html += `
+    <button type="button" 
+            onclick="changeRosterPage(${rosterCurrentPage - 1})"
+            ${prevDisabled ? 'disabled' : ''}
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      <span>Prev</span>
+    </button>
+  `;
+
+  // Page Numbers with Smart Window (max 5 buttons visible)
+  const maxButtons = 5;
+  let startPage = Math.max(1, rosterCurrentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    html += `
+      <button type="button" onclick="changeRosterPage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">1</button>
+    `;
+    if (startPage > 2) {
+      html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
+    }
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    const isActive = p === rosterCurrentPage;
+    if (isActive) {
+      html += `
+        <button type="button" class="w-8 h-8 rounded-lg border border-blue-600 bg-blue-600 text-xs font-black text-white shadow-xs">${p}</button>
+      `;
+    } else {
+      html += `
+        <button type="button" onclick="changeRosterPage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${p}</button>
+      `;
+    }
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
+    }
+    html += `
+      <button type="button" onclick="changeRosterPage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${totalPages}</button>
+    `;
+  }
+
+  // Next button
+  const nextDisabled = rosterCurrentPage >= totalPages;
+  html += `
+    <button type="button" 
+            onclick="changeRosterPage(${rosterCurrentPage + 1})"
+            ${nextDisabled ? 'disabled' : ''}
+            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+      <span>Next</span>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+  `;
+
+  controls.innerHTML = html;
+}
+
+function changeRosterPage(page) {
+  rosterCurrentPage = page;
+  applyFilters(false);
+  const tableEl = document.getElementById('roster-attendance-table');
+  if (tableEl) {
+    tableEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function changeRosterPageSize(newSize) {
+  rosterPageSize = parseInt(newSize, 10);
+  rosterCurrentPage = 1;
+  applyFilters(false);
+}
+
 function resetFilters() {
   const search = document.getElementById('filter-search');
   const course = document.getElementById('filter-course');
@@ -1266,13 +1440,14 @@ function resetFilters() {
 
   // Reset major options back to all majors with counts
   updateMajorDropdown('');
+  rosterCurrentPage = 1;
 
-  applyFilters();
+  applyFilters(true);
 }
 
 // 3. Modal management & Format selection
 function openExportModal() {
-  applyFilters();
+  applyFilters(false);
   const modal = document.getElementById('export-modal-backdrop');
   if (modal) {
     modal.classList.remove('hidden');
@@ -1348,9 +1523,13 @@ function getChartSnapshots() {
 // Get the dataset records for export based on scope
 function getExportRecords(scope) {
   if (scope === 'all') {
-    return window.AMS_EXPORTS_CACHE.records;
+    return window.AMS_EXPORTS_CACHE.records || [];
   }
-  // Scope is filtered: grab only visible rows from DOM
+  // Scope is filtered: use the complete filtered dataset from cache
+  if (window.AMS_EXPORTS_CACHE.filteredRecords && window.AMS_EXPORTS_CACHE.filteredRecords.length > 0) {
+    return window.AMS_EXPORTS_CACHE.filteredRecords;
+  }
+  // Fallback: grab from DOM
   const visibleRows = document.querySelectorAll('#roster-table-body tr.roster-row:not([style*="display: none"])');
   const indices = Array.from(visibleRows).map(r => parseInt(r.getAttribute('data-index')));
   return indices.map(idx => window.AMS_EXPORTS_CACHE.records[idx]).filter(Boolean);
@@ -1921,6 +2100,7 @@ function startRealtimePolling() {
 // Bind DOM Events on Load
 document.addEventListener('DOMContentLoaded', () => {
   initExportCharts();
+  applyFilters(true);
   startRealtimePolling();
 
   // Escape key to close modal

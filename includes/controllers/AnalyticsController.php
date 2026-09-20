@@ -375,44 +375,70 @@ class AnalyticsController {
 
     /**
      * API Endpoint: POST /api/analytics/intervene
+     * Supports both single student intervention and bulk batch interventions.
      */
     public static function apiIntervene(): void {
         header('Content-Type: application/json; charset=utf-8');
         try {
             $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-            $studentId = (int)($input['student_id'] ?? 0);
             $actionType = trim($input['action_type'] ?? 'notify_parent');
-            $studentName = trim($input['student_name'] ?? "Student #$studentId");
 
-            if ($studentId <= 0) {
+            // Support either array student_ids or single student_id
+            $studentIds = [];
+            if (!empty($input['student_ids']) && is_array($input['student_ids'])) {
+                $studentIds = array_map('intval', $input['student_ids']);
+            } elseif (!empty($input['student_id'])) {
+                $studentIds = [(int)$input['student_id']];
+            }
+
+            $studentIds = array_values(array_filter($studentIds, fn($id) => $id > 0));
+
+            if (empty($studentIds)) {
                 http_response_code(400);
-                echo json_encode(['status' => 'error', 'message' => 'Invalid student ID']);
+                echo json_encode(['status' => 'error', 'message' => 'No valid student IDs provided for intervention.']);
                 exit;
             }
 
-            try {
-                $db = Database::getConnection();
-                $stmt = $db->prepare("SELECT email, parent_email, first_name, last_name FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
-                $stmt->execute([$studentId, $studentId]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $db = Database::getConnection();
+            $successCount = 0;
+            $targetedNames = [];
 
-                $targetEmail = !empty($user['parent_email']) ? $user['parent_email'] : ($user['email'] ?? 'parent@example.com');
+            // Prepare statements for efficient batch processing
+            $userStmt = $db->prepare("SELECT user_id, student_id, email, parent_email, first_name, last_name FROM users WHERE user_id = ? OR student_id = ? LIMIT 1");
+            $alertStmt = $db->prepare("
+                INSERT INTO parent_alerts (student_id, parent_email, alert_date, alert_time, status, created_at)
+                VALUES (?, ?, CURDATE(), CURTIME(), 'absent', NOW())
+            ");
 
-                $alertStmt = $db->prepare("
-                    INSERT INTO parent_alerts (student_id, parent_email, alert_date, alert_time, status, created_at)
-                    VALUES (?, ?, CURDATE(), CURTIME(), 'absent', NOW())
-                ");
-                $alertStmt->execute([$studentId, $targetEmail]);
-            } catch (Exception $e) {
-                // Non-fatal alert record
+            foreach ($studentIds as $sId) {
+                try {
+                    $userStmt->execute([$sId, $sId]);
+                    $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+                    $targetEmail = !empty($user['parent_email']) ? $user['parent_email'] : ($user['email'] ?? 'parent@example.com');
+                    $studentName = $user ? trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) : "Student #$sId";
+                    if ($studentName) {
+                        $targetedNames[] = $studentName;
+                    }
+
+                    $alertStmt->execute([$sId, $targetEmail]);
+                    $successCount++;
+                } catch (Exception $e) {
+                    // Non-fatal per-student error, continue batch
+                }
             }
 
+            $msg = count($studentIds) === 1
+                ? "Early-warning parent alert successfully logged in parent_alerts table for " . ($targetedNames[0] ?? "Student #{$studentIds[0]}") . "!"
+                : "Bulk early-warning alerts successfully dispatched to $successCount student parents!";
+
             echo json_encode([
-                'status'       => 'success',
-                'message'      => "Early-warning parent alert successfully logged in parent_alerts table for $studentName!",
-                'student_id'   => $studentId,
-                'action_type'  => $actionType,
-                'timestamp'    => date('M d, Y h:i A')
+                'status'        => 'success',
+                'message'       => $msg,
+                'affected_count'=> $successCount,
+                'student_ids'   => $studentIds,
+                'action_type'   => $actionType,
+                'timestamp'     => date('M d, Y h:i A')
             ], JSON_PRETTY_PRINT);
         } catch (Throwable $e) {
             http_response_code(500);
