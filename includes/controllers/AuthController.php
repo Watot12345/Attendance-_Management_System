@@ -200,21 +200,13 @@ class AuthController {
                 error_log("[BCP Attendance SMTP] Failed to send OTP email to {$user['email']}: " . $mailResult['error']);
             }
 
-            $responsePayload = [
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
                 'status'             => 'otp_required',
                 'message'            => "A 6-digit verification code has been sent to {$maskedEmail}. Please check your inbox.",
                 'masked_email'       => $maskedEmail,
                 'expires_in_seconds' => 600,
-            ];
-
-            // If cloud host blocks outgoing SMTP, provide the verification code directly so the user is never blocked
-            if (!$mailSuccess) {
-                $responsePayload['debug_otp'] = $otp;
-                $responsePayload['message'] = "Verification code generated: {$otp} (Cloud mail egress notice).";
-            }
-
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($responsePayload);
+            ]);
             exit;
 
         } catch (Throwable $e) {
@@ -378,20 +370,13 @@ class AuthController {
                 error_log("[BCP Attendance SMTP] Failed to resend OTP email to {$email}: " . $mailResult['error']);
             }
 
-            $responsePayload = [
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
                 'status'             => 'success',
                 'message'            => 'A new verification code has been sent to your email.',
                 'masked_email'       => $this->maskEmail($email),
                 'expires_in_seconds' => 600
-            ];
-
-            if (!$mailSuccess) {
-                $responsePayload['debug_otp'] = $newOtp;
-                $responsePayload['message'] = "Verification code: {$newOtp} (Cloud mail egress notice).";
-            }
-
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($responsePayload);
+            ]);
             exit;
         } catch (Throwable $e) {
             $this->respondError('Failed to resend OTP: ' . $e->getMessage(), 500);
@@ -725,19 +710,12 @@ class AuthController {
                 error_log("[BCP Attendance SMTP] Failed to send reset OTP email to {$user['email']}: " . $mailResult['error']);
             }
 
-            $responsePayload = [
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
                 'status'       => 'success',
                 'message'      => 'Password reset verification code has been sent to your email.',
                 'masked_email' => $this->maskEmail($user['email']),
-            ];
-
-            if (!$mailSuccess) {
-                $responsePayload['debug_otp'] = $otp;
-                $responsePayload['message'] = "Password reset code: {$otp} (Cloud mail egress notice).";
-            }
-
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($responsePayload);
+            ]);
             exit;
         } catch (Throwable $e) {
             $this->respondError('Database error processing password reset: ' . $e->getMessage(), 500);

@@ -1280,7 +1280,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     // Step 2 OTP Transition
-    function showOtpStep(maskedEmail, debugOtp, message) {
+    function showOtpStep(maskedEmail) {
       hideAlert();
       document.getElementById('credentials-step-container').style.display = 'none';
       document.getElementById('otp-step-container').style.display = 'block';
@@ -1292,20 +1292,9 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
       const otpBoxes = document.querySelectorAll('.otp-digit-box');
       otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+      updateFullOtpValue();
 
-      if (debugOtp) {
-        const digits = String(debugOtp).split('');
-        digits.forEach((d, i) => {
-          if (otpBoxes[i]) {
-            otpBoxes[i].value = d;
-            otpBoxes[i].classList.add('filled');
-          }
-        });
-        updateFullOtpValue();
-        showAlert(message || `Verification Code for ${maskedEmail}: ${debugOtp}`, false);
-      } else {
-        showAlert(message || `A 6-digit verification code has been sent to ${maskedEmail}. Please check your inbox.`, false);
-      }
+      showAlert(`A 6-digit verification code has been sent to ${maskedEmail}. Please check your inbox.`, false);
 
       if (otpBoxes[0]) otpBoxes[0].focus();
       startResendCountdown();
@@ -1451,7 +1440,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
             window.location.href = data.redirect_url;
           }, 300);
         } else if (res.ok && data.status === 'otp_required') {
-          showOtpStep(data.masked_email, data.debug_otp, data.message);
+          showOtpStep(data.masked_email);
         } else {
           showAlert(data.message || 'Invalid institutional ID/email or password.');
         }
@@ -1548,19 +1537,11 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
         const data = await res.json();
         if (res.ok && data.status === 'success') {
-          if (data.debug_otp) {
-            const digits = String(data.debug_otp).split('');
-            digits.forEach((d, i) => {
-              if (otpBoxes[i]) {
-                otpBoxes[i].value = d;
-                otpBoxes[i].classList.add('filled');
-              }
-            });
-            updateFullOtpValue();
-            showAlert(data.message || `Fresh verification code: ${data.debug_otp}`, false);
-          } else {
-            showAlert(`A fresh verification code has been sent to ${data.masked_email}.`, false);
-          }
+          showAlert(`A fresh verification code has been sent to ${data.masked_email}.`, false);
+          const otpBoxes = document.querySelectorAll('.otp-digit-box');
+          otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+          updateFullOtpValue();
+          if (otpBoxes[0]) otpBoxes[0].focus();
           startResendCountdown();
         } else {
           showAlert(data.message || 'Unable to resend code at this time.');
@@ -1633,15 +1614,11 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           document.getElementById('modal-step-email').style.display = 'none';
           document.getElementById('modal-step-otp').style.display = 'block';
           document.getElementById('modal-step-new-pass').style.display = 'none';
-          document.getElementById('reset-otp-input').value = data.debug_otp || '';
+          document.getElementById('reset-otp-input').value = '';
           document.getElementById('reset-otp-input').focus();
           
           startModalResendCountdown();
-          if (data.debug_otp) {
-            showModalAlert(`Reset code for ${data.masked_email}: ${data.debug_otp}`, false);
-          } else {
-            showModalAlert(`Verification code sent to ${data.masked_email}. Please check your inbox.`, false);
-          }
+          showModalAlert(`Verification code sent to ${data.masked_email}. Please check your inbox.`, false);
         } else {
           showModalAlert(data.message || 'No user account found with this email.');
         }
@@ -1683,12 +1660,9 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
         const data = await res.json();
         if (res.ok && data.status === 'success') {
-          if (data.debug_otp) {
-            document.getElementById('reset-otp-input').value = data.debug_otp;
-            showModalAlert(`Fresh verification code: ${data.debug_otp}`, false);
-          } else {
-            showModalAlert(`A fresh verification code has been sent to ${data.masked_email}.`, false);
-          }
+          document.getElementById('reset-otp-input').value = '';
+          document.getElementById('reset-otp-input').focus();
+          showModalAlert(`A fresh verification code has been sent to ${data.masked_email}.`, false);
           startModalResendCountdown();
         } else {
           showModalAlert(data.message || 'Unable to resend code.');
