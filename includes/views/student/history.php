@@ -64,7 +64,7 @@ $allStudents = $db->query("
 
 // 2. Fetch Live Attendance Metrics & Streak for This Student
 $allAttStmt = $db->prepare("
-    SELECT a.attendance_id, a.date, a.time, a.subject, a.status, a.verified_by
+    SELECT a.attendance_id, a.date, a.time, a.subject, a.status
     FROM attendance a
     WHERE a.student_id = :sid
     ORDER BY a.date DESC, a.time DESC
@@ -155,8 +155,7 @@ $recordsStmt = $db->prepare("
         cr.course_code,
         cr.course_title,
         cr.room_number,
-        CONCAT(t.first_name, ' ', t.last_name) AS instructor_name,
-        a.verified_by
+        CONCAT(t.first_name, ' ', t.last_name) AS instructor_name
     FROM attendance a
     LEFT JOIN users t ON a.teacher_id = t.user_id
     LEFT JOIN class_roster cr ON (cr.student_id = a.student_id AND cr.teacher_id = a.teacher_id)
@@ -414,7 +413,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   $courseDisplay = $row['course_title'] ? ($row['course_code'] . ' — ' . $row['course_title']) : ($row['subject'] ?: 'Web Systems');
                   $roomDisplay   = !empty($row['room_number']) ? 'Room ' . $row['room_number'] : 'Lab / Classroom';
                   $sectionDisplay = $row['section'] ?: '31001';
-                  $instructor    = !empty($row['instructor_name']) ? 'Prof. ' . $row['instructor_name'] : ($row['verified_by'] ?: 'Faculty Instructor');
+                  $instructor    = !empty(trim($row['instructor_name'] ?? '')) ? 'Prof. ' . trim($row['instructor_name']) : 'Faculty Instructor';
 
                   // Verification method
                   if (!empty($row['qr_session_id'])) {
