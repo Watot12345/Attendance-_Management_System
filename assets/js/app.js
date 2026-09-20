@@ -585,6 +585,197 @@ const APP = {
         item.classList.add('active');
       }
     });
+  },
+
+  /* ── Inactivity Auto-Logout Manager (1 Minute Inactivity, 10s Countdown) ── */
+  inactivityManager: {
+    INACTIVITY_TIME_MS: 50 * 1000, // 50s until warning (total = 60s / 1 min)
+    COUNTDOWN_SECONDS: 10,
+    
+    inactivityTimer: null,
+    countdownInterval: null,
+    remainingSeconds: 10,
+    isWarningShown: false,
+    lastActivityTime: Date.now(),
+    isInitialized: false,
+
+    init() {
+      if (this.isInitialized) return;
+      
+      // Do NOT run on login/auth forms or password reset modals
+      const isAuthPage = document.getElementById('credentials-form') || 
+                         document.getElementById('auth-flow-title') ||
+                         document.getElementById('reset-email-input');
+      if (isAuthPage) return;
+
+      this.isInitialized = true;
+      this.bindEvents();
+      this.startInactivityTimer();
+    },
+
+    bindEvents() {
+      const resetHandler = () => {
+        const now = Date.now();
+        if (now - this.lastActivityTime < 300) return;
+        this.lastActivityTime = now;
+
+        if (!this.isWarningShown) {
+          this.startInactivityTimer();
+        }
+      };
+
+      const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click', 'wheel'];
+      events.forEach(ev => {
+        window.addEventListener(ev, resetHandler, { passive: true });
+      });
+    },
+
+    startInactivityTimer() {
+      if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = setTimeout(() => {
+        this.showWarning();
+      }, this.INACTIVITY_TIME_MS);
+    },
+
+    showWarning() {
+      this.isWarningShown = true;
+      this.remainingSeconds = this.COUNTDOWN_SECONDS;
+
+      let modal = document.getElementById('inactivity-warning-modal');
+      let box = document.getElementById('inactivity-modal-box');
+      let timerSpan = document.getElementById('inactivity-countdown-timer');
+
+      // If modal DOM element is not already present, inject dynamic fallback
+      if (!modal) {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <div id="inactivity-warning-modal" 
+               style="z-index: 999999 !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; background-color: rgba(15, 23, 42, 0.75) !important;"
+               class="fixed inset-0 z-[99999] flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200" 
+               role="dialog" 
+               aria-modal="true">
+            <div id="inactivity-modal-box" 
+                 style="z-index: 1000000 !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45) !important;"
+                 class="bg-white rounded-2xl shadow-2xl border border-slate-200/90 max-w-md w-full p-6 text-center transform scale-95 transition-all duration-200 relative overflow-hidden">
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-amber-100 text-amber-600 ring-8 ring-amber-50 shadow-xs">
+                <svg class="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 tracking-tight mb-1">Session Inactivity Warning</h3>
+              <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">You have been inactive for nearly 1 minute. For your security, you will be automatically signed out in:</p>
+              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-50 border-2 border-rose-500 text-rose-600 font-black text-2xl mb-6 shadow-inner tracking-tight">
+                <span id="inactivity-countdown-timer">10</span>s
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="APP.inactivityManager.logoutNow()" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer">Sign Out Now</button>
+                <button type="button" onclick="APP.inactivityManager.stayLoggedIn()" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20">I'm Still Here</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(div.firstElementChild);
+        modal = document.getElementById('inactivity-warning-modal');
+        box = document.getElementById('inactivity-modal-box');
+        timerSpan = document.getElementById('inactivity-countdown-timer');
+      }
+
+      if (timerSpan) timerSpan.textContent = this.remainingSeconds;
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          modal.classList.remove('opacity-0');
+          if (box) {
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+          }
+        });
+      }
+
+      // Start 10-second countdown interval
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+      this.countdownInterval = setInterval(() => {
+        this.remainingSeconds--;
+        const timerEl = document.getElementById('inactivity-countdown-timer');
+        if (timerEl) timerEl.textContent = this.remainingSeconds;
+
+        if (this.remainingSeconds <= 0) {
+          clearInterval(this.countdownInterval);
+          this.logoutNow();
+        }
+      }, 1000);
+    },
+
+    stayLoggedIn() {
+      this.isWarningShown = false;
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+
+      const modal = document.getElementById('inactivity-warning-modal');
+      const box = document.getElementById('inactivity-modal-box');
+      if (modal) {
+        modal.classList.add('opacity-0');
+        if (box) {
+          box.classList.remove('scale-100');
+          box.classList.add('scale-95');
+        }
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, 200);
+      }
+
+      // Send a lightweight ping to keep backend session alive
+      try {
+        const logoutBtn = document.querySelector('a[href*="logout"]');
+        let basePath = '';
+        if (logoutBtn && logoutBtn.getAttribute('href')) {
+          const href = logoutBtn.getAttribute('href');
+          const idx = href.indexOf('/logout');
+          if (idx !== -1) basePath = href.substring(0, idx);
+        }
+        fetch(basePath + '/api/auth/me', {
+          headers: { 'Accept': 'application/json' }
+        }).catch(() => {});
+      } catch (e) {}
+
+      if (typeof APP !== 'undefined' && APP.toast && APP.toast.success) {
+        APP.toast.success('Session extended. Welcome back!');
+      }
+
+      this.lastActivityTime = Date.now();
+      this.startInactivityTimer();
+    },
+
+    logoutNow() {
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+      if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+
+      if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+        APP.showLoadingScreen({
+          title: 'Session Inactivity',
+          subtitle: 'Signing you out due to inactivity...'
+        });
+      }
+
+      const logoutBtn = document.querySelector('a[href*="logout"]');
+      let logoutUrl = '/logout';
+      if (logoutBtn && logoutBtn.getAttribute('href')) {
+        logoutUrl = logoutBtn.getAttribute('href');
+      } else {
+        const themeLink = document.querySelector('link[rel="stylesheet"][href*="Project_theme.css"]');
+        if (themeLink && themeLink.getAttribute('href')) {
+          const href = themeLink.getAttribute('href');
+          const idx = href.indexOf('/Project_theme.css');
+          if (idx !== -1) {
+            logoutUrl = href.substring(0, idx) + '/logout';
+          }
+        }
+      }
+
+      setTimeout(() => {
+        window.location.href = logoutUrl;
+      }, 300);
+    }
   }
 };
 
@@ -625,8 +816,12 @@ if (typeof APP !== 'undefined' && APP.toast) {
   };
 }
 
-/* ── Auto-open manual entry modal if ?action=manual-entry ───── */
+/* ── Auto-open manual entry modal and initialize Inactivity Manager ───── */
 document.addEventListener('DOMContentLoaded', function() {
+  if (typeof APP !== 'undefined' && APP.inactivityManager && typeof APP.inactivityManager.init === 'function') {
+    APP.inactivityManager.init();
+  }
+
   if (new URLSearchParams(window.location.search).get('action') === 'manual-entry') {
     setTimeout(function() {
       if (typeof APP !== 'undefined' && APP.openManualEntryModal) {
