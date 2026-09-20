@@ -6,6 +6,7 @@
 
 require_once dirname(__DIR__) . '/core/Database.php';
 require_once dirname(__DIR__) . '/core/Router.php';
+require_once dirname(__DIR__) . '/core/Mailer.php';
 
 class AnalyticsController {
 
@@ -423,6 +424,22 @@ class AnalyticsController {
 
                     $alertStmt->execute([$sId, $targetEmail]);
                     $successCount++;
+
+                    // Dispatch real email notice if valid email address is provided
+                    if (!empty($targetEmail) && filter_var($targetEmail, FILTER_VALIDATE_EMAIL) && strpos($targetEmail, '@example.com') === false) {
+                        try {
+                            Mailer::sendParentAlert(
+                                $targetEmail,
+                                $studentName,
+                                'High Risk',
+                                'Consecutive unexcused absences or irregular attendance velocity flagged by early-warning analytics.',
+                                'Immediate counseling conference with department adviser / parent follow-up.'
+                            );
+                        } catch (Throwable $mailEx) {
+                            // Non-fatal mail error logged
+                            error_log("[Parent Alert Mail Error] {$mailEx->getMessage()}");
+                        }
+                    }
                 } catch (Exception $e) {
                     // Non-fatal per-student error, continue batch
                 }
@@ -552,6 +569,22 @@ class AnalyticsController {
                 try {
                     $alertStmt->execute([(int)$st['student_id'], $st['parent_email']]);
                     $insertedCount++;
+
+                    $stEmail = $st['parent_email'] ?? '';
+                    if (!empty($stEmail) && filter_var($stEmail, FILTER_VALIDATE_EMAIL) && strpos($stEmail, '@example.com') === false) {
+                        try {
+                            $stName = $st['full_name'] ?? "Student #{$st['student_id']}";
+                            Mailer::sendParentAlert(
+                                $stEmail,
+                                $stName,
+                                'High Risk',
+                                "Pattern Alert: {$patternTitle}",
+                                $actionDesc ?: 'Please review the student attendance ledger and schedule a conference if needed.'
+                            );
+                        } catch (Throwable $mailEx) {
+                            error_log("[Pattern Alert Mail Error] {$mailEx->getMessage()}");
+                        }
+                    }
                 } catch (Exception $e) {
                     // Ignore duplicate or non-fatal
                 }
