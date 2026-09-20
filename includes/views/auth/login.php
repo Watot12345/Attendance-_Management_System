@@ -1,4 +1,74 @@
-<?php require_once dirname(__DIR__, 2) . '/core/Router.php'; ?>
+<?php
+require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
+
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    session_start();
+}
+
+// 1. If actively logged in and not explicitly logging out, redirect to role dashboard
+if (!empty($_SESSION['user_id']) && !empty($_SESSION['user']) && empty($_GET['logged_out'])) {
+    $role = $_SESSION['user']['role'] ?? ($_SESSION['role'] ?? 'admin');
+    $redirectUrl = match ($role) {
+        'teacher' => url('teacher/dashboard'),
+        'student' => url('student/calendar'),
+        default   => url('dashboard'),
+    };
+    header("Location: {$redirectUrl}");
+    exit;
+}
+
+// 2. If remembered token cookie exists and user did not explicitly click log out, auto-login
+if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && empty($_GET['logged_out'])) {
+    try {
+        $db = Database::getConnection();
+        $token = $_COOKIE['ams_remember_token'];
+        $remStmt = $db->prepare("
+            SELECT * FROM users 
+            WHERE remember_token = :token 
+              AND remember_expires_at > NOW() 
+              AND status = 'active' 
+            LIMIT 1
+        ");
+        $remStmt->execute([':token' => $token]);
+        $rememberedUser = $remStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($rememberedUser) {
+            $_SESSION['user_id'] = (int)$rememberedUser['user_id'];
+            $_SESSION['role']    = $rememberedUser['role'];
+            $_SESSION['user']    = [
+                'user_id'     => (int)$rememberedUser['user_id'],
+                'student_id'  => $rememberedUser['student_id'] ?? null,
+                'employee_id' => $rememberedUser['employee_id'] ?? null,
+                'first_name'  => $rememberedUser['first_name'],
+                'last_name'   => $rememberedUser['last_name'],
+                'full_name'   => trim("{$rememberedUser['first_name']} {$rememberedUser['last_name']}"),
+                'email'       => $rememberedUser['email'],
+                'role'        => $rememberedUser['role'],
+                'avatar_path' => $rememberedUser['avatar_path'] ?? null,
+            ];
+
+            if ($rememberedUser['role'] === 'teacher') {
+                $_SESSION['teacher_id'] = (int)$rememberedUser['user_id'];
+            } elseif ($rememberedUser['role'] === 'student') {
+                $_SESSION['student_id'] = (int)$rememberedUser['user_id'];
+            }
+
+            $upStmt = $db->prepare("UPDATE users SET last_login_at = NOW() WHERE user_id = ?");
+            $upStmt->execute([$rememberedUser['user_id']]);
+
+            $role = $rememberedUser['role'];
+            $redirectUrl = match ($role) {
+                'teacher' => url('teacher/dashboard'),
+                'student' => url('student/calendar'),
+                default   => url('dashboard'),
+            };
+            header("Location: {$redirectUrl}");
+            exit;
+        }
+    } catch (Throwable $e) {}
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -787,7 +857,7 @@
         </div>
 
         <?php if (!empty($_GET['logged_out'])): ?>
-        <div class="auth-alert success">
+        <div id="logged-out-alert" class="auth-alert success">
           <svg style="width: 16px; height: 16px; flex-shrink: 0; color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           <span>You have been successfully signed out.</span>
         </div>
@@ -870,7 +940,7 @@
         <!-- ══════════════════════════════════════════════════════════
              STEP 2: 2FA ONE-TIME PASSWORD (OTP) VERIFICATION FORM
              ══════════════════════════════════════════════════════════ -->
-        <div id="otp-step-container">
+        <div id="otp-step-container" style="display: none;">
           <form id="otp-form" onsubmit="event.preventDefault(); submitOtpVerification();">
             
             <p style="font-size: 13px; color: #475569; line-height: 1.5;">
@@ -1117,6 +1187,20 @@
        PRODUCTION AUTHENTICATION, OTP & PASSWORD RESET JAVASCRIPT
        ══════════════════════════════════════════════════════════ -->
   <script>
+    // Clean ?logged_out=1 from address bar so page refreshes don't re-trigger the message or block auto-remember
+    if (window.location.search.includes('logged_out=1')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => {
+        const loAlert = document.getElementById('logged-out-alert');
+        if (loAlert) {
+          loAlert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          loAlert.style.opacity = '0';
+          loAlert.style.transform = 'translateY(-4px)';
+          setTimeout(() => loAlert.remove(), 400);
+        }
+      }, 5000);
+    }
+
     let resendCountdown = 60;
     let resendInterval = null;
     let modalResendCountdown = 60;

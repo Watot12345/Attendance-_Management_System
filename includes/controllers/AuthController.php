@@ -272,7 +272,7 @@ class AuthController {
             $clearStmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL, last_login_at = NOW() WHERE user_id = ?");
             $clearStmt->execute([$userId]);
 
-            $cookiePath = Router::getBasePath() !== '' ? Router::getBasePath() : '/';
+            $cookiePath = '/';
 
             // Handle Remember Me (Remember device for future logins so OTP is skipped)
             if ($rememberMe) {
@@ -425,7 +425,7 @@ class AuthController {
 
             if (!$user) {
                 // Token invalid or expired
-                setcookie('ams_remember_token', '', time() - 3600, Router::getBasePath() ?: '/');
+                setcookie('ams_remember_token', '', time() - 3600, '/');
                 echo json_encode(['status' => 'unauthenticated']);
                 exit;
             }
@@ -491,7 +491,7 @@ class AuthController {
 
     /**
      * GET /logout or POST /api/auth/logout
-     * Clears user session, revokes remember token, and redirects to login
+     * Clears active session and redirects to login, keeping device remembered for next login
      */
     public function logout(): void {
         if (session_status() === PHP_SESSION_NONE) {
@@ -501,7 +501,8 @@ class AuthController {
         if (!empty($_SESSION['user_id'])) {
             try {
                 $db = Database::getConnection();
-                $stmt = $db->prepare("UPDATE users SET remember_token = NULL, remember_expires_at = NULL, otp_code = NULL WHERE user_id = ?");
+                // Clear active OTPs but preserve trusted device remember_token
+                $stmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE user_id = ?");
                 $stmt->execute([(int)$_SESSION['user_id']]);
             } catch (Throwable $e) {}
         }
@@ -516,15 +517,12 @@ class AuthController {
         }
         session_destroy();
 
-        // Clear remember cookie
-        setcookie('ams_remember_token', '', time() - 3600, Router::getBasePath() ?: '/');
-
         if (!empty($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json')) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'status'       => 'success',
                 'message'      => 'Logged out successfully.',
-                'redirect_url' => url('login'),
+                'redirect_url' => url('login?logged_out=1'),
             ]);
             exit;
         }
