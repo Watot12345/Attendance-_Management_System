@@ -964,7 +964,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
             <div style="margin-top: 14px; margin-bottom: 12px;">
               <label class="remember-label" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="otp-remember-me" name="remember_me" class="remember-checkbox" checked>
-                <span style="font-size: 12.5px; color: #475569; font-weight: 600;">Remember this device (Skip OTP on next login)</span>
+                <span style="font-size: 12.5px; color: #475569; font-weight: 600;">Remember this device for 15 days (Skip OTP on next login)</span>
               </label>
             </div>
 

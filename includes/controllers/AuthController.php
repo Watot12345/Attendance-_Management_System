@@ -282,7 +282,7 @@ class AuthController {
                 $remStmt = $db->prepare("
                     UPDATE users 
                     SET remember_token = :token, 
-                        remember_expires_at = DATE_ADD(NOW(), INTERVAL 30 DAY), 
+                        remember_expires_at = DATE_ADD(NOW(), INTERVAL 15 DAY), 
                         remember_user_agent = :ua 
                     WHERE user_id = :uid
                 ");
@@ -292,8 +292,8 @@ class AuthController {
                     ':uid'   => $userId
                 ]);
 
-                // Set 30-day persistent cookie
-                $cookieExpire = time() + (30 * 86400);
+                // Set 15-day persistent cookie
+                $cookieExpire = time() + (15 * 86400);
                 setcookie('ams_remember_token', $rememberToken, [
                     'expires'  => $cookieExpire,
                     'path'     => $cookiePath,
