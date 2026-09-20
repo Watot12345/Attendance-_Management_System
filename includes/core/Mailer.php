@@ -425,4 +425,89 @@ class Mailer {
 
         return self::send($toEmail, "Your BCP Attendance Code: {$otp}", $html);
     }
+
+    /**
+     * Send Attendance Early-Warning Notice to Parent/Guardian
+     */
+    public static function sendParentAlert(string $toEmail, string $studentName, string $riskLevel = 'High Risk', string $details = '', string $actionPlan = ''): array {
+        $subject = "BCP Attendance Notice: Early-Warning Alert for {$studentName}";
+
+        $badgeColor = '#E11D48';
+        if (stripos($riskLevel, 'moderate') !== false) {
+            $badgeColor = '#D97706';
+        }
+
+        $html = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset='UTF-8'>
+          <title>{$subject}</title>
+        </head>
+        <body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A;'>
+          <table width='100%' border='0' cellspacing='0' cellpadding='0' style='background-color: #F8FAFC; padding: 40px 16px;'>
+            <tr>
+              <td align='center'>
+                <table width='100%' max-width='560' border='0' cellspacing='0' cellpadding='0' style='max-width: 560px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;'>
+                  <tr>
+                    <td style='background-color: #0F172A; padding: 24px 32px; text-align: left;'>
+                      <table border='0' cellspacing='0' cellpadding='0'>
+                        <tr>
+                          <td style='font-size: 18px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;'>
+                            BESTLINK COLLEGE OF THE PHILIPPINES
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style='font-size: 12px; color: #94A3B8;'>
+                            Attendance &amp; Academic Welfare Monitoring
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style='padding: 32px;'>
+                      <div style='display: inline-block; padding: 4px 12px; border-radius: 9999px; background-color: #FFF1F2; border: 1px solid #FECDD3; font-size: 12px; font-weight: 800; color: {$badgeColor}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;'>
+                        " . htmlspecialchars($riskLevel) . " Advisory
+                      </div>
+                      <h2 style='font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 14px 0;'>
+                        Official Attendance Early-Warning Notification
+                      </h2>
+                      <p style='font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 18px 0;'>
+                        Dear Parent / Guardian of <strong>" . htmlspecialchars($studentName) . "</strong>,
+                      </p>
+                      <p style='font-size: 13px; line-height: 1.6; color: #475569; margin: 0 0 18px 0;'>
+                        Our institutional attendance monitoring system has flagged recent attendance irregularities (such as consecutive unexcused absences or low attendance velocity) for your student.
+                      </p>
+
+                      " . (!empty($details) ? "
+                      <div style='background-color: #F8FAFC; border-radius: 10px; padding: 14px 16px; border-left: 4px solid {$badgeColor}; margin-bottom: 18px; font-size: 13px; color: #334155;'>
+                        <strong>Recorded Concern:</strong> " . htmlspecialchars($details) . "
+                      </div>" : "") . "
+
+                      " . (!empty($actionPlan) ? "
+                      <div style='background-color: #EFF6FF; border-radius: 10px; padding: 14px 16px; border-left: 4px solid #3B82F6; margin-bottom: 18px; font-size: 13px; color: #1E3A8A;'>
+                        <strong>Recommended Next Step:</strong> " . htmlspecialchars($actionPlan) . "
+                      </div>" : "") . "
+
+                      <p style='font-size: 12px; line-height: 1.5; color: #64748B; margin: 0 0 12px 0;'>
+                        Please coordinate with the student's department head or class adviser to submit any pending excuse documentation or arrange an academic counseling session.
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style='background-color: #F8FAFC; padding: 16px 32px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #94A3B8;'>
+                      Bestlink College of the Philippines · Student Affairs &amp; Attendance Office<br>
+                      Sent automatically via BCP Attendance Management Portal
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>";
+
+        return self::send($toEmail, $subject, $html);
+    }
 }
