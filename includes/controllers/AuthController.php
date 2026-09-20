@@ -294,10 +294,14 @@ class AuthController {
 
                 // Set 15-day persistent cookie
                 $cookieExpire = time() + (15 * 86400);
+                $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                         || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                         || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
                 setcookie('ams_remember_token', $rememberToken, [
                     'expires'  => $cookieExpire,
                     'path'     => $cookiePath,
-                    'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'secure'   => $isSecure,
                     'httponly' => true,
                     'samesite' => 'Lax'
                 ]);

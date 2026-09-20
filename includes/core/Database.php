@@ -35,12 +35,39 @@ class Database {
         if (self::$instance === null) {
             self::loadEnv(dirname(__DIR__, 2) . '/.env');
 
-            $host = getenv('DB_HOST') ?: 'mysql-ams-asierra389-4cc5.f.aivencloud.com';
-            $port = getenv('DB_PORT') ?: '18778';
-            $dbName = getenv('DB_NAME') ?: 'defaultdb';
-            $user = getenv('DB_USER') ?: 'avnadmin';
-            $pass = getenv('DB_PASS') ?: '';
+            // 1. Resolve connection parameters from DB_* or Railway MYSQL* or defaults
+            $host = getenv('DB_HOST') 
+                 ?: getenv('MYSQLHOST') 
+                 ?: ($_ENV['DB_HOST'] ?? ($_ENV['MYSQLHOST'] ?? 'yamabiko.proxy.rlwy.net'));
+
+            $port = getenv('DB_PORT') 
+                 ?: getenv('MYSQLPORT') 
+                 ?: ($_ENV['DB_PORT'] ?? ($_ENV['MYSQLPORT'] ?? '57011'));
+
+            $dbName = getenv('DB_NAME') 
+                   ?: getenv('MYSQLDATABASE') 
+                   ?: ($_ENV['DB_NAME'] ?? ($_ENV['MYSQLDATABASE'] ?? 'railway'));
+
+            $user = getenv('DB_USER') 
+                 ?: getenv('MYSQLUSER') 
+                 ?: ($_ENV['DB_USER'] ?? ($_ENV['MYSQLUSER'] ?? 'root'));
+
+            $pass = getenv('DB_PASS') 
+                 ?: getenv('MYSQLPASSWORD') 
+                 ?: ($_ENV['DB_PASS'] ?? ($_ENV['MYSQLPASSWORD'] ?? 'UKpKFxDomvRzxgSvsWSAMAAKBSjuKZVY'));
+
             $charset = getenv('DB_CHARSET') ?: 'utf8mb4';
+
+            // 2. Parse DATABASE_URL / MYSQL_URL if provided
+            $dbUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: ($_ENV['DATABASE_URL'] ?? ($_ENV['MYSQL_URL'] ?? ''));
+            if (!empty($dbUrl)) {
+                $parsed = parse_url($dbUrl);
+                if (!empty($parsed['host'])) $host = $parsed['host'];
+                if (!empty($parsed['port'])) $port = (string)$parsed['port'];
+                if (!empty($parsed['user'])) $user = $parsed['user'];
+                if (!empty($parsed['pass'])) $pass = $parsed['pass'];
+                if (!empty($parsed['path'])) $dbName = ltrim($parsed['path'], '/');
+            }
 
             $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset={$charset}";
 
