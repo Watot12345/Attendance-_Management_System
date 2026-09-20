@@ -57,6 +57,7 @@ class Router {
         '/auth'                  => 'auth/login.php',
         '/login'                 => 'auth/login.php',
         '/logout'                => 'AuthController@logout',
+        '/auth/logout'           => 'AuthController@logout',
         '/auth/login'            => 'AuthController@login',
         '/api/auth/login'        => 'AuthController@login',
         '/api/auth/verify-otp'   => 'AuthController@verifyOtp',
@@ -299,13 +300,148 @@ class Router {
     }
 
     /**
-     * Synchronizes session role and user persona for the active role
+     * Check if a given path is public (no active session required)
+     */
+    public static function isPublicRoute(string $path): bool {
+        $publicExact = [
+            '/',
+            '/auth',
+            '/auth/login',
+            '/login',
+            '/logout',
+            '/auth/logout',
+            '/api/auth/login',
+            '/api/auth/verify-otp',
+            '/api/auth/resend-otp',
+            '/api/auth/check-remembered',
+            '/api/auth/forgot-password',
+            '/api/auth/verify-reset-otp',
+            '/api/auth/reset-password',
+            '/api/auth/logout',
+            '/api/auth/me',
+            '/healthcheck',
+            '/403',
+            '/404',
+            '/500',
+        ];
+
+        if (in_array($path, $publicExact, true)) {
+            return true;
+        }
+
+        if (str_starts_with($path, '/api/auth/')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Enforce authentication on all protected routes and API endpoints.
+     * Redirects unauthenticated guests to login.
+     */
+    public static function enforceAuth(string $path): void {
+        if (self::isPublicRoute($path)) {
+            return;
+        }
+
+        startSessionSafely();
+        $hasSession = !empty($_SESSION['user_id']) && !empty($_SESSION['user']);
+
+        // Check if device is remembered via trusted cookie (if user did not explicitly log out)
+        if (!$hasSession && !empty($_COOKIE['ams_remember_token']) && empty($_GET['logged_out'])) {
+            try {
+                require_once dirname(__DIR__) . '/core/Database.php';
+                $db = Database::getConnection();
+                $token = $_COOKIE['ams_remember_token'];
+                $remStmt = $db->prepare("
+                    SELECT * FROM users 
+                    WHERE remember_token = :token 
+                      AND remember_expires_at > NOW() 
+                      AND status = 'active' 
+                    LIMIT 1
+                ");
+                $remStmt->execute([':token' => $token]);
+                $rememberedUser = $remStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($rememberedUser) {
+                    $_SESSION['user_id'] = (int)$rememberedUser['user_id'];
+                    $_SESSION['role']    = $rememberedUser['role'];
+                    $_SESSION['user']    = [
+                        'user_id'     => (int)$rememberedUser['user_id'],
+                        'student_id'  => $rememberedUser['student_id'] ?? null,
+                        'employee_id' => $rememberedUser['employee_id'] ?? null,
+                        'first_name'  => $rememberedUser['first_name'],
+                        'last_name'   => $rememberedUser['last_name'],
+                        'full_name'   => trim("{$rememberedUser['first_name']} {$rememberedUser['last_name']}"),
+                        'email'       => $rememberedUser['email'],
+                        'role'        => $rememberedUser['role'],
+                        'avatar_path' => $rememberedUser['avatar_path'] ?? null,
+                    ];
+
+                    if ($rememberedUser['role'] === 'teacher') {
+                        $_SESSION['teacher_id'] = (int)$rememberedUser['user_id'];
+                        unset($_SESSION['student_id']);
+                    } elseif ($rememberedUser['role'] === 'student') {
+                        $_SESSION['student_id'] = (int)$rememberedUser['user_id'];
+                        unset($_SESSION['teacher_id']);
+                    } else {
+                        unset($_SESSION['teacher_id'], $_SESSION['student_id']);
+                    }
+
+                    $hasSession = true;
+                }
+            } catch (Throwable $e) {}
+        }
+
+        if (!$hasSession) {
+            // Unauthenticated request
+            if (str_starts_with($path, '/api/')) {
+                header('Content-Type: application/json; charset=utf-8');
+                http_response_code(401);
+                echo json_encode([
+                    'status'        => 'error',
+                    'authenticated' => false,
+                    'message'       => 'Unauthorized. Your session has expired or you are not signed in.',
+                    'redirect_url'  => url('login?session_expired=1')
+                ]);
+                exit;
+            }
+
+            header('Location: ' . url('login?session_expired=1'));
+            exit;
+        }
+
+        // Role-Based Access Control (RBAC)
+        $userRole = $_SESSION['user']['role'] ?? ($_SESSION['role'] ?? 'student');
+
+        if (str_starts_with($path, '/teacher') && $userRole === 'student') {
+            header('Location: ' . url('student/dashboard'));
+            exit;
+        }
+
+        if (str_starts_with($path, '/student') && $userRole === 'teacher') {
+            header('Location: ' . url('teacher/dashboard'));
+            exit;
+        }
+
+        if ((str_starts_with($path, '/admin') || $path === '/settings') && $userRole !== 'admin') {
+            $dest = ($userRole === 'teacher') ? url('teacher/dashboard') : url('student/dashboard');
+            header('Location: ' . $dest);
+            exit;
+        }
+    }
+
+    /**
+     * Synchronizes session role and user persona for the active role (Admin Switcher only)
      */
     public static function syncSessionUserForRole(string $role): void {
         startSessionSafely();
-        $_SESSION['role'] = $role;
+        if (empty($_SESSION['user']) || (($_SESSION['user']['role'] ?? '') !== 'admin' && ($_SESSION['role'] ?? '') !== 'admin')) {
+            return; // Only active administrators can switch personas
+        }
 
-        $loadedFromDb = false;
+        $_SESSION['role'] = $role;
         try {
             require_once dirname(__DIR__) . '/core/Database.php';
             $db = Database::getConnection();
@@ -334,58 +470,8 @@ class Router {
                 } else {
                     unset($_SESSION['teacher_id'], $_SESSION['student_id']);
                 }
-                $loadedFromDb = true;
             }
-        } catch (Throwable $e) {
-            $loadedFromDb = false;
-        }
-
-        if (!$loadedFromDb) {
-            if ($role === 'teacher') {
-                $_SESSION['user_id'] = 2;
-                $_SESSION['teacher_id'] = 2;
-                unset($_SESSION['student_id']);
-                $_SESSION['user'] = [
-                    'user_id'     => 2,
-                    'employee_id' => 'EMP-1001',
-                    'first_name'  => 'Manuel',
-                    'last_name'   => 'Ramirez',
-                    'full_name'   => 'Prof. Manuel Ramirez',
-                    'email'       => 'm.ramirez@bcp.edu.ph',
-                    'role'        => 'teacher',
-                    'department'  => 'College of Computer Studies',
-                    'avatar_path' => null,
-                ];
-            } elseif ($role === 'student') {
-                $_SESSION['user_id'] = 1;
-                $_SESSION['student_id'] = 1;
-                unset($_SESSION['teacher_id']);
-                $_SESSION['user'] = [
-                    'user_id'     => 1,
-                    'student_id'  => '2026-00123',
-                    'first_name'  => 'Juan',
-                    'last_name'   => 'Dela Cruz',
-                    'full_name'   => 'Juan Dela Cruz',
-                    'email'       => 'juan.delacruz@bcp.edu.ph',
-                    'role'        => 'student',
-                    'section'     => 'BSIT 3-A',
-                    'avatar_path' => null,
-                ];
-            } else {
-                $_SESSION['user_id'] = 999;
-                unset($_SESSION['teacher_id'], $_SESSION['student_id']);
-                $_SESSION['user'] = [
-                    'user_id'     => 999,
-                    'employee_id' => 'ADM-001',
-                    'first_name'  => 'System',
-                    'last_name'   => 'Administrator',
-                    'full_name'   => 'System Administrator',
-                    'email'       => 'admin@bcp.edu.ph',
-                    'role'        => 'admin',
-                    'avatar_path' => null,
-                ];
-            }
-        }
+        } catch (Throwable $e) {}
     }
 
     /**
@@ -394,42 +480,15 @@ class Router {
     public static function getCurrentRole(): string {
         startSessionSafely();
 
-        // 1. Explicit query param switch (e.g. ?switch_role=student or ?role=teacher)
-        if (isset($_GET['switch_role']) && in_array($_GET['switch_role'], ['admin', 'teacher', 'student'], true)) {
-            self::syncSessionUserForRole($_GET['switch_role']);
-            return $_SESSION['role'];
-        }
-        if (isset($_GET['role']) && in_array($_GET['role'], ['admin', 'teacher', 'student'], true)) {
-            $path = self::getCurrentPath();
-            if (!str_starts_with($path, '/api/')) {
-                self::syncSessionUserForRole($_GET['role']);
+        // Administrator quick switch
+        if (!empty($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin') {
+            if (isset($_GET['switch_role']) && in_array($_GET['switch_role'], ['admin', 'teacher', 'student'], true)) {
+                self::syncSessionUserForRole($_GET['switch_role']);
                 return $_SESSION['role'];
             }
         }
 
-        // 2. URL route prefix auto-detection
-        $path = self::getCurrentPath();
-        if (str_starts_with($path, '/teacher')) {
-            if (($_SESSION['role'] ?? '') !== 'teacher') {
-                self::syncSessionUserForRole('teacher');
-            }
-            return 'teacher';
-        }
-        if (str_starts_with($path, '/student')) {
-            if (($_SESSION['role'] ?? '') !== 'student') {
-                self::syncSessionUserForRole('student');
-            }
-            return 'student';
-        }
-        if (str_starts_with($path, '/admin') || $path === '/dashboard') {
-            if (($_SESSION['role'] ?? '') !== 'admin') {
-                self::syncSessionUserForRole('admin');
-            }
-            return 'admin';
-        }
-
-        // 3. Fallback to session, default to admin
-        return $_SESSION['role'] ?? 'admin';
+        return $_SESSION['user']['role'] ?? ($_SESSION['role'] ?? 'guest');
     }
 
     /**
@@ -473,7 +532,6 @@ class Router {
             exit;
         }
 
-
         // Redirect any direct /includes/views/... requests to clean URLs
         if (strpos($path, '/includes/views/') === 0) {
             $sub = substr($path, strlen('/includes/views/'));
@@ -489,6 +547,9 @@ class Router {
             header('Location: ' . $target, true, 301);
             exit;
         }
+
+        // Enforce Authentication and RBAC on all protected routes
+        self::enforceAuth($path);
 
         // 1. Direct route match
         if (isset(self::$routes[$path])) {

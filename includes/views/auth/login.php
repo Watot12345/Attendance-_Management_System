@@ -861,6 +861,11 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           <svg style="width: 16px; height: 16px; flex-shrink: 0; color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           <span>You have been successfully signed out.</span>
         </div>
+        <?php elseif (!empty($_GET['session_expired'])): ?>
+        <div id="session-expired-alert" class="auth-alert error">
+          <svg style="width: 16px; height: 16px; flex-shrink: 0; color: #E11D48;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Your session has expired or you are not logged in. Please sign in.</span>
+        </div>
         <?php endif; ?>
 
         <!-- ══════════════════════════════════════════════════════════
@@ -1187,8 +1192,8 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
        PRODUCTION AUTHENTICATION, OTP & PASSWORD RESET JAVASCRIPT
        ══════════════════════════════════════════════════════════ -->
   <script>
-    // Clean ?logged_out=1 from address bar so page refreshes don't re-trigger the message or block auto-remember
-    if (window.location.search.includes('logged_out=1')) {
+    // Clean ?logged_out=1 or ?session_expired=1 from address bar so page refreshes don't re-trigger
+    if (window.location.search.includes('logged_out=1') || window.location.search.includes('session_expired=1')) {
       window.history.replaceState({}, document.title, window.location.pathname);
       setTimeout(() => {
         const loAlert = document.getElementById('logged-out-alert');
@@ -1197,6 +1202,13 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           loAlert.style.opacity = '0';
           loAlert.style.transform = 'translateY(-4px)';
           setTimeout(() => loAlert.remove(), 400);
+        }
+        const seAlert = document.getElementById('session-expired-alert');
+        if (seAlert) {
+          seAlert.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          seAlert.style.opacity = '0';
+          seAlert.style.transform = 'translateY(-4px)';
+          setTimeout(() => seAlert.remove(), 400);
         }
       }, 5000);
     }
