@@ -15,13 +15,13 @@
         </div>
       </div>
       <nav class="flex-1 py-4 px-3.5 space-y-1.5">
-        <a href="#" class="nav-item active bg-[#395299] text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-3">
+        <a href="#" class="nav-item active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 px-3.5 py-2.5 rounded-xl flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Attendance
         </a>
-        <a href="#" class="nav-item text-blue-100 hover:text-white hover:bg-[#395299] px-3.5 py-2.5 rounded-xl flex items-center gap-3">
+        <a href="#" class="nav-item font-semibold text-sky-100/80 hover:text-white hover:bg-white/10 px-3.5 py-2.5 rounded-xl flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0 text-sky-200/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Alert History
         </a>
-        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="nav-item text-blue-100 hover:text-white hover:bg-[#395299] px-3.5 py-2.5 rounded-xl flex items-center gap-3">
+        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="nav-item font-semibold text-sky-100/80 hover:text-white hover:bg-white/10 px-3.5 py-2.5 rounded-xl flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0 text-sky-200/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Submit Excuse
         </a>
       </nav>

@@ -110,26 +110,26 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       <div class="px-3.5 pt-1 pb-1 text-[10px] font-bold text-sky-200/90 uppercase tracking-widest">Faculty Menu</div>
       
       <?php $act = isActiveLink('teacher/dashboard', $pathOnly); ?>
-      <a href="<?php echo url('teacher/dashboard'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/dashboard'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-white'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span>Overview Dashboard</span>
       </a>
 
       <?php $act = (isActiveLink(['teacher/classes', 'teacher/roster'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/classes'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/classes'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-white'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         <span>My Classes &amp; Rosters</span>
       </a>
 
       <?php $act = isActiveLink('teacher/import-roster', $pathOnly); ?>
-      <a href="<?php echo url('teacher/import-roster'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/import-roster'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-white'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         <span>Import Class Roster</span>
       </a>
 
       <!-- 3+ Consecutive Absences Dropout Watchlist -->
       <?php $act = (isActiveLink(['teacher/consecutive-absences', 'teacher/dropout-watchlist', 'teacher/at-risk'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/consecutive-absences'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-rose-600 text-white font-bold shadow-md shadow-rose-950/40 ring-1 ring-white/20' : 'font-semibold text-rose-300 hover:text-white hover:bg-rose-900/30 border border-rose-400/20'; ?>">
+      <a href="<?php echo url('teacher/consecutive-absences'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-rose-600 text-white font-bold shadow-md shadow-rose-950/40' : 'font-semibold text-rose-300 hover:text-white hover:bg-rose-900/30'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-rose-300 group-hover:text-white'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         <span>Dropout / Consecutive Absences</span>
       </a>
@@ -138,42 +138,42 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       
       <!-- Daily Attendance Marking -->
       <?php $act = (isActiveLink(['teacher/daily-attendance', 'attendance/daily'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/daily-attendance'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/daily-attendance'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         <span>Daily Attendance Marking</span>
       </a>
 
       <!-- Start Live QR Session -->
       <?php $act = isActiveLink('teacher/live-session', $pathOnly); ?>
-      <a href="<?php echo url('teacher/live-session'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-300 hover:text-white hover:bg-white/10 border border-sky-400/20'; ?>">
+      <a href="<?php echo url('teacher/live-session'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 text-sky-300 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
         <span>Start Live QR Session</span>
       </a>
 
       <!-- Tardy & Absence Logs -->
       <?php $act = (isActiveLink(['teacher/tardy-logs', 'alerts/history'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/tardy-logs'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/tardy-logs'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Tardy &amp; Absence Logs</span>
       </a>
 
       <!-- Submitted Excuse Slips Review -->
       <?php $act = (isActiveLink(['teacher/excuse-slips', 'dashboard/excuse-slips', 'excuses/review'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>Submitted Excuse Slips</span>
       </a>
 
       <!-- Perfect Attendance Award Tool -->
       <?php $act = (isActiveLink(['teacher/awards', 'awards', 'dashboard/tools'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/awards'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/awards'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
         <span>Perfect Attendance Award Tool</span>
       </a>
 
       <!-- Attendance History & Audit -->
       <?php $act = (isActiveLink(['teacher/attendance-history', 'teacher/attendance/history', 'teacher/history'], $pathOnly)); ?>
-      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('teacher/attendance-history'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         <span>Attendance History &amp; Audit</span>
       </a>
@@ -184,28 +184,28 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       
       <!-- Scan Attendance QR -->
       <?php $act = isActiveLink('student/scanner', $pathOnly); ?>
-      <a href="<?php echo url('student/scanner'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-300 hover:text-white hover:bg-white/10 border border-sky-400/20'; ?>">
+      <a href="<?php echo url('student/scanner'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 text-sky-300 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
         <span>Scan Attendance QR</span>
       </a>
 
       <!-- Attendance Calendar (Present, Late, Absent, Excused) -->
       <?php $act = (isActiveLink(['student/calendar', 'calendar', 'student/dashboard', 'student/classes'], $pathOnly)); ?>
-      <a href="<?php echo url('student/calendar'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('student/calendar'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         <span>Attendance Calendar</span>
       </a>
 
       <!-- Excuse Slip Submission -->
       <?php $act = (isActiveLink(['student/excuse-slips', 'excuses/submit'], $pathOnly)); ?>
-      <a href="<?php echo url('student/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('student/excuse-slips'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>Excuse Slip Submission</span>
       </a>
 
       <!-- Attendance History -->
       <?php $act = isActiveLink('student/history', $pathOnly); ?>
-      <a href="<?php echo url('student/history'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('student/history'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         <span>Attendance History</span>
       </a>
@@ -216,28 +216,28 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
       
       <!-- Overview Dashboard -->
       <?php $act = (isActiveLink(['dashboard', 'admin/dashboard'], $pathOnly)); ?>
-      <a href="<?php echo url('dashboard'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('dashboard'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span>Overview Dashboard</span>
       </a>
 
       <!-- Analytics Dashboard -->
       <?php $act = (isActiveLink(['dashboard/analytics', 'analytics', 'analytics/dashboard', 'dashboard/ml-analytics'], $pathOnly)); ?>
-      <a href="<?php echo url('dashboard/analytics'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('dashboard/analytics'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         <span>Analytics Dashboard</span>
       </a>
 
       <!-- Alerts to Parents -->
       <?php $act = isActiveLink('alerts', $pathOnly); ?>
-      <a href="<?php echo url('alerts'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('alerts'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span>Alerts to Parents</span>
       </a>
 
       <!-- CSV / Excel Export -->
       <?php $act = isActiveLink('exports', $pathOnly); ?>
-      <a href="<?php echo url('exports'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('exports'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         <span>CSV / Excel Export</span>
       </a>
@@ -246,21 +246,21 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
 
       <!-- Student Master Accounts -->
       <?php $act = (isActiveLink(['admin/students', 'admin/import-students'], $pathOnly)); ?>
-      <a href="<?php echo url('admin/students'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('admin/students'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         <span>Student Master Accounts</span>
       </a>
 
       <!-- Teacher Faculty Master -->
       <?php $act = (isActiveLink(['admin/teachers', 'admin/reports'], $pathOnly)); ?>
-      <a href="<?php echo url('admin/teachers'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('admin/teachers'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
         <span>Teacher Faculty Master</span>
       </a>
 
       <!-- System Settings -->
       <?php $act = (isActiveLink(['settings', 'settings/personal'], $pathOnly)); ?>
-      <a href="<?php echo url('settings'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40 ring-1 ring-white/20' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
+      <a href="<?php echo url('settings'); ?>" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition group <?php echo $act ? 'active bg-[#0284c7] text-white font-bold shadow-md shadow-sky-950/40' : 'font-semibold text-sky-100/80 hover:text-white hover:bg-white/10'; ?>">
         <svg class="w-4 h-4 shrink-0 <?php echo $act ? 'text-white drop-shadow-xs' : 'text-sky-200/70 group-hover:text-sky-200'; ?> transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span>System Settings</span>
       </a>

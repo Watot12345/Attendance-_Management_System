@@ -134,10 +134,56 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     -webkit-backdrop-filter: blur(5px);
     transition: opacity 0.25s ease, visibility 0.25s ease;
   }
-  .qr-card-blur-overlay.is-hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+  .qr-card-blur-overlay.is-hidden,
+  .qr-card-blur-overlay.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* Unmistakable Deep Royal/Navy Blue for Generate QR buttons */
+  #btn-header-generate,
+  #btn-card-generate,
+  #btn-empty-generate,
+  .btn-generate-qr {
+    background-color: #1e3b8a !important;
+    background: #1e3b8a !important;
+    color: #ffffff !important;
+    border: 1px solid #1e3b8a !important;
+    box-shadow: 0 4px 12px -2px rgba(30, 59, 138, 0.4) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #btn-header-generate:hover,
+  #btn-card-generate:hover,
+  #btn-empty-generate:hover,
+  .btn-generate-qr:hover {
+    background-color: #172554 !important;
+    background: #172554 !important;
+    border-color: #172554 !important;
+    box-shadow: 0 6px 16px -2px rgba(30, 59, 138, 0.5) !important;
+    transform: translateY(-1px);
+  }
+  #btn-header-generate:active,
+  #btn-card-generate:active,
+  #btn-empty-generate:active {
+    transform: translateY(0) scale(0.97);
+  }
+  #btn-header-generate svg,
+  #btn-card-generate svg,
+  #btn-empty-generate svg {
+    color: #bae6fd !important;
+    flex-shrink: 0;
+  }
+  #btn-header-generate span,
+  #btn-card-generate span,
+  #btn-empty-generate span {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
   }
 </style>
 <div class="app-layout">
@@ -151,22 +197,22 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         <!-- Minimalist Live Header -->
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
-            <div class="flex items-center gap-2 mb-2">
-              <span id="header-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span id="header-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-slate-100 text-slate-600 border border-slate-200/80">
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                 <span>Inactive</span>
               </span>
             </div>
-            <h1 class="text-2xl font-bold text-text-primary tracking-tight" id="header-course-title">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight" id="header-course-title">
               <?= htmlspecialchars($selectedSectionInfo['section'] ?? '') ?> · <?= htmlspecialchars($selectedSectionInfo['course_code'] ?? '') ?> (<?= htmlspecialchars($selectedSectionInfo['course_title'] ?? 'No Classes Assigned') ?>)
             </h1>
-            <p class="text-sm text-text-secondary mt-0.5" id="header-course-sub">
-              Room <span id="header-room-number"><?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?></span> · Started <span id="header-scheduled-time"><?= $startTimeFormatted ?></span> · <span id="header-live-clock" class="font-mono text-slate-600">--:--:-- --</span>
+            <p class="text-xs text-slate-500 mt-0.5" id="header-course-sub">
+              Room <span id="header-room-number" class="font-medium text-slate-700"><?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?></span> · Started <span id="header-scheduled-time" class="font-medium text-slate-700"><?= $startTimeFormatted ?></span> · <span id="header-live-clock" class="font-mono text-slate-600">--:--:-- --</span>
             </p>
           </div>
 
           <!-- Controls & Dynamic Section Selector -->
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap items-center gap-2.5">
             <!-- Scalable Custom Section Switcher Dropdown & Combobox -->
             <div class="relative" id="section-switcher-container">
               <!-- Trigger Button -->
@@ -175,28 +221,28 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                       onclick="toggleSectionSwitcherDropdown()"
                       aria-haspopup="listbox"
                       aria-expanded="false"
-                      class="flex items-center gap-2.5 bg-slate-100/90 hover:bg-slate-200/80 rounded-xl px-3.5 py-2 transition-all duration-150 cursor-pointer text-left select-none">
-                <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                      class="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 transition-all duration-150 cursor-pointer text-left select-none shadow-xs">
+                <div class="w-6 h-6 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </div>
                 <div class="flex flex-col min-w-0 pr-1">
                   <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold text-slate-800 tracking-tight" id="switcher-active-section">Section <?= htmlspecialchars($selectedSectionInfo['section'] ?? 'None') ?></span>
-                    <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-white text-slate-600" id="switcher-active-code"><?= htmlspecialchars($selectedSectionInfo['course_code'] ?? 'N/A') ?></span>
+                    <span class="text-xs font-semibold text-slate-900 tracking-tight" id="switcher-active-section">Section <?= htmlspecialchars($selectedSectionInfo['section'] ?? 'None') ?></span>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200/60" id="switcher-active-code"><?= htmlspecialchars($selectedSectionInfo['course_code'] ?? 'N/A') ?></span>
                   </div>
-                  <span class="text-[11px] text-slate-500 truncate" id="switcher-active-sub">Rm <?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?> · <?= $startTimeFormatted ?></span>
+                  <span class="text-[11px] text-slate-400 truncate" id="switcher-active-sub">Rm <?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?> · <?= $startTimeFormatted ?></span>
                 </div>
-                <svg id="switcher-chevron" class="w-4 h-4 text-slate-400 ml-1 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg id="switcher-chevron" class="w-3.5 h-3.5 text-slate-400 ml-1 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
 
               <!-- Floating Dropdown Popover Menu -->
               <div id="section-switcher-dropdown" 
-                   class="hidden absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl z-50 overflow-hidden transform origin-top transition-all duration-150">
+                   class="hidden absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-slate-200/90 z-50 overflow-hidden transform origin-top transition-all duration-150">
                 <!-- Dropdown Header & Search -->
-                <div class="p-3 bg-slate-50/90">
+                <div class="p-3 bg-slate-50/80 border-b border-slate-100">
                   <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Class Section</span>
-                    <span class="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full"><?= count($teacherSections) ?> sections</span>
+                    <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Select Class Section</span>
+                    <span class="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200"><?= count($teacherSections) ?> sections</span>
                   </div>
                   <?php if (count($teacherSections) >= 3): ?>
                   <div class="relative">
@@ -204,7 +250,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                            id="section-switcher-search" 
                            oninput="filterSectionDropdownList()" 
                            placeholder="Search section or course..." 
-                           class="w-full pl-8 pr-3 py-1.5 text-xs bg-white rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 transition">
+                           class="w-full pl-8 pr-3 py-1.5 text-xs bg-white rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 transition">
                     <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </div>
                   <?php endif; ?>
@@ -225,23 +271,23 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                             data-search-text="<?= strtolower($secVal . ' ' . $sec['course_code'] . ' ' . $sec['course_title']) ?>"
                             aria-selected="<?= $isSelected ? 'true' : 'false' ?>"
                             onclick="selectSectionFromDropdown('<?= $secVal ?>')"
-                            class="section-switcher-option w-full p-2.5 rounded-xl text-left transition-all duration-150 flex items-start justify-between gap-3 cursor-pointer select-none <?= $isSelected ? 'bg-teal-50 text-slate-900' : 'hover:bg-slate-50 text-slate-700' ?>">
+                            class="section-switcher-option w-full p-2.5 rounded-lg text-left transition-all duration-150 flex items-start justify-between gap-3 cursor-pointer select-none <?= $isSelected ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-slate-50 text-slate-700' ?>">
                       <div class="flex items-start gap-2.5 min-w-0">
-                        <div class="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 <?= $isSelected ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600' ?>">
+                        <div class="mt-0.5 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0 <?= $isSelected ? 'bg-[#1e3b8a] text-white' : 'bg-slate-200/80 text-slate-700' ?>">
                           <?= substr($secVal, -2) ?>
                         </div>
                         <div class="min-w-0">
                           <div class="flex items-center gap-1.5">
-                            <span class="text-xs font-bold text-slate-800">Section <?= $secVal ?></span>
-                            <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded <?= $isSelected ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600' ?>"><?= htmlspecialchars($sec['course_code']) ?></span>
+                            <span class="text-xs font-semibold text-slate-900">Section <?= $secVal ?></span>
+                            <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded <?= $isSelected ? 'bg-white text-slate-800 border border-slate-200' : 'bg-slate-100 text-slate-600' ?>"><?= htmlspecialchars($sec['course_code']) ?></span>
                           </div>
                           <p class="text-[11px] text-slate-500 truncate mt-0.5"><?= htmlspecialchars($sec['course_title']) ?></p>
                           <p class="text-[10px] text-slate-400 mt-0.5">Room <?= htmlspecialchars($sec['room_number'] ?? '402') ?> · <?= htmlspecialchars($sec['schedule_day'] ?? 'Mon') ?> <?= date('h:i A', strtotime($sec['scheduled_time'])) ?></p>
                         </div>
                       </div>
                       <div class="flex items-center pt-0.5 shrink-0">
-                        <span class="switcher-opt-check text-teal-600 <?= $isSelected ? '' : 'hidden' ?>">
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        <span class="switcher-opt-check text-slate-900 <?= $isSelected ? '' : 'hidden' ?>">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </span>
                       </div>
                     </button>
@@ -260,12 +306,12 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
               <?php endforeach; ?>
             </select>
 
-            <button type="button" id="btn-header-generate" class="btn btn-primary text-xs font-bold flex items-center gap-2 shadow-xs cursor-pointer" onclick="requestGenerateQR(this)" title="Generate dynamic QR session">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              <span>Generate QR</span>
+            <button type="button" id="btn-header-generate" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#172554] active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer select-none" onclick="requestGenerateQR(this)" title="Generate dynamic QR session">
+              <svg class="w-4 h-4 text-sky-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+              <span class="tracking-wide">Generate QR</span>
             </button>
-            <button type="button" id="btn-header-close-session" class="btn btn-danger text-xs font-semibold shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none transition-all" onclick="openCloseSessionModal()" title="No active session to close" disabled>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button type="button" id="btn-header-close-session" class="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none" onclick="openCloseSessionModal()" title="No active session to close" disabled>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
               <span>Close Session</span>
             </button>
           </div>
@@ -273,152 +319,154 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
           <!-- ════ LEFT COLUMN: UNIFIED DYNAMIC QR + METRIC CARDS SIDE-BY-SIDE ════ -->
-          <div class="lg:col-span-7 xl:col-span-8 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col justify-between relative overflow-hidden" id="qr-card-container">
-            <!-- ════ BLURRY LOADING OVERLAY IN FRONT OF DYNAMIC QR ════ -->
-            <div id="qr-card-loading-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center qr-card-blur-overlay hidden is-hidden">
-              <div class="relative w-14 h-14 mb-3 flex items-center justify-center">
-                <div class="absolute inset-0 rounded-full border-2 border-slate-200"></div>
-                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-teal-600 border-r-teal-500 animate-spin"></div>
-                <div class="w-7 h-7 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-xs">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                </div>
-              </div>
-              <p id="qr-loading-text" class="text-xs font-bold text-slate-800 tracking-wide">Loading...</p>
-              <p id="qr-loading-sub" class="text-[11px] text-slate-500 mt-0.5">Please wait</p>
-            </div>
-
-            <div class="w-full flex flex-col">
-              <!-- Card Header -->
-              <div class="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
-                  <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Dynamic Anti-Screenshot QR</span>
-                </div>
-                <span class="text-xs font-mono bg-teal-50 border border-teal-200 text-teal-800 font-bold px-2.5 py-0.5 rounded-full" id="token-display">READY</span>
-              </div>
-
-              <!-- Animated Rotating Countdown Bar -->
-              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-5">
-                <div id="qr-timer-bar" class="bg-gradient-to-r from-teal-500 to-emerald-500 h-2 transition-all duration-1000 ease-linear" style="width: 0%;"></div>
-              </div>
-
-              <!-- ════ SIDE-BY-SIDE: QR VIEW (LEFT) + METRICS CARDS (RIGHT) ════ -->
-              <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center my-auto">
-                <!-- Left: QR Boxes & Session Controls -->
-                <div class="md:col-span-6 flex flex-col items-center justify-center text-center">
-                  <!-- 1. Ready To Start Box -->
-                  <div id="qr-ready-box" class="flex flex-col items-center justify-center p-5 bg-slate-50 border border-slate-200 rounded-2xl mx-auto w-[220px] h-[220px] aspect-square transition-all text-center animate-fade-in">
-                    <div class="w-12 h-12 rounded-2xl bg-teal-100/80 text-teal-600 flex items-center justify-center mx-auto mb-2 shadow-xs">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                    </div>
-                    <h4 class="text-xs font-bold text-slate-800 line-clamp-1" id="ready-box-title">Section <?= htmlspecialchars($selectedSectionKey) ?></h4>
-                    <p class="text-[11px] text-slate-500 mt-0.5 mb-2.5 leading-tight">
-                      Ready to start session
-                    </p>
-                    <button type="button" class="btn btn-primary text-xs font-bold py-1.5 px-3.5 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <span>Generate QR</span>
-                    </button>
-                  </div>
-
-                  <!-- 2. Active Dynamic QR Box Container -->
-                  <div id="qr-active-box" class="hidden flex-col items-center justify-center mx-auto transition-all">
-                    <div id="qrcode-container" class="w-[220px] h-[220px] aspect-square flex items-center justify-center mx-auto">
-                      <!-- QR Code Rendered dynamically via qrcode-generator.js -->
-                    </div>
-                    <div class="flex items-center justify-center gap-1.5 mt-2.5 text-xs font-medium text-slate-600">
-                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <span>Expires in <span id="countdown-text" class="text-slate-800 font-bold">30m 00s</span></span>
-                    </div>
-                  </div>
-
-                  <!-- 3. Empty State Box -->
-                  <div id="qr-empty-box" class="hidden flex-col items-center justify-center p-5 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl mx-auto w-[220px] h-[220px] aspect-square text-center animate-fade-in">
-                    <div class="w-12 h-12 rounded-2xl bg-slate-200/80 text-slate-400 flex items-center justify-center mx-auto mb-2 shadow-inner">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <h4 class="text-xs font-bold text-slate-800">Session Closed</h4>
-                    <p class="text-[11px] text-slate-500 mt-0.5 mb-2.5 leading-tight">
-                      Attendance window ended
-                    </p>
-                    <button type="button" class="btn btn-primary text-xs font-bold py-1.5 px-3.5 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                      <span>Generate QR</span>
-                    </button>
-                  </div>
-
-                  <!-- Controls in Card (Active State): Pause/Resume & Rotate QR -->
-                  <div id="qr-refresh-btn-wrap" class="hidden mt-3.5 flex items-center justify-center gap-2">
-                    <button type="button" id="btn-pause-resume-session" class="btn btn-secondary text-xs font-bold flex items-center gap-1.5 py-1.5 px-3 shadow-2xs rounded-xl cursor-pointer hover:bg-slate-100 transition" onclick="togglePauseResumeSession()" title="Pause countdown & scanning">
-                      <svg id="icon-pause-session" class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <svg id="icon-resume-session" class="w-3.5 h-3.5 text-teal-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      <span id="text-pause-resume">Pause</span>
-                    </button>
-                    <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-1.5 py-1.5 px-3 shadow-2xs rounded-xl cursor-pointer" onclick="openRotateQRModal()" title="Rotate QR code">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                      <span>Rotate QR</span>
-                    </button>
+          <div class="lg:col-span-7 xl:col-span-7 flex flex-col" id="qr-card-container">
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 p-5 flex flex-col flex-1 relative overflow-hidden">
+              <!-- ════ BLURRY LOADING OVERLAY IN FRONT OF DYNAMIC QR ════ -->
+              <div id="qr-card-loading-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center qr-card-blur-overlay hidden is-hidden">
+                <div class="relative w-12 h-12 mb-2.5 flex items-center justify-center">
+                  <div class="absolute inset-0 rounded-full border-2 border-slate-200"></div>
+                  <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-slate-800 border-r-slate-600 animate-spin"></div>
+                  <div class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shadow-xs">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
                   </div>
                 </div>
-
-                <!-- Right: 4 Metrics Cards Side-by-Side (2x2 Grid) -->
-                <div class="md:col-span-6 grid grid-cols-2 gap-3" id="metric-cards-container">
-                  <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrolled</p>
-                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                    <p class="metric-val text-2xl font-bold text-slate-800 mt-1" id="metric-enrolled">0</p>
-                  </div>
-                  <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
-                    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Present</p>
-                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                    <p class="metric-val text-2xl font-bold text-emerald-600 mt-1" id="metric-present">0</p>
-                  </div>
-                  <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
-                    <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tardy</p>
-                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                    <p class="metric-val text-2xl font-bold text-amber-600 mt-1" id="metric-tardy">0</p>
-                  </div>
-                  <div class="bg-rose-50/60 p-4 rounded-xl border border-rose-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
-                    <p class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Pending</p>
-                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                    <p class="metric-val text-2xl font-bold text-rose-600 mt-1" id="metric-pending">0</p>
-                  </div>
-                </div>
+                <p id="qr-loading-text" class="text-xs font-bold text-slate-800 tracking-wide">Loading...</p>
+                <p id="qr-loading-sub" class="text-[11px] text-slate-500 mt-0.5">Please wait</p>
               </div>
 
-              <!-- Card Footer Note -->
-              <p id="qr-footer-note" class="text-xs text-text-muted mt-5 pt-3 border-t border-slate-100 text-center">
-                Students scan with an authenticated device enrolled in <strong>Section <?= htmlspecialchars($selectedSectionKey) ?></strong>. Screenshots expire after 30 minutes.
-              </p>
+              <div class="w-full flex flex-col">
+                <!-- Card Header -->
+                <div class="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#1e3b8a]"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Dynamic Anti-Screenshot QR</span>
+                  </div>
+                  <span class="text-xs font-mono bg-slate-100 border border-slate-200 text-slate-700 font-semibold px-2.5 py-0.5 rounded-md" id="token-display">READY</span>
+                </div>
+
+                <!-- Animated Rotating Countdown Bar -->
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-5">
+                  <div id="qr-timer-bar" class="bg-[#1e3b8a] h-1.5 transition-all duration-1000 ease-linear" style="width: 0%;"></div>
+                </div>
+
+                <!-- ════ SIDE-BY-SIDE: QR VIEW (LEFT) + METRICS CARDS (RIGHT) ════ -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center my-auto">
+                  <!-- Left: QR Boxes & Session Controls -->
+                  <div class="md:col-span-6 flex flex-col items-center justify-center text-center">
+                    <!-- 1. Ready To Start Box -->
+                    <div id="qr-ready-box" class="flex flex-col items-center justify-center p-6 bg-slate-50/90 border border-slate-200/90 rounded-2xl mx-auto w-full max-w-[260px] min-h-[240px] transition-all text-center animate-fade-in shadow-xs">
+                      <div class="w-14 h-14 rounded-2xl bg-blue-50 text-[#1e3b8a] border border-blue-100 flex items-center justify-center mx-auto mb-3 shadow-2xs">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                      </div>
+                      <h4 class="text-sm font-bold text-slate-900 line-clamp-1" id="ready-box-title">Section <?= htmlspecialchars($selectedSectionKey) ?></h4>
+                      <p class="text-xs text-slate-500 mt-0.5 mb-4 leading-tight">
+                        Ready to start live attendance
+                      </p>
+                      <button type="button" id="btn-card-generate" class="w-full px-5 py-3 rounded-xl bg-[#1e3b8a] hover:bg-[#172554] active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer select-none" onclick="requestGenerateQR(this)">
+                        <svg class="w-4 h-4 text-sky-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                        <span>Generate QR Code</span>
+                      </button>
+                    </div>
+
+                    <!-- 2. Active Dynamic QR Box Container -->
+                    <div id="qr-active-box" class="hidden flex-col items-center justify-center mx-auto transition-all">
+                      <div id="qrcode-container" class="w-[220px] h-[220px] aspect-square flex items-center justify-center mx-auto">
+                        <!-- QR Code Rendered dynamically via qrcode-generator.js -->
+                      </div>
+                      <div class="flex items-center justify-center gap-1.5 mt-2.5 text-xs font-medium text-slate-600">
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Expires in <span id="countdown-text" class="text-slate-800 font-bold">30m 00s</span></span>
+                      </div>
+                    </div>
+
+                    <!-- 3. Empty State Box -->
+                    <div id="qr-empty-box" class="hidden flex-col items-center justify-center p-6 bg-slate-50/80 border-2 border-dashed border-slate-200 rounded-2xl mx-auto w-full max-w-[260px] min-h-[240px] text-center animate-fade-in shadow-xs">
+                      <div class="w-14 h-14 rounded-2xl bg-slate-200/80 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      </div>
+                      <h4 class="text-sm font-bold text-slate-900">Session Closed</h4>
+                      <p class="text-xs text-slate-500 mt-0.5 mb-4 leading-tight">
+                        Attendance window ended
+                      </p>
+                      <button type="button" id="btn-empty-generate" class="w-full px-5 py-3 rounded-xl bg-[#1e3b8a] hover:bg-[#172554] active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer select-none" onclick="requestGenerateQR(this)">
+                        <svg class="w-4 h-4 text-sky-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                        <span>Generate QR Code</span>
+                      </button>
+                    </div>
+
+                    <!-- Controls in Card (Active State): Pause/Resume & Rotate QR -->
+                    <div id="qr-refresh-btn-wrap" class="hidden mt-3.5 flex items-center justify-center gap-2">
+                      <button type="button" id="btn-pause-resume-session" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer" onclick="togglePauseResumeSession()" title="Pause countdown & scanning">
+                        <svg id="icon-pause-session" class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg id="icon-resume-session" class="w-3.5 h-3.5 text-emerald-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span id="text-pause-resume">Pause</span>
+                      </button>
+                      <button type="button" class="px-3 py-1.5 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer" onclick="openRotateQRModal()" title="Rotate QR code">
+                        <svg class="w-3.5 h-3.5 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Rotate QR</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Right: 4 Metrics Cards Side-by-Side (2x2 Grid) -->
+                  <div class="md:col-span-6 grid grid-cols-2 gap-3" id="metric-cards-container">
+                    <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[90px]">
+                      <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Enrolled</p>
+                      <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                      <p class="metric-val text-2xl font-bold text-slate-800 mt-1" id="metric-enrolled"><?= (int)($selectedSectionInfo['enrolled_count'] ?? 0) ?></p>
+                    </div>
+                    <div class="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[90px]">
+                      <p class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Present</p>
+                      <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                      <p class="metric-val text-2xl font-bold text-emerald-700 mt-1" id="metric-present">0</p>
+                    </div>
+                    <div class="bg-amber-50/50 p-3.5 rounded-xl border border-amber-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[90px]">
+                      <p class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Tardy</p>
+                      <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                      <p class="metric-val text-2xl font-bold text-amber-700 mt-1" id="metric-tardy">0</p>
+                    </div>
+                    <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[90px]">
+                      <p class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Pending</p>
+                      <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                      <p class="metric-val text-2xl font-bold text-rose-700 mt-1" id="metric-pending"><?= (int)($selectedSectionInfo['enrolled_count'] ?? 0) ?></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card Footer Note -->
+                <p id="qr-footer-note" class="text-xs text-slate-400 mt-5 pt-3 border-t border-slate-100 text-center">
+                  Students scan with an authenticated device enrolled in <strong>Section <?= htmlspecialchars($selectedSectionKey) ?></strong>. Screenshots expire after 30 minutes.
+                </p>
+              </div>
             </div>
           </div>
 
           <!-- ════ RIGHT COLUMN: LIVE SCAN FEED ════ -->
-          <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
+          <div class="lg:col-span-5 xl:col-span-5 flex flex-col">
             <!-- Live Scan Stream Card -->
-            <div class="bg-white rounded-2xl shadow-card border border-slate-100 flex-1 flex flex-col overflow-hidden min-h-[460px]">
-              <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="text-base font-bold text-text-primary flex items-center gap-2">
-                  <span class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500"></span>
+            <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 flex-1 flex flex-col overflow-hidden min-h-[460px]">
+              <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span>Live Student Check-In Feed</span>
                 </h3>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full" id="feed-count">0 checked in</span>
-                  <button type="button" id="view-all-btn" onclick="openPresentStudentsModal()" class="px-2.5 py-1 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs cursor-pointer" title="View all present students">
+                  <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md" id="feed-count">0 checked in</span>
+                  <button type="button" id="view-all-btn" onclick="openPresentStudentsModal()" class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs cursor-pointer" title="View all present students">
                     <span>View All</span>
-                    <span id="view-all-count-badge" class="px-1.5 py-0.2 bg-teal-600 text-white rounded-full text-[10px] font-bold">0</span>
+                    <span id="view-all-count-badge" class="px-1.5 py-0.2 bg-[#1e3b8a] text-white rounded text-[10px] font-bold">0</span>
                   </button>
-                  <button type="button" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer" onclick="loadLiveFeed(true, this)" title="Refresh feed">
+                  <button type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer" onclick="loadLiveFeed(true, this)" title="Refresh feed">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   </button>
                 </div>
               </div>
 
               <!-- Live Stream List from DB -->
-              <div class="p-4 overflow-y-auto space-y-2.5 max-h-[380px] flex-1" id="live-feed-list">
+              <div class="p-4 overflow-y-auto space-y-2 max-h-[380px] flex-1" id="live-feed-list">
                 <!-- Skeletons rendered dynamically while loading -->
               </div>
             </div>
@@ -429,89 +477,89 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
   </div>
 
   <!-- ════ 1. START SESSION CONFIRMATION MODAL ════ -->
-  <div id="start-session-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'start-session-modal')">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  <div id="start-session-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'start-session-modal')">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80" onclick="event.stopPropagation()">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
 
-      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Start Live Attendance Session?</h3>
-      <p class="text-sm text-text-secondary text-center mb-5">
+      <h3 class="text-base font-bold text-center text-slate-900 mb-1">Start Live Attendance Session?</h3>
+      <p class="text-xs text-slate-500 text-center mb-5">
         This will generate an active 6-digit dynamic QR code for enrolled students to scan.
       </p>
 
-      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2 mb-6">
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 text-xs space-y-2 mb-6">
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Target Section:</span>
+          <span class="text-slate-500 font-medium text-[11px]">Target Section:</span>
           <span class="font-bold text-slate-900" id="start-modal-section">Section <?= htmlspecialchars($selectedSectionKey) ?></span>
         </div>
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Course:</span>
+          <span class="text-slate-500 font-medium text-[11px]">Course:</span>
           <span class="font-semibold text-slate-800 truncate max-w-[200px]" id="start-modal-course"><?= htmlspecialchars($selectedSectionInfo['course_code'] ?? '') ?> - <?= htmlspecialchars($selectedSectionInfo['course_title'] ?? '') ?></span>
         </div>
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Session Duration:</span>
-          <span class="font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200/60">30 Minutes</span>
+          <span class="text-slate-500 font-medium text-[11px]">Session Duration:</span>
+          <span class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">30 Minutes</span>
         </div>
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Room:</span>
+          <span class="text-slate-500 font-medium text-[11px]">Room:</span>
           <span class="font-medium text-slate-700" id="start-modal-room">Room <?= htmlspecialchars($selectedSectionInfo['room_number'] ?? '402') ?></span>
         </div>
       </div>
 
-      <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeStartSessionModal()">Cancel</button>
-        <button type="button" id="confirm-start-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedStartSession(this)">Start Live Session</button>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="closeStartSessionModal()">Cancel</button>
+        <button type="button" id="confirm-start-btn" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="executeConfirmedStartSession(this)">Start Live Session</button>
       </div>
     </div>
   </div>
 
   <!-- ════ 2. ROTATE QR CONFIRMATION MODAL ════ -->
-  <div id="rotate-qr-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'rotate-qr-modal')">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+  <div id="rotate-qr-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'rotate-qr-modal')">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80" onclick="event.stopPropagation()">
+      <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
       </div>
 
-      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Rotate QR Attendance Code?</h3>
-      <p class="text-sm text-text-secondary text-center mb-5">
+      <h3 class="text-base font-bold text-center text-slate-900 mb-1">Rotate QR Attendance Code?</h3>
+      <p class="text-xs text-slate-500 text-center mb-5">
         Rotating the QR code will <strong>immediately expire the previous 6-digit token</strong> and generate a new dynamic code for section <strong id="rotate-modal-section"><?= htmlspecialchars($selectedSectionKey) ?></strong>.
       </p>
 
-      <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80 text-xs text-amber-900 mb-6 flex items-start gap-2.5">
+      <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 text-xs text-amber-900 mb-6 flex items-start gap-2.5">
         <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         <span>Students attempting to scan the old screenshot or projected code will need to scan the new code. Checked-in students will remain present.</span>
       </div>
 
-      <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeRotateQRModal()">Cancel</button>
-        <button type="button" id="confirm-rotate-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedRotateQR(this)">Rotate QR Code</button>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="closeRotateQRModal()">Cancel</button>
+        <button type="button" id="confirm-rotate-btn" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="executeConfirmedRotateQR(this)">Rotate QR Code</button>
       </div>
     </div>
   </div>
 
   <!-- ════ 3. SWITCH SECTION DURING ACTIVE SESSION MODAL ════ -->
-  <div id="switch-section-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'switch-section-modal')">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+  <div id="switch-section-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'switch-section-modal')">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80" onclick="event.stopPropagation()">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
       </div>
 
-      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Switch Class Section?</h3>
-      <p class="text-sm text-text-secondary text-center mb-5">
+      <h3 class="text-base font-bold text-center text-slate-900 mb-1">Switch Class Section?</h3>
+      <p class="text-xs text-slate-500 text-center mb-5">
         You have an active live session currently running for <strong id="switch-modal-current-section">Section <?= htmlspecialchars($selectedSectionKey) ?></strong>.
       </p>
 
-      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2 mb-6">
+      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs space-y-2 mb-6">
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500">Current Live Section:</span>
+          <span class="text-slate-500 text-[11px]">Current Live Section:</span>
           <span class="font-bold text-emerald-700 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="switch-modal-curr-name">Section <?= htmlspecialchars($selectedSectionKey) ?> (Live)</span>
           </span>
         </div>
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500">Target Section:</span>
+          <span class="text-slate-500 text-[11px]">Target Section:</span>
           <span class="font-bold text-slate-900" id="switch-modal-target-name">Section ...</span>
         </div>
         <p class="text-[11px] text-slate-500 pt-1 border-t border-slate-200 leading-relaxed">
@@ -519,129 +567,129 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         </p>
       </div>
 
-      <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeSwitchSectionModal()">Stay Here</button>
-        <button type="button" id="confirm-switch-btn" class="btn btn-primary flex-1 cursor-pointer font-bold" onclick="executeConfirmedSwitchSection()">Switch Section</button>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="closeSwitchSectionModal()">Stay Here</button>
+        <button type="button" id="confirm-switch-btn" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="executeConfirmedSwitchSection()">Switch Section</button>
       </div>
     </div>
   </div>
 
   <!-- ════ 4. CLOSE SESSION CONFIRMATION MODAL ════ -->
-  <div id="close-session-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleModalBackdropClick(event, 'close-session-modal')">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+  <div id="close-session-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4" onclick="handleModalBackdropClick(event, 'close-session-modal')">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80" onclick="event.stopPropagation()">
+      <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
 
-      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Close Attendance Session?</h3>
-      <p class="text-sm text-text-secondary text-center mb-5">
+      <h3 class="text-base font-bold text-center text-slate-900 mb-1">Close Attendance Session?</h3>
+      <p class="text-xs text-slate-500 text-center mb-5">
         Closing the session stops QR scanning and will <strong>automatically create Absence records</strong> in the database for students enrolled in section <strong id="modal-section-name"><?= htmlspecialchars($selectedSectionKey) ?></strong> who have not checked in yet.
       </p>
 
-      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1.5 mb-6">
+      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs space-y-1.5 mb-6">
         <div class="flex justify-between font-medium text-slate-700">
           <span>Present Students:</span>
-          <span class="text-emerald-600 font-bold" id="modal-present-count">0</span>
+          <span class="text-emerald-700 font-bold" id="modal-present-count">0</span>
         </div>
         <div class="flex justify-between font-medium text-slate-700">
           <span>Tardy Students:</span>
-          <span class="text-amber-600 font-bold" id="modal-tardy-count">0</span>
+          <span class="text-amber-700 font-bold" id="modal-tardy-count">0</span>
         </div>
-        <div class="flex justify-between font-bold text-rose-700 border-t border-slate-200 pt-1.5">
+        <div class="flex justify-between font-bold text-rose-700 border-t border-slate-200/80 pt-1.5">
           <span>Unrecorded ➔ Marked Absent:</span>
           <span id="modal-pending-count">0</span>
         </div>
       </div>
 
-      <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeModal()">Cancel</button>
-        <button type="button" id="confirm-close-btn" class="btn btn-danger flex-1 cursor-pointer" onclick="executeCloseSession(this)">Close Session</button>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="closeModal()">Cancel</button>
+        <button type="button" id="confirm-close-btn" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="executeCloseSession(this)">Close Session</button>
       </div>
     </div>
   </div>
 
   <!-- ════ 5. VOID / FLAG PROXY ATTENDANCE MODAL ════ -->
-  <div id="void-proxy-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'void-proxy-modal')">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in" onclick="event.stopPropagation()">
-      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+  <div id="void-proxy-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 transition-opacity duration-200" onclick="handleModalBackdropClick(event, 'void-proxy-modal')">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80" onclick="event.stopPropagation()">
+      <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
       </div>
 
-      <h3 class="text-xl font-bold text-center text-text-primary mb-1">Void Check-In &amp; Mark Absent?</h3>
-      <p class="text-sm text-text-secondary text-center mb-5">
+      <h3 class="text-base font-bold text-center text-slate-900 mb-1">Void Check-In &amp; Mark Absent?</h3>
+      <p class="text-xs text-slate-500 text-center mb-5">
         Suspected remote proxy scan or student not in room? You can void this attendance record and mark the student as officially absent.
       </p>
 
-      <div class="bg-rose-50/70 p-4 rounded-xl border border-rose-200 text-xs space-y-2 mb-5">
+      <div class="bg-rose-50/50 p-4 rounded-xl border border-rose-200 text-xs space-y-2 mb-5">
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Student Name:</span>
+          <span class="text-slate-500 font-medium text-[11px]">Student Name:</span>
           <span class="font-bold text-slate-900" id="void-modal-student-name">Juan Dela Cruz</span>
         </div>
         <div class="flex justify-between items-center text-slate-700">
-          <span class="text-slate-500 font-medium">Student ID:</span>
+          <span class="text-slate-500 font-medium text-[11px]">Student ID:</span>
           <span class="font-mono text-slate-800" id="void-modal-student-num">230110001</span>
         </div>
         <div class="pt-2 border-t border-rose-200/60">
-          <label for="void-modal-reason" class="block text-slate-600 font-semibold mb-1">Observation Reason:</label>
-          <input type="text" id="void-modal-reason" value="Not physically present in room (Suspected proxy scan)" class="w-full px-2.5 py-1.5 text-xs bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-800">
+          <label for="void-modal-reason" class="block text-slate-700 font-semibold mb-1 text-[11px] uppercase">Observation Reason:</label>
+          <input type="text" id="void-modal-reason" value="Not physically present in room (Suspected proxy scan)" class="w-full px-3 py-2 text-xs bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-800">
         </div>
       </div>
 
       <input type="hidden" id="void-modal-attendance-id" value="">
 
-      <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary flex-1 cursor-pointer" onclick="closeVoidProxyModal()">Cancel</button>
-        <button type="button" id="confirm-void-btn" class="btn btn-danger flex-1 cursor-pointer font-bold bg-rose-600 hover:bg-rose-700 text-white" onclick="executeConfirmedVoidProxy(this)">Mark as Absent</button>
+      <div class="flex justify-end gap-2.5">
+        <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="closeVoidProxyModal()">Cancel</button>
+        <button type="button" id="confirm-void-btn" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition flex-1 cursor-pointer" onclick="executeConfirmedVoidProxy(this)">Mark as Absent</button>
       </div>
     </div>
   </div>
 
   <!-- ════ ALL PRESENT STUDENTS MODAL ════ -->
-  <div id="present-students-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[88vh] animate-scale-in overflow-hidden">
+  <div id="present-students-modal" class="hidden fixed inset-0 bg-[#0f172a]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full flex flex-col max-h-[88vh] animate-scale-in overflow-hidden border border-slate-200/80">
       <!-- Modal Header -->
-      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-2xs font-bold">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-slate-900">Present &amp; Checked-In Students</h3>
-            <p class="text-xs text-slate-500">Live attendance records for today's session (<span id="modal-header-section"><?= htmlspecialchars($selectedSectionKey) ?></span>)</p>
+            <h3 class="text-sm font-bold text-slate-900">Present &amp; Checked-In Students</h3>
+            <p class="text-[11px] text-slate-500">Live attendance records for today's session (<span id="modal-header-section"><?= htmlspecialchars($selectedSectionKey) ?></span>)</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="modal-present-badge-count" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span id="modal-present-badge-count" class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
             0 Students
           </span>
-          <button type="button" onclick="closePresentStudentsModal()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          <button type="button" onclick="closePresentStudentsModal()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
 
       <!-- Filter / Search Bar -->
-      <div class="p-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div class="p-3 border-b border-slate-100 bg-white flex flex-col sm:flex-row gap-2.5 items-center justify-between">
         <div class="relative w-full sm:w-72">
-          <input type="text" id="present-search-input" oninput="filterPresentModalList()" placeholder="Search by student name or ID..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-teal-500 transition">
-          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="present-search-input" oninput="filterPresentModalList()" placeholder="Search by student name or ID..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50/80 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </div>
         <div class="flex items-center gap-1.5 w-full sm:w-auto">
-          <button type="button" onclick="setPresentFilter('all')" id="filter-tab-all" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-600 text-white shadow-2xs cursor-pointer">All (<span id="modal-tab-all-count">0</span>)</button>
-          <button type="button" onclick="setPresentFilter('present')" id="filter-tab-present" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer">Present (<span id="modal-tab-present-count">0</span>)</button>
-          <button type="button" onclick="setPresentFilter('tardy')" id="filter-tab-tardy" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer">Tardy (<span id="modal-tab-tardy-count">0</span>)</button>
+          <button type="button" onclick="setPresentFilter('all')" id="filter-tab-all" class="px-2.5 py-1 text-xs font-semibold rounded-md bg-[#1e3b8a] text-white shadow-2xs cursor-pointer">All (<span id="modal-tab-all-count">0</span>)</button>
+          <button type="button" onclick="setPresentFilter('present')" id="filter-tab-present" class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:bg-slate-100 cursor-pointer">Present (<span id="modal-tab-present-count">0</span>)</button>
+          <button type="button" onclick="setPresentFilter('tardy')" id="filter-tab-tardy" class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:bg-slate-100 cursor-pointer">Tardy (<span id="modal-tab-tardy-count">0</span>)</button>
         </div>
       </div>
 
       <!-- Modal Body (Scrollable List) -->
-      <div class="p-5 overflow-y-auto space-y-2.5 flex-1 min-h-[260px] max-h-[460px]" id="modal-present-list">
+      <div class="p-4 overflow-y-auto space-y-2 flex-1 min-h-[260px] max-h-[460px]" id="modal-present-list">
         <!-- Rendered dynamically -->
       </div>
 
       <!-- Modal Footer -->
-      <div class="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+      <div class="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
         <span id="modal-footer-stats">Showing 0 verified records</span>
-        <button type="button" onclick="closePresentStudentsModal()" class="btn btn-secondary btn-sm py-1.5 px-4 cursor-pointer">Close</button>
+        <button type="button" onclick="closePresentStudentsModal()" class="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition cursor-pointer">Close</button>
       </div>
     </div>
   </div>
@@ -1078,7 +1126,6 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
 
       if (!hasCachedState) {
         // Only show lightweight loading skeleton if no cache exists for this section yet
-        showQrLoading(true, `Loading Section ${sectionVal}...`, 'Syncing dynamic QR & roster...');
         setMetricsLoading(true);
         setLiveFeedLoading(true);
         setHeaderStatusLoading(true);
@@ -1092,9 +1139,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         if (String(currentSection) === String(sectionVal)) {
           setMetricsLoading(false);
           setLiveFeedLoading(false);
-          setTimeout(() => {
-            showQrLoading(false);
-          }, 120);
+          showQrLoading(false);
         }
         // Resume background polling
         if (!liveFeedPolling) {
@@ -2132,11 +2177,10 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       const hasCachedState = applyCachedSectionState(currentSection);
 
       if (!hasCachedState) {
-        // Only show initial loaders if no cached snapshot is present
+        // Only show initial loaders for metrics & feed if no cached snapshot is present
         setMetricsLoading(true);
         setLiveFeedLoading(true);
         setHeaderStatusLoading(true);
-        showQrLoading(true, `Loading Section ${currentSection}...`, 'Checking session status...');
       }
 
       // 2. Fetch fresh status & database metrics in background (Stale-While-Revalidate)
@@ -2146,9 +2190,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       ]).finally(() => {
         setMetricsLoading(false);
         setLiveFeedLoading(false);
-        setTimeout(() => {
-          showQrLoading(false);
-        }, 120);
+        showQrLoading(false);
       });
 
       // 3. Fast High-Performance Polling: every 1000ms (1 second)
@@ -2194,5 +2236,4 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       if (liveFeedPolling) clearInterval(liveFeedPolling);
     });
   </script>
-  <script>if (window.APP && typeof APP.highlightNav === 'function') APP.highlightNav('classes');</script>
   <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>

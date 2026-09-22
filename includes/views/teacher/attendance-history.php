@@ -146,118 +146,117 @@ $auditLogs = $auditStmt->fetchAll(PDO::FETCH_ASSOC);
 $page_title = 'Attendance History & Audit Logs';
 require_once dirname(__DIR__) . '/partials/header.php';
 ?>
-<body class="min-h-screen bg-slate-50">
-  <div class="flex min-h-screen">
-    <?php include dirname(__DIR__) . '/partials/sidebar.php'; ?>
+<div class="app-layout">
+  <?php include dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <?php include dirname(__DIR__) . '/partials/navbar.php'; ?>
+  <div class="main-content">
+    <?php include dirname(__DIR__) . '/partials/navbar.php'; ?>
 
-      <!-- Content Area -->
-      <main class="flex-1 p-6 bg-surface">
-        <!-- Page Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 class="text-2xl font-bold text-text-primary flex items-center gap-2">
-              <span>Attendance History &amp; Audit Logs</span>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                Live Data
-              </span>
-            </h1>
-            <p class="text-sm text-text-secondary mt-0.5">
-              Review verified session records, export reports, and perform authorized manual corrections with audit logging.
-            </p>
+    <!-- Content Area -->
+    <main class="page-body">
+      <!-- Page Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200/80">Faculty Records</span>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ● Live Data
+            </span>
           </div>
-          <div class="flex items-center gap-2">
-            <button type="button" class="btn btn-secondary flex items-center gap-2 shadow-sm hover:shadow" onclick="exportAttendanceCsv()">
-              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              <span>Export CSV / Excel</span>
-            </button>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Attendance History &amp; Audit Logs</h1>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Review verified session records, export class reports, and perform authorized manual corrections with audit logging.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-1.5" onclick="exportAttendanceCsv()">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Form with Debounced Live Controls -->
+      <form id="attendance-filter-form" onsubmit="event.preventDefault(); applyAttendanceFiltersAndPagination();" class="bg-white p-4 rounded-xl shadow-xs border border-slate-200/80 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <!-- Search Student -->
+          <div>
+            <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">Search Student</label>
+            <div class="relative flex items-center">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="search-attendance"
+                name="search" 
+                value="<?php echo htmlspecialchars($filterSearch); ?>" 
+                class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400" 
+                placeholder="Search student number, name..."
+                oninput="debouncedFilterAttendance()"
+              >
+            </div>
+          </div>
+
+          <!-- Class / Section -->
+          <div>
+            <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">Class / Section</label>
+            <select id="filter-section" name="section" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer" onchange="debouncedFilterAttendance()">
+              <option value="all">All Assigned Sections</option>
+              <?php foreach ($sectionsList as $sec): ?>
+                <option value="<?php echo htmlspecialchars($sec['section']); ?>" <?php echo ($filterSection === $sec['section']) ? 'selected' : ''; ?>>
+                  Section <?php echo htmlspecialchars($sec['section']); ?> &middot; <?php echo htmlspecialchars($sec['course_code']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <!-- Date Selector -->
+          <div>
+            <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">Session Date</label>
+            <input 
+              type="date" 
+              id="filter-date"
+              name="date" 
+              value="<?php echo htmlspecialchars(($filterDate !== 'all' && $filterDate !== '') ? $filterDate : ''); ?>" 
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer" 
+              onchange="debouncedFilterAttendance()"
+            >
+          </div>
+
+          <!-- Status Filter -->
+          <div>
+            <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">Status</label>
+            <select id="filter-status" name="status" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer" onchange="debouncedFilterAttendance()">
+              <option value="all" <?php echo ($filterStatus === 'all' || $filterStatus === '') ? 'selected' : ''; ?>>All Statuses</option>
+              <option value="present" <?php echo ($filterStatus === 'present') ? 'selected' : ''; ?>>Present</option>
+              <option value="tardy" <?php echo ($filterStatus === 'tardy' || $filterStatus === 'late') ? 'selected' : ''; ?>>Tardy / Late</option>
+              <option value="absent" <?php echo ($filterStatus === 'absent') ? 'selected' : ''; ?>>Absent</option>
+            </select>
           </div>
         </div>
 
-        <!-- Filter Form with Debounced Live Controls -->
-        <form id="attendance-filter-form" onsubmit="event.preventDefault(); applyAttendanceFiltersAndPagination();" class="bg-white p-4 rounded-xl shadow-card border border-slate-100 mb-6">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Search Student -->
-            <div>
-              <label class="text-xs font-semibold uppercase text-text-muted mb-1 block">Search Student</label>
-              <div class="relative flex items-center">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                  </svg>
-                </div>
-                <input 
-                  type="text" 
-                  id="search-attendance"
-                  name="search" 
-                  value="<?php echo htmlspecialchars($filterSearch); ?>" 
-                  class="form-input text-sm" 
-                  style="padding-left: 2.5rem !important;"
-                  placeholder="Search student number, name, status..."
-                  oninput="debouncedFilterAttendance()"
-                >
-              </div>
-            </div>
-
-            <!-- Class / Section -->
-            <div>
-              <label class="text-xs font-semibold uppercase text-text-muted mb-1 block">Class / Section</label>
-              <select id="filter-section" name="section" class="form-input form-select text-sm cursor-pointer" onchange="debouncedFilterAttendance()">
-                <option value="all">All Assigned Sections</option>
-                <?php foreach ($sectionsList as $sec): ?>
-                  <option value="<?php echo htmlspecialchars($sec['section']); ?>" <?php echo ($filterSection === $sec['section']) ? 'selected' : ''; ?>>
-                    Section <?php echo htmlspecialchars($sec['section']); ?> &middot; <?php echo htmlspecialchars($sec['course_code']); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Date Selector -->
-            <div>
-              <label class="text-xs font-semibold uppercase text-text-muted mb-1 block">Session Date</label>
-              <input 
-                type="date" 
-                id="filter-date"
-                name="date" 
-                value="<?php echo htmlspecialchars(($filterDate !== 'all' && $filterDate !== '') ? $filterDate : ''); ?>" 
-                class="form-input text-sm cursor-pointer" 
-                onchange="debouncedFilterAttendance()"
-              >
-            </div>
-
-            <!-- Status Filter -->
-            <div>
-              <label class="text-xs font-semibold uppercase text-text-muted mb-1 block">Status</label>
-              <select id="filter-status" name="status" class="form-input form-select text-sm cursor-pointer" onchange="debouncedFilterAttendance()">
-                <option value="all" <?php echo ($filterStatus === 'all' || $filterStatus === '') ? 'selected' : ''; ?>>All Statuses</option>
-                <option value="present" <?php echo ($filterStatus === 'present') ? 'selected' : ''; ?>>Present</option>
-                <option value="tardy" <?php echo ($filterStatus === 'tardy' || $filterStatus === 'late') ? 'selected' : ''; ?>>Tardy / Late</option>
-                <option value="absent" <?php echo ($filterStatus === 'absent') ? 'selected' : ''; ?>>Absent</option>
-              </select>
-            </div>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 text-xs">
+          <div class="text-slate-500 text-[11px]">
+            Showing records for <strong><?php echo htmlspecialchars($loggedTeacherName); ?></strong>
           </div>
-
-          <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 text-xs">
-            <div class="text-slate-500">
-              Showing records for <strong><?php echo htmlspecialchars($loggedTeacherName); ?></strong>.
-            </div>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="resetAttendanceFilters()" class="text-slate-500 hover:text-slate-800 font-medium px-2.5 py-1 rounded hover:bg-slate-100 transition">
-                Reset Filters
-              </button>
-              <button type="button" onclick="applyAttendanceFiltersAndPagination()" class="btn btn-primary btn-sm text-xs px-3 py-1.5">
-                Apply Filters
-              </button>
-            </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="resetAttendanceFilters()" class="text-slate-500 hover:text-slate-800 font-semibold px-2.5 py-1 rounded hover:bg-slate-100 transition text-xs">
+              Reset Filters
+            </button>
+            <button type="button" onclick="applyAttendanceFiltersAndPagination()" class="px-3.5 py-1.5 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition">
+              Apply Filters
+            </button>
           </div>
-        </form>
+        </div>
+      </form>
 
-        <!-- Attendance Records Table with Debounced Loading & Pagination -->
-        <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden mb-8">
+      <!-- Attendance Records Table with Debounced Loading & Pagination -->
+      <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 overflow-hidden mb-8">
           <div class="px-5 py-4 border-b border-border flex items-center justify-between">
             <div>
               <h3 class="text-base font-bold text-text-primary">
@@ -447,19 +446,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <!-- ════ AUDIT LOG SECTION ════ -->
-        <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
-          <div class="px-5 py-4 border-b border-border flex items-center justify-between bg-slate-50">
+        <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
             <div>
-              <h3 class="text-base font-bold text-text-primary flex items-center gap-2">
-                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 Attendance Correction Audit Trail
               </h3>
-              <p class="text-xs text-text-muted mt-0.5">Immutable ledger of authorized manual overrides, dynamic QR check-ins, and anti-proxy events.</p>
+              <p class="text-xs text-slate-500 mt-0.5">Immutable ledger of authorized manual overrides, dynamic QR check-ins, and anti-proxy events.</p>
             </div>
-            <span class="text-xs font-semibold text-slate-500 bg-white px-2.5 py-1 border border-slate-200 rounded-full">
-              Showing recent <?php echo count($auditLogs); ?> log entries
+            <span class="text-[11px] font-semibold text-slate-600 bg-white px-2.5 py-1 border border-slate-200 rounded-lg">
+              Recent <?php echo count($auditLogs); ?> entries
             </span>
           </div>
 
@@ -488,19 +487,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     $isQrScan = (stripos($log['description'], 'Dynamic') !== false);
 
                     if ($isManualOverride) {
-                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">Manual Override</span>';
+                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Manual Override</span>';
                     } elseif ($isVoided) {
-                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">Proxy Voided</span>';
+                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Proxy Voided</span>';
                     } elseif ($isQrScan) {
-                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">QR Check-in</span>';
+                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">QR Check-in</span>';
                     } else {
-                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">Audit Record</span>';
+                        $eventBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Audit Record</span>';
                     }
 
                     // Modifier label
                     if ($log['mod_role'] === 'teacher') {
                         $modifier = 'Prof. ' . htmlspecialchars($log['mod_first_name'] . ' ' . $log['mod_last_name']);
-                        $modifierClass = 'text-teal-700 font-semibold';
+                        $modifierClass = 'text-slate-800 font-semibold';
                     } elseif ($log['mod_role'] === 'student') {
                         $modifier = 'Student (' . htmlspecialchars($log['mod_first_name'] . ' ' . $log['mod_last_name']) . ')';
                         $modifierClass = 'text-slate-700 font-medium';
@@ -510,7 +509,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     }
                   ?>
                     <tr class="hover:bg-slate-50/60 transition">
-                      <td class="text-xs text-text-muted font-mono whitespace-nowrap">
+                      <td class="text-xs text-slate-500 font-mono whitespace-nowrap">
                         <?php echo htmlspecialchars($createdAt); ?>
                       </td>
                       <td>
@@ -534,14 +533,14 @@ require_once dirname(__DIR__) . '/partials/header.php';
   </div>
 
   <!-- ════ MANUAL CORRECTION MODAL ════ -->
-  <div id="correction-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in border border-slate-100">
+  <div id="correction-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-scale-in border border-slate-200/80">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
         <div>
-          <h3 class="text-lg font-bold text-text-primary">Manual Attendance Override</h3>
-          <p class="text-xs text-text-muted">Authorized status modification with mandatory reason justification.</p>
+          <h3 class="text-base font-bold text-slate-900">Manual Attendance Override</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Authorized status modification with mandatory reason justification.</p>
         </div>
-        <button type="button" onclick="closeCorrectionModal()" class="text-slate-400 hover:text-slate-700 transition">
+        <button type="button" onclick="closeCorrectionModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -556,17 +555,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/80 mb-4">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-text-muted uppercase font-semibold">Student Record:</span>
-            <span class="font-bold text-slate-700 font-mono" id="modal-student-current-status-badge"></span>
+            <span class="text-slate-500 uppercase font-semibold text-[10px]">Student Record:</span>
+            <span class="font-bold text-slate-700 font-mono text-[11px]" id="modal-student-current-status-badge"></span>
           </div>
           <p class="text-sm font-bold text-slate-900 mt-1" id="modal-student-name">Loading...</p>
         </div>
 
         <div class="mb-4">
-          <label class="form-label text-xs font-semibold uppercase text-text-secondary mb-1.5 block">
+          <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">
             New Attendance Status <span class="text-rose-500">*</span>
           </label>
-          <select id="modal-new-status" class="form-input form-select text-sm font-medium" required>
+          <select id="modal-new-status" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 cursor-pointer" required>
             <option value="present">Present (On Time)</option>
             <option value="tardy">Tardy / Late</option>
             <option value="absent">Absent</option>
@@ -574,12 +573,12 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <div class="mb-5">
-          <label class="form-label text-xs font-semibold uppercase text-text-secondary mb-1.5 block">
+          <label class="text-[11px] font-bold uppercase text-slate-600 mb-1.5 block">
             Reason for Correction (Recorded in Audit Log) <span class="text-rose-500">*</span>
           </label>
           <textarea 
             id="modal-reason" 
-            class="form-input text-sm leading-relaxed" 
+            class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 leading-relaxed" 
             rows="3" 
             placeholder="e.g. Student presented clinic slip, phone camera hardware error, verified present by teacher..." 
             required
@@ -587,9 +586,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <span class="text-[11px] text-slate-400 mt-1 block">This justification is permanently stored in the audit trail.</span>
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-          <button type="button" class="btn btn-secondary text-xs" onclick="closeCorrectionModal()">Cancel</button>
-          <button type="submit" id="modal-submit-btn" class="btn btn-primary text-xs font-bold px-4 py-2">
+        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition" onclick="closeCorrectionModal()">Cancel</button>
+          <button type="submit" id="modal-submit-btn" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition">
             Save &amp; Log Audit Record
           </button>
         </div>

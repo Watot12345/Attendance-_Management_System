@@ -66,6 +66,50 @@
   --topbar-height: 64px;
 }
 
+/* ── Universal Brand Color Utilities & Explicit Utility Classes ── */
+.bg-\[\#1e3b8a\],
+[class~="bg-[#1e3b8a]"],
+.bg-primary-blue {
+  background-color: #1e3b8a !important;
+}
+
+.hover\:bg-\[\#172554\]:hover,
+[class~="hover:bg-[#172554]"]:hover,
+.bg-primary-blue-hover:hover {
+  background-color: #172554 !important;
+}
+
+.hover\:bg-\[\#1e3b8a\]:hover,
+[class~="hover:bg-[#1e3b8a]"]:hover {
+  background-color: #1e3b8a !important;
+}
+
+.group:hover .group-hover\:bg-\[\#1e3b8a\] {
+  background-color: #1e3b8a !important;
+}
+
+.group:hover .group-hover\:text-white {
+  color: #ffffff !important;
+}
+
+.bg-\[\#0284c7\],
+[class~="bg-[#0284c7]"],
+.bg-sky-primary {
+  background-color: #0284c7 !important;
+}
+
+.text-\[\#1e3b8a\],
+[class~="text-[#1e3b8a]"],
+.text-primary-blue {
+  color: #1e3b8a !important;
+}
+
+.border-\[\#1e3b8a\],
+[class~="border-[#1e3b8a]"],
+.border-primary-blue {
+  border-color: #1e3b8a !important;
+}
+
 /* ── App Layout Structure ──────────────────────────────────── */
 .app-layout {
   display: flex !important;
@@ -355,12 +399,16 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1e3b8a 0%, #2563eb 100%);
+  background-color: #1e3b8a;
+  background: #1e3b8a;
   color: #FFFFFF;
+  border-color: #1e3b8a;
   box-shadow: 0 2px 8px -2px rgba(30, 59, 138, 0.4);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #172554 0%, #1e3b8a 100%);
+  background-color: #172554;
+  background: #172554;
+  border-color: #172554;
   box-shadow: 0 4px 14px -3px rgba(30, 59, 138, 0.5);
 }
 
@@ -377,12 +425,16 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  background-color: #ef4444;
+  background: #ef4444;
   color: #FFFFFF;
+  border-color: #ef4444;
   box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.4);
 }
 .btn-danger:hover {
-  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  background-color: #dc2626;
+  background: #dc2626;
+  border-color: #dc2626;
   box-shadow: 0 4px 14px -3px rgba(239, 68, 68, 0.5);
 }
 
@@ -740,4 +792,110 @@ body.confirm-modal-open .page-body {
 main {
   transition: opacity 0.18s ease;
 }
+
+/* Tooltip hover helper */
+.group\/tooltip:hover > div,
+[class*="group/tooltip"]:hover > div {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Dropzone hover transition */
+#dropzone-area {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#dropzone-area:hover {
+  border-color: #1e3b8a !important;
+  background-color: rgba(239, 246, 255, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+/* ── Stepper & Flex Helpers ────────────────────────────────── */
+.justify-between,
+[class*="justify-between"] {
+  justify-content: space-between !important;
+}
+
+.stepper-flex-between {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 1rem !important;
+}
+
+/* ── Form Row Layout Helpers for Import Roster & Forms ─────── */
+.step1-grid {
+  display: grid !important;
+  grid-template-columns: 1.35fr 1fr !important;
+  gap: 1.5rem !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+.step1-grid > * {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 1024px) {
+  .step1-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.form-row-2 {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+.form-row-2 > * {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+.form-row-code-title {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+.form-row-code-title > .col-code {
+  flex: 0 0 35% !important;
+  max-width: 35% !important;
+  min-width: 0 !important;
+}
+.form-row-code-title > .col-title {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+.form-row-3 {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+.form-row-3 > * {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .form-row-2,
+  .form-row-code-title,
+  .form-row-3 {
+    flex-direction: column !important;
+    gap: 0.875rem !important;
+  }
+  .form-row-code-title > .col-code,
+  .form-row-code-title > .col-title {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
 

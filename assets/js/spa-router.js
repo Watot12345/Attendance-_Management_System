@@ -125,37 +125,48 @@
 
   function updateActiveNav(href) {
     var targetPath = normalize(href);
-    var links = document.querySelectorAll('#sidebar a');
+    var links = document.querySelectorAll('#sidebar a.nav-item');
     links.forEach(function (link) {
       var linkPath = normalize(link.getAttribute('href') || '');
       var isActive = linkPath === targetPath;
+      var isConsecutive = linkPath.indexOf('consecutive-absences') !== -1 || linkPath.indexOf('dropout-watchlist') !== -1 || linkPath.indexOf('at-risk') !== -1;
+
+      // Always remove all active/inactive classes first to ensure clean state transition
+      link.classList.remove(
+        'active', 'bg-[#0284c7]', 'bg-[#395299]', 'bg-sky-500', 'bg-blue-600', 'bg-rose-600',
+        'text-white', 'text-sky-100/80', 'text-sky-100', 'text-blue-100', 'text-slate-300',
+        'text-rose-300', 'text-rose-400',
+        'font-bold', 'font-semibold',
+        'shadow-md', 'shadow-sky-950/40', 'shadow-rose-950/40', 'shadow-blue-600/30', 'shadow-sky-500/30', 'shadow-rose-600/30',
+        'ring-1', 'ring-white/20', 'border', 'border-rose-400/20', 'border-sky-400/20',
+        'hover:text-white', 'hover:bg-white/10', 'hover:bg-[#395299]', 'hover:bg-rose-900/30'
+      );
 
       if (isActive) {
-        link.classList.remove(
-          'text-slate-300', 'text-blue-100', 'hover:text-white', 'hover:bg-[#395299]', 'hover:bg-white/10', 'hover:bg-slate-800/80',
-          'text-rose-400', 'text-rose-300', 'hover:text-rose-300', 'hover:bg-rose-950/30',
-          'text-blue-400', 'text-sky-300', 'hover:text-blue-300', 'hover:bg-blue-950/30',
-          'border', 'border-rose-500/20', 'border-rose-400/20', 'border-blue-500/20', 'border-sky-400/20'
-        );
-        if (link.classList.contains('text-rose-400') || link.classList.contains('text-rose-300')) {
-          link.classList.add('bg-rose-600', 'text-white', 'font-bold');
+        link.classList.add('active', 'text-white', 'font-bold', 'shadow-md');
+        if (isConsecutive) {
+          link.classList.add('bg-rose-600', 'shadow-rose-950/40');
         } else {
-          link.classList.add('bg-[#395299]', 'text-white', 'font-bold');
+          link.classList.add('bg-[#0284c7]', 'shadow-sky-950/40');
         }
-        link.classList.add('active');
         link.querySelectorAll('svg').forEach(function (svg) {
           svg.classList.remove('text-slate-400', 'text-rose-400', 'text-rose-300', 'text-blue-400', 'text-sky-200/70', 'text-sky-300');
           svg.classList.add('text-white');
         });
       } else {
-        link.classList.remove(
-          'bg-[#395299]', 'bg-sky-500', 'bg-blue-600', 'bg-rose-600', 'text-white', 'active',
-          'shadow-md', 'shadow-blue-600/30', 'shadow-sky-500/30', 'shadow-rose-600/30', 'font-bold'
-        );
-        link.classList.add('text-blue-100', 'hover:text-white', 'hover:bg-[#395299]');
+        link.classList.add('font-semibold');
+        if (isConsecutive) {
+          link.classList.add('text-rose-300', 'hover:text-white', 'hover:bg-rose-900/30');
+        } else {
+          link.classList.add('text-sky-100/80', 'hover:text-white', 'hover:bg-white/10');
+        }
         link.querySelectorAll('svg').forEach(function (svg) {
           svg.classList.remove('text-white');
-          svg.classList.add('text-sky-200/70');
+          if (isConsecutive) {
+            svg.classList.add('text-rose-300');
+          } else {
+            svg.classList.add('text-sky-200/70');
+          }
         });
       }
     });

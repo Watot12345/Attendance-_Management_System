@@ -207,57 +207,57 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="badge badge-present">Teacher Portal</span>
-            <span class="text-xs text-slate-500">Academic Year 2025–2026</span>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">Faculty Portal</span>
+            <span class="text-xs text-slate-500 font-medium">Academic Year 2025–2026</span>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">My Assigned Classes &amp; Rosters</h1>
-          <p class="text-sm text-slate-500">Manage your course sections, view interactive student rosters, and launch live attendance sessions.</p>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">My Assigned Classes &amp; Rosters</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Manage course sections, view interactive student rosters, and launch live attendance sessions.</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <a href="<?php echo url('teacher/import-roster'); ?>" class="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium shadow-sm transition flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
+          <a href="<?php echo url('teacher/import-roster'); ?>" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 text-xs font-semibold shadow-xs transition flex items-center gap-2">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            <span>Import Class Roster</span>
+            <span>Import Roster</span>
           </a>
-          <a href="<?php echo url('teacher/live-session'); ?>" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md hover:shadow-lg transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          <a href="<?php echo url('teacher/live-session'); ?>" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
             <span>Start Attendance</span>
           </a>
         </div>
       </div>
 
       <!-- Quick KPI Stats Bar -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Classes</div>
-          <div class="text-2xl font-bold text-slate-800 mt-1"><?= count($classes) ?> Course<?= count($classes) !== 1 ? 's' : '' ?></div>
-          <div class="text-[11px] text-slate-500 mt-0.5"><?= count($allSections) ?> Academic Section<?= count($allSections) !== 1 ? 's' : '' ?></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
+        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs hover:border-blue-300 transition text-left flex flex-col justify-between">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Assigned Classes</div>
+          <div class="text-2xl font-bold tracking-tight text-slate-900 my-1"><?= count($classes) ?> Course<?= count($classes) !== 1 ? 's' : '' ?></div>
+          <div class="text-[11px] text-slate-500"><?= count($allSections) ?> Academic Section<?= count($allSections) !== 1 ? 's' : '' ?></div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-          <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Total Enrolled</div>
-          <div class="text-2xl font-bold text-blue-700 mt-1"><?= number_format($totalEnrolledAll) ?> Students</div>
-          <div class="text-[11px] text-slate-500 mt-0.5">Official Roster Count</div>
+        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs hover:border-blue-300 transition text-left flex flex-col justify-between">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Enrolled</div>
+          <div class="text-2xl font-bold tracking-tight text-blue-700 my-1"><?= number_format($totalEnrolledAll) ?> Students</div>
+          <div class="text-[11px] text-slate-500">Official Roster Count</div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-          <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Avg. Attendance</div>
-          <div class="text-2xl font-bold text-emerald-600 mt-1"><?= $overallAvgRate ?>%</div>
-          <div class="text-[11px] text-slate-500 mt-0.5">Campus Benchmark: 85%</div>
+        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs hover:border-blue-300 transition text-left flex flex-col justify-between">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg. Attendance</div>
+          <div class="text-2xl font-bold tracking-tight text-emerald-600 my-1"><?= $overallAvgRate ?>%</div>
+          <div class="text-[11px] text-slate-500">Campus Benchmark: 85%</div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-          <div class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Sessions Held</div>
-          <div class="text-2xl font-bold text-slate-800 mt-1"><?= $totalSessionsAll ?> Sessions</div>
-          <div class="text-[11px] text-slate-500 mt-0.5">Recorded QR Sessions</div>
+        <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs hover:border-blue-300 transition text-left flex flex-col justify-between">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sessions Held</div>
+          <div class="text-2xl font-bold tracking-tight text-slate-900 my-1"><?= $totalSessionsAll ?> Sessions</div>
+          <div class="text-[11px] text-slate-500">Recorded QR Sessions</div>
         </div>
       </div>
 
       <!-- Course / Year / Section Filter Bar -->
-      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
           <!-- Course Program -->
           <div>
-            <label for="filter-program" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Program / Course</label>
-            <select id="filter-program" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
+            <label for="filter-program" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Program / Course</label>
+            <select id="filter-program" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
               <option value="all">All Programs</option>
               <?php foreach ($allPrograms as $p): ?>
                 <option value="<?= htmlspecialchars($p) ?>"><?= htmlspecialchars($p) ?></option>
@@ -267,8 +267,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           <!-- Year Level -->
           <div>
-            <label for="filter-year" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Year Level</label>
-            <select id="filter-year" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
+            <label for="filter-year" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Year Level</label>
+            <select id="filter-year" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
               <option value="all">All Year Levels</option>
               <?php foreach ($allYears as $y): ?>
                 <?php $yOrd = match((int)$y) { 1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year', default => $y . 'th Year' }; ?>
@@ -279,8 +279,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           <!-- Section -->
           <div>
-            <label for="filter-section" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Section</label>
-            <select id="filter-section" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
+            <label for="filter-section" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Section</label>
+            <select id="filter-section" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterClasses()">
               <option value="all">All Sections</option>
               <?php foreach ($allSections as $s): ?>
                 <option value="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></option>
@@ -290,21 +290,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           <!-- Search keyword -->
           <div>
-            <label for="search-class" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Search Subject / Code</label>
+            <label for="search-class" class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Search Subject / Code</label>
             <div class="relative">
-              <input type="text" id="search-class" placeholder="e.g. IT301 or Web Dev" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="filterClasses()">
+              <input type="text" id="search-class" placeholder="e.g. IT301 or Web Dev" class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="filterClasses()">
               <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Classes & Rosters Cards Grid -->
-      <div id="classes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+      <!-- Classes & Rosters Horizontal List -->
+      <div id="classes-container" class="space-y-3.5 mb-6">
         <?php if (empty($classes)): ?>
-          <div class="col-span-2 bg-white rounded-2xl p-12 text-center border border-slate-200 text-slate-400">
-            <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            <div class="text-base font-bold text-slate-700">No Assigned Classes Found</div>
+          <div class="bg-white rounded-xl p-12 text-center border border-slate-200 text-slate-400">
+            <svg class="w-10 h-10 mx-auto text-slate-300 mb-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <div class="text-sm font-bold text-slate-700">No Assigned Classes Found</div>
             <div class="text-xs text-slate-400 mt-1">Click "Import Class Roster" to upload or enroll students into your class section.</div>
           </div>
         <?php else: ?>
@@ -330,55 +330,66 @@ require_once dirname(__DIR__) . '/partials/header.php';
               $sessionCount      = (int)($cls['session_count'] ?? 0);
               $avgRate           = number_format((float)($cls['avg_rate'] ?? 100), 1) . '%';
             ?>
-            <div class="class-card bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-400 transition flex flex-col overflow-hidden"
+            <div class="class-card bg-white rounded-xl border border-slate-200/80 shadow-xs hover:border-blue-300 hover:shadow-xs transition p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                  data-program="<?= $programCode ?>"
                  data-year="<?= $yearNum ?>"
                  data-section="<?= $sectionCode ?>"
                  data-title="<?= strtolower($courseCode . ' ' . $courseTitle . ' ' . $sectionCode) ?>">
-              <div class="p-6 flex-1">
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-800"><?= $sectionCode ?></span>
-                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600"><?= $yearOrdinal ?></span>
-                  </div>
-                  <span class="badge badge-present text-xs">● Active Class</span>
+              
+              <!-- Left: Course Info & Badges -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200/70"><?= $sectionCode ?></span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/60"><?= $yearOrdinal ?></span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">● Active</span>
                 </div>
                 
-                <h3 class="font-bold text-slate-800 text-lg leading-tight mb-1"><?= $courseCode ?> — <?= $courseTitle ?></h3>
-                <p class="text-xs text-slate-500 mb-4 flex items-center gap-2">
-                  <span>🗓️ <?= $scheduleFormatted ?></span>
-                  <span>•</span>
-                  <span>📍 Room <?= $roomFormatted ?></span>
-                </p>
-
-                <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-center mb-4">
-                  <div>
-                    <div class="text-xs text-slate-400 font-medium">Enrolled</div>
-                    <div class="text-lg font-bold text-slate-800"><?= $enrolled ?></div>
-                  </div>
-                  <div>
-                    <div class="text-xs text-slate-400 font-medium">Sessions</div>
-                    <div class="text-lg font-bold text-slate-800"><?= $sessionCount ?></div>
-                  </div>
-                  <div>
-                    <div class="text-xs text-slate-400 font-medium">Avg Rate</div>
-                    <div class="text-lg font-bold text-emerald-600"><?= $avgRate ?></div>
-                  </div>
+                <h3 class="font-bold text-slate-900 text-base leading-snug truncate">
+                  <span class="text-[#1e3b8a]"><?= $courseCode ?></span> — <?= $courseTitle ?>
+                </h3>
+                
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1.5">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span><?= $scheduleFormatted ?></span>
+                  </span>
+                  <span class="text-slate-300">&middot;</span>
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Room <?= $roomFormatted ?></span>
+                  </span>
                 </div>
               </div>
 
-              <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <button type="button" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5"
-                          onclick="openRosterModal('<?= $sectionCode ?>', '<?= $courseCode ?> — <?= addslashes($courseTitle) ?>', '<?= $yearOrdinal ?>', '<?= addslashes($scheduleFormatted) ?>', 'Room <?= addslashes($roomFormatted) ?>', <?= $enrolled ?>, '<?= $avgRate ?>')">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    <span>View Student Roster</span>
-                  </button>
-                  <a href="<?php echo url('teacher/attendance-history?section=' . urlencode($cls['section'])); ?>" class="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition" title="View Past Attendance Sessions">
-                    History
-                  </a>
+              <!-- Center: Class Statistics Strip -->
+              <div class="flex items-center gap-4 sm:gap-6 bg-slate-50/80 px-4 py-2.5 rounded-xl border border-slate-200/60 shrink-0">
+                <div class="text-center">
+                  <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Enrolled</div>
+                  <div class="text-base font-bold text-blue-700"><?= $enrolled ?></div>
                 </div>
-                <a href="<?php echo url('teacher/live-session?section=' . urlencode($cls['section'])); ?>" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div class="text-center">
+                  <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sessions</div>
+                  <div class="text-base font-bold text-slate-800"><?= $sessionCount ?></div>
+                </div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div class="text-center">
+                  <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Avg Rate</div>
+                  <div class="text-base font-bold text-emerald-600"><?= $avgRate ?></div>
+                </div>
+              </div>
+
+              <!-- Right: Quick Actions -->
+              <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+                <button type="button" class="px-3.5 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                        onclick="openRosterModal('<?= $sectionCode ?>', '<?= $courseCode ?> — <?= addslashes($courseTitle) ?>', '<?= $yearOrdinal ?>', '<?= addslashes($scheduleFormatted) ?>', 'Room <?= addslashes($roomFormatted) ?>', <?= $enrolled ?>, '<?= $avgRate ?>')">
+                  <svg class="w-3.5 h-3.5 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                  <span>Student Roster</span>
+                </button>
+                <a href="<?php echo url('teacher/attendance-history?section=' . urlencode($cls['section'])); ?>" class="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 text-xs font-semibold shadow-xs transition" title="View Past Attendance Sessions">
+                  History
+                </a>
+                <a href="<?php echo url('teacher/live-session?section=' . urlencode($cls['section'])); ?>" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
                   <span>Start QR</span>
                 </a>
@@ -387,6 +398,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
+
+      <!-- Class List Pagination Bar -->
+      <div id="classes-pagination-bar" class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
+        <div id="classes-pagination-info" class="text-xs text-slate-500">
+          Showing <strong class="text-slate-800" id="classes-start-count">1</strong> to <strong class="text-slate-800" id="classes-end-count">6</strong> of <strong class="text-slate-800" id="classes-total-count"><?= count($classes) ?></strong> assigned classes
+        </div>
+
+        <div class="flex items-center gap-1.5" id="classes-pagination-buttons">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -394,38 +416,38 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <!-- ══════════════════════════════════════════════════════════════
      MODAL: CLASS STUDENT ROSTER WITH PAGINATION & SEARCH
 ══════════════════════════════════════════════════════════════ -->
-<div id="roster-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+<div id="roster-modal" class="fixed inset-0 z-50 bg-[#0f172a]/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
     <!-- Modal Header -->
-    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+    <div class="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/70 shrink-0">
       <div>
         <div class="flex items-center gap-2 mb-1">
-          <span id="modal-section-badge" class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-blue-100 text-blue-800">BSIT 3-A</span>
+          <span id="modal-section-badge" class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200/70">BSIT 3-A</span>
           <span id="modal-year-badge" class="text-xs text-slate-500 font-medium">3rd Year</span>
-          <span class="text-slate-300">•</span>
+          <span class="text-slate-300">&middot;</span>
           <span id="modal-schedule-text" class="text-xs text-slate-500">Tue/Thu • 08:00 AM – 10:00 AM (Lab 304)</span>
         </div>
-        <h2 id="modal-course-title" class="text-lg font-bold text-slate-800">IT301 — Web Development 2</h2>
+        <h2 id="modal-course-title" class="text-base font-bold text-slate-900">IT301 — Web Development 2</h2>
       </div>
-      <button type="button" onclick="closeRosterModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center font-bold text-sm transition">
-        
+      <button type="button" onclick="closeRosterModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition" aria-label="Close modal">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
 
     <!-- Modal Controls & Search Bar -->
-    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white shrink-0">
+    <div class="p-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white shrink-0">
       <div class="relative flex-1 min-w-[220px]">
-        <input type="text" id="modal-search-input" placeholder="Search enrolled student by ID or name..." class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="filterModalStudents()">
+        <input type="text" id="modal-search-input" placeholder="Search enrolled student by ID or name..." class="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="filterModalStudents()">
         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
       </div>
 
       <div class="flex items-center gap-2">
-        <select id="modal-status-filter" class="px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterModalStudents()">
+        <select id="modal-status-filter" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="filterModalStudents()">
           <option value="all">All Enrolled</option>
           <option value="good">Good Standing (&gt;85%)</option>
           <option value="at-risk">At Risk (&lt;75%)</option>
         </select>
-        <button type="button" onclick="exportRosterCSV()" class="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+        <button type="button" onclick="exportRosterCSV()" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-700 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           <span>Export CSV</span>
         </button>
@@ -475,15 +497,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
 </div>
 
 <script>
-// Filter Course Offerings on Main Page
+// ==========================================
+// MAIN CLASS LIST PAGINATION & FILTERING
+// ==========================================
+let currentClassPage = 1;
+const classPageSize = 5;
+let matchingClassCards = [];
+
 function filterClasses() {
   const program = document.getElementById('filter-program').value;
   const year = document.getElementById('filter-year').value;
   const section = document.getElementById('filter-section').value;
   const query = document.getElementById('search-class').value.toLowerCase().trim();
 
-  const cards = document.querySelectorAll('.class-card');
-  cards.forEach(card => {
+  const cards = Array.from(document.querySelectorAll('.class-card'));
+  matchingClassCards = cards.filter(card => {
     const cardProg = card.getAttribute('data-program');
     const cardYear = card.getAttribute('data-year');
     const cardSec = card.getAttribute('data-section');
@@ -494,15 +522,90 @@ function filterClasses() {
     const matchSec = (section === 'all' || cardSec === section);
     const matchQuery = (!query || cardTitle.includes(query));
 
-    if (matchProg && matchYear && matchSec && matchQuery) {
-      card.style.display = 'flex';
-    } else {
-      card.style.display = 'none';
-    }
+    return matchProg && matchYear && matchSec && matchQuery;
   });
+
+  currentClassPage = 1;
+  renderClassPagination();
 }
 
-// Section rosters passed dynamically from live database
+function setClassPage(page) {
+  currentClassPage = page;
+  renderClassPagination();
+}
+
+function renderClassPagination() {
+  const allCards = Array.from(document.querySelectorAll('.class-card'));
+  const total = matchingClassCards.length;
+  const totalPages = Math.ceil(total / classPageSize) || 1;
+
+  if (currentClassPage > totalPages) currentClassPage = totalPages;
+  if (currentClassPage < 1) currentClassPage = 1;
+
+  const startIdx = (currentClassPage - 1) * classPageSize;
+  const endIdx = startIdx + classPageSize;
+
+  allCards.forEach(card => {
+    card.style.display = 'none';
+  });
+
+  const visibleCards = matchingClassCards.slice(startIdx, endIdx);
+  visibleCards.forEach(card => {
+    card.style.display = 'flex';
+  });
+
+  // Update counts
+  const startCountEl = document.getElementById('classes-start-count');
+  const endCountEl = document.getElementById('classes-end-count');
+  const totalCountEl = document.getElementById('classes-total-count');
+
+  if (startCountEl) startCountEl.textContent = total > 0 ? (startIdx + 1) : 0;
+  if (endCountEl) endCountEl.textContent = Math.min(endIdx, total);
+  if (totalCountEl) totalCountEl.textContent = total;
+
+  // Render pagination buttons
+  const btnContainer = document.getElementById('classes-pagination-buttons');
+  if (!btnContainer) return;
+  btnContainer.innerHTML = '';
+
+  if (totalPages <= 1) {
+    document.getElementById('classes-pagination-bar').classList.toggle('hidden', total === 0);
+    return;
+  }
+  document.getElementById('classes-pagination-bar').classList.remove('hidden');
+
+  // Prev
+  const prevBtn = document.createElement('button');
+  prevBtn.type = 'button';
+  prevBtn.disabled = (currentClassPage <= 1);
+  prevBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentClassPage <= 1 ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
+  prevBtn.innerHTML = '&laquo; Prev';
+  prevBtn.onclick = () => setClassPage(currentClassPage - 1);
+  btnContainer.appendChild(prevBtn);
+
+  // Page Numbers
+  for (let i = 1; i <= totalPages; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.type = 'button';
+    pageBtn.className = `w-8 h-8 rounded-lg text-xs font-bold transition ${i === currentClassPage ? 'bg-[#1e3b8a] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
+    pageBtn.textContent = i;
+    pageBtn.onclick = () => setClassPage(i);
+    btnContainer.appendChild(pageBtn);
+  }
+
+  // Next
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.disabled = (currentClassPage >= totalPages);
+  nextBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold transition ${currentClassPage >= totalPages ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
+  nextBtn.innerHTML = 'Next &raquo;';
+  nextBtn.onclick = () => setClassPage(currentClassPage + 1);
+  btnContainer.appendChild(nextBtn);
+}
+
+// ==========================================
+// STUDENT ROSTER MODAL
+// ==========================================
 const sectionRosters = <?= json_encode($rostersBySection, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 let currentSection = '';
 let currentSectionRoster = [];
@@ -639,7 +742,7 @@ function renderModalTable() {
   const prevBtn = document.createElement('button');
   prevBtn.type = 'button';
   prevBtn.disabled = (currentPage <= 1);
-  prevBtn.className = `px-2.5 py-1 rounded text-xs font-semibold ${currentPage <= 1 ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`;
+  prevBtn.className = `px-2.5 py-1 rounded text-xs font-semibold ${currentPage <= 1 ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
   prevBtn.textContent = '« Prev';
   prevBtn.onclick = () => setModalPage(currentPage - 1);
   btnContainer.appendChild(prevBtn);
@@ -648,7 +751,7 @@ function renderModalTable() {
   for (let i = 1; i <= totalPages; i++) {
     const pageBtn = document.createElement('button');
     pageBtn.type = 'button';
-    pageBtn.className = `w-7 h-7 rounded text-xs font-bold transition ${i === currentPage ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`;
+    pageBtn.className = `w-7 h-7 rounded text-xs font-bold transition ${i === currentPage ? 'bg-[#1e3b8a] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
     pageBtn.textContent = i;
     pageBtn.onclick = () => setModalPage(i);
     btnContainer.appendChild(pageBtn);
@@ -658,7 +761,7 @@ function renderModalTable() {
   const nextBtn = document.createElement('button');
   nextBtn.type = 'button';
   nextBtn.disabled = (currentPage >= totalPages);
-  nextBtn.className = `px-2.5 py-1 rounded text-xs font-semibold ${currentPage >= totalPages ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`;
+  nextBtn.className = `px-2.5 py-1 rounded text-xs font-semibold ${currentPage >= totalPages ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-700'}`;
   nextBtn.textContent = 'Next »';
   nextBtn.onclick = () => setModalPage(currentPage + 1);
   btnContainer.appendChild(nextBtn);
@@ -670,12 +773,51 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Auto open modal if ?section or ?roster is in URL
+// Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const targetSec = urlParams.get('section') || urlParams.get('roster') || urlParams.get('class_id');
-  if (targetSec && sectionRosters[targetSec]) {
-    openRosterModal(targetSec, 'Section ' + targetSec, 'Official Roster', 'Academic Year 2025–2026', 'Room 402', sectionRosters[targetSec].length, '100%');
+  const targetSearch = urlParams.get('search') || urlParams.get('q');
+  const targetProgram = urlParams.get('program') || urlParams.get('course');
+  const targetYear = urlParams.get('year') || urlParams.get('year_level');
+
+  // Auto populate filters if provided in URL
+  if (targetSec && document.getElementById('filter-section')) {
+    const secSelect = document.getElementById('filter-section');
+    for (let i = 0; i < secSelect.options.length; i++) {
+      if (secSelect.options[i].value.toLowerCase() === targetSec.toLowerCase()) {
+        secSelect.value = secSelect.options[i].value;
+        break;
+      }
+    }
+  }
+
+  if (targetSearch && document.getElementById('search-class')) {
+    document.getElementById('search-class').value = targetSearch;
+  }
+
+  if (targetProgram && document.getElementById('filter-program')) {
+    document.getElementById('filter-program').value = targetProgram;
+  }
+
+  if (targetYear && document.getElementById('filter-year')) {
+    document.getElementById('filter-year').value = targetYear;
+  }
+
+  // Trigger filtering
+  filterClasses();
+
+  // Auto open modal if section or roster is in URL
+  if (targetSec) {
+    const targetCard = Array.from(document.querySelectorAll('.class-card')).find(c => (c.getAttribute('data-section') || '').toLowerCase() === targetSec.toLowerCase());
+    if (targetCard) {
+      const cardTitle = targetCard.querySelector('h3')?.textContent?.trim() || ('Section ' + targetSec);
+      const cardYear = targetCard.getAttribute('data-year') ? (targetCard.getAttribute('data-year') + ' Year') : 'Official Roster';
+      const enrolledCount = sectionRosters[targetSec]?.length || 0;
+      openRosterModal(targetSec, cardTitle, cardYear, 'Academic Year 2025–2026', 'Campus Room', enrolledCount, '100%');
+    } else if (sectionRosters[targetSec]) {
+      openRosterModal(targetSec, 'Section ' + targetSec, 'Official Roster', 'Academic Year 2025–2026', 'Campus Room', sectionRosters[targetSec].length, '100%');
+    }
   }
 });
 </script>
