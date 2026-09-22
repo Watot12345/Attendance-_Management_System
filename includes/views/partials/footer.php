@@ -4,6 +4,9 @@
   <!-- Reusable Inactivity Auto-Logout Warning Modal Component -->
   <?php require_once __DIR__ . '/inactivity-modal.php'; ?>
 
+  <!-- SPA Top Progress Bar -->
+  <div id="spa-progress-bar"></div>
+
   <!-- Sonner Toast Container -->
   <ol id="sonner-toast-container"
       position="top-right"
@@ -18,6 +21,9 @@
 
   <!-- Global JS -->
   <script src="<?php echo url('assets/js/app.js'); ?>"></script>
+
+  <!-- SPA Instant Navigation Router -->
+  <script src="<?php echo url('assets/js/spa-router.js'); ?>"></script>
 
   <!-- Page-specific JS slot -->
   <?php if (isset($page_js)) echo $page_js; ?>
