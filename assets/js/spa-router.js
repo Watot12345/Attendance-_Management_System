@@ -1,7 +1,7 @@
 /**
  * Lightweight SPA Router — Instant Sidebar Navigation
  * Intercepts sidebar nav clicks, fetches pages via AJAX,
- * swaps <main> content without a full page reload.
+ * swaps <main> content and page-level modals/scripts without full page reload.
  * Uses history.pushState for proper URL + back/forward support.
  */
 
@@ -60,11 +60,38 @@
     }, 400);
   }
 
+  /* ── Persistent Global Elements Registry ───────────────────── */
+  var GLOBAL_ELEMENT_IDS = [
+    'spa-progress-bar',
+    'sonner-toast-container',
+    'global-confirm-modal',
+    'confirmation-modal',
+    'inactivity-warning-modal',
+    'inactivityModal',
+    'inactivity-modal',
+    'global-app-preloader',
+    'sidebar-overlay'
+  ];
+
+  function isGlobalElement(el) {
+    if (!el || el.nodeType !== 1) return true;
+    if (el.classList.contains('app-layout') || el.classList.contains('sidebar-overlay')) return true;
+    if (el.id && GLOBAL_ELEMENT_IDS.indexOf(el.id) !== -1) return true;
+    if (el.tagName === 'SCRIPT') {
+      var src = el.getAttribute('src') || '';
+      if (src.indexOf('vanilla-sonner') !== -1 ||
+          src.indexOf('app.js') !== -1 ||
+          src.indexOf('spa-router.js') !== -1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /* ── Helpers ───────────────────────────────────────────────── */
   function isSidebarLink(el) {
     var anchor = el.closest ? el.closest('#sidebar a') : null;
     if (!anchor) {
-      // Traverse manually for older browsers
       var node = el;
       while (node && node !== document.body) {
         if (node.tagName === 'A' && node.closest('#sidebar')) { anchor = node; break; }
@@ -78,7 +105,6 @@
         href.indexOf('mailto') === 0) {
       return null;
     }
-    // External links
     try {
       var url = new URL(href, location.origin);
       if (url.origin !== location.origin) return null;
@@ -104,14 +130,12 @@
       var isActive = linkPath === targetPath;
 
       if (isActive) {
-        // Remove inactive styles
         link.classList.remove(
           'text-slate-300', 'hover:text-white', 'hover:bg-slate-800/80',
           'text-rose-400', 'hover:text-rose-300', 'hover:bg-rose-950/30',
           'text-blue-400', 'hover:text-blue-300', 'hover:bg-blue-950/30',
           'border', 'border-rose-500/20', 'border-blue-500/20'
         );
-        // Add active styles
         if (link.classList.contains('text-rose-400')) {
           link.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'shadow-rose-600/30', 'font-bold');
         } else {
@@ -135,16 +159,98 @@
     });
   }
 
-  function runPageScripts(container) {
-    var scripts = container.querySelectorAll('script');
-    scripts.forEach(function (oldScript) {
-      var newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach(function (attr) {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      newScript.textContent = oldScript.textContent;
-      oldScript.parentNode.replaceChild(newScript, oldScript);
+  function cleanupPageElements() {
+    var children = Array.from(document.body.children);
+    children.forEach(function (el) {
+      if (!isGlobalElement(el)) {
+        el.remove();
+      }
     });
+  }
+
+  function insertNewPageElements(doc) {
+    var newChildren = Array.from(doc.body.children);
+    newChildren.forEach(function (el) {
+      if (!isGlobalElement(el) && el.tagName !== 'SCRIPT') {
+        var clone = el.cloneNode(true);
+        clone.setAttribute('data-spa-page-element', '1');
+        document.body.appendChild(clone);
+      }
+    });
+  }
+
+  function collectPageScripts(doc) {
+    var scripts = [];
+    
+    // External scripts in doc.head not yet loaded
+    doc.head.querySelectorAll('script').forEach(function (s) {
+      var src = s.getAttribute('src');
+      if (src && !document.querySelector('head script[src="' + src + '"]')) {
+        scripts.push(s);
+      }
+    });
+
+    // All scripts in body (excluding persistent global bundles)
+    doc.body.querySelectorAll('script').forEach(function (s) {
+      var src = s.getAttribute('src') || '';
+      if (src.indexOf('vanilla-sonner') !== -1 ||
+          src.indexOf('app.js') !== -1 ||
+          src.indexOf('spa-router.js') !== -1) {
+        return;
+      }
+      scripts.push(s);
+    });
+
+    return scripts;
+  }
+
+  function executeScriptsSequentially(scripts) {
+    var index = 0;
+    function next() {
+      if (index >= scripts.length) return Promise.resolve();
+      var oldScript = scripts[index++];
+      return new Promise(function (resolve) {
+        var newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach(function (attr) {
+          newScript.setAttribute(attr.name, attr.value);
+        });
+        if (oldScript.src) {
+          if (document.querySelector('script[src="' + oldScript.src + '"]')) {
+            resolve();
+            return;
+          }
+          newScript.onload = newScript.onerror = function () {
+            resolve();
+          };
+          document.head.appendChild(newScript);
+        } else {
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+          resolve();
+        }
+      }).then(next);
+    }
+    return next();
+  }
+
+  function triggerPageReady(href) {
+    try {
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+    } catch (e) {
+      var evt = document.createEvent('Event');
+      evt.initEvent('DOMContentLoaded', true, true);
+      document.dispatchEvent(evt);
+    }
+
+    try {
+      document.dispatchEvent(new CustomEvent('spa:navigated', {
+        detail: { href: href }
+      }));
+    } catch (_) {}
+
+    if (window.APP && APP.inactivityManager) {
+      APP.inactivityManager.lastActivityTime = Date.now();
+    }
   }
 
   function scrollToTop() {
@@ -219,22 +325,26 @@
         document.title = doc.title || document.title;
 
         fadeOut(currentMain, function () {
+          // 1. Swap main content
           currentMain.innerHTML = newMain.innerHTML;
           currentMain.className = newMain.className;
-          runPageScripts(currentMain);
+
+          // 2. Clean up old page modals and insert new page modals
+          cleanupPageElements();
+          insertNewPageElements(doc);
+
+          // 3. Collect all scripts from the fetched page
+          var pageScripts = collectPageScripts(doc);
+
+          // 4. Scroll to top & fade in
           scrollToTop();
           fadeIn(currentMain);
           barFinish();
 
-          // Keep inactivity timer alive
-          if (window.APP && APP.inactivityManager) {
-            APP.inactivityManager.lastActivityTime = Date.now();
-          }
-
-          // Dispatch event for page-level scripts to hook into
-          document.dispatchEvent(new CustomEvent('spa:navigated', {
-            detail: { href: href }
-          }));
+          // 5. Execute all page scripts sequentially, then trigger DOMContentLoaded
+          executeScriptsSequentially(pageScripts).then(function () {
+            triggerPageReady(href);
+          });
         });
       })
       .catch(function (err) {
