@@ -144,17 +144,17 @@ $auditStmt->execute();
 $auditLogs = $auditStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $page_title = 'Attendance History & Audit Logs';
-include dirname(__DIR__) . '/partials/header.php';
+require_once dirname(__DIR__) . '/partials/header.php';
 ?>
-<body class="min-h-screen bg-slate-50">
-  <div class="flex min-h-screen">
-    <?php include dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <?php include dirname(__DIR__) . '/partials/navbar.php'; ?>
+<div class="app-layout">
+  <?php require_once dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-      <!-- Content Area -->
-      <main class="flex-1 p-6 bg-surface">
+  <div class="main-content">
+    <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
+
+    <!-- Content Area -->
+    <main class="page-body flex-1 p-6 bg-surface">
         <!-- Page Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
@@ -562,8 +562,6 @@ include dirname(__DIR__) . '/partials/header.php';
     </div>
   </div>
 
-  <?php include dirname(__DIR__) . '/partials/footer.php'; ?>
-
   <script>
     function openCorrectionModal(studentId, studentName, studentNumber, currentStatus, recordDate, recordTime, subject) {
       document.getElementById('modal-student-id').value = studentId;
@@ -704,7 +702,10 @@ include dirname(__DIR__) . '/partials/header.php';
         APP.showToast('Attendance report exported successfully.', 'success');
       }
     }
+
+    if (typeof APP !== 'undefined' && APP.highlightNav) {
+      APP.highlightNav('attendance');
+    }
   </script>
-</body>
-</html>
-<script>APP.highlightNav('attendance');</script>
+
+<?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
