@@ -1049,7 +1049,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
                     <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block; animation: blink 1.2s ease-in-out infinite;"></span>
                     Awaiting authorization...
                   </span>
-                  <span id="approval-timer-badge" style="font-family: monospace; font-weight: 700; color: #0284c7;">60s</span>
+                  <span id="approval-timer-badge" style="font-family: monospace; font-weight: 700; color: #0284c7;">5:00</span>
                 </div>
                 <div style="height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
                   <div id="approval-progress-fill" style="height: 100%; width: 100%; background: linear-gradient(90deg, #1e3b8a, #0284c7); transition: width 1s linear;"></div>
@@ -1475,7 +1475,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
         }
       }, 1000);
 
-      // Fast polling every 800ms for immediate reaction when active device approves/rejects
+      // Fast polling every 500ms for immediate reaction when active device approves/rejects
       approvalPollInterval = setInterval(async () => {
         if (!activeApprovalRequestId || isApprovalFinished) return;
         try {
@@ -1519,7 +1519,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
         } catch (e) {
           console.warn('Poll approval error:', e);
         }
-      }, 800);
+      }, 500);
     }
 
     function handleApprovalDenied(msg) {
@@ -2102,6 +2102,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       }
     }
   </script>
+  <?php require_once dirname(__DIR__) . '/partials/loading-screen.php'; ?>
   <!-- Global App JS for Preloader and Utilities -->
   <script src="<?php echo url('assets/js/app.js'); ?>"></script>
 </body>

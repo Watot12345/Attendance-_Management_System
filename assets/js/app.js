@@ -978,7 +978,16 @@ const APP = {
       if (action === 'approve') {
         if (approveIcon) approveIcon.classList.add('hidden');
         if (approveSpinner) approveSpinner.classList.remove('hidden');
-        if (approveText) approveText.textContent = 'Authorizing...';
+        if (approveText) approveText.textContent = 'Logging Out...';
+        
+        // Immediately show the fullscreen "Logging out..." screen for instant visual feedback
+        this.hideModal();
+        if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+          APP.showLoadingScreen({
+            title: 'Logging Out...',
+            subtitle: 'New device authorized. Signing out of this session...'
+          });
+        }
       } else {
         if (denyIcon) denyIcon.classList.add('hidden');
         if (denySpinner) denySpinner.classList.remove('hidden');
@@ -1002,16 +1011,9 @@ const APP = {
         const data = await res.json();
 
         if (action === 'approve' || data.status === 'approved_and_logged_out') {
-          this.hideModal();
-          if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
-            APP.showLoadingScreen({
-              title: 'Device Authorized',
-              subtitle: 'Signing out this device...'
-            });
-          }
           setTimeout(() => {
             window.location.href = data.redirect_url || (basePath + '/login?logged_out=1');
-          }, 300);
+          }, 150);
         } else {
           this.hideModal();
           if (typeof APP !== 'undefined' && APP.toast && APP.toast.warning) {
@@ -1022,9 +1024,16 @@ const APP = {
         }
       } catch (e) {
         console.error('Error responding to login request:', e);
-        this.hideModal();
+        if (action === 'approve') {
+          const basePath = this.getBasePath();
+          window.location.href = basePath + '/login?logged_out=1';
+        } else {
+          this.hideModal();
+        }
       } finally {
-        this.resetButtons();
+        if (action !== 'approve') {
+          this.resetButtons();
+        }
       }
     },
 

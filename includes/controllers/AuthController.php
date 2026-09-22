@@ -592,16 +592,17 @@ class AuthController {
         }
 
         if (empty($_SESSION['user_id'])) {
+            session_write_close();
             echo json_encode(['status' => 'unauthenticated']);
             exit;
         }
 
         $userId = (int)$_SESSION['user_id'];
         $currentSessionToken = $_SESSION['ams_session_token'] ?? '';
+        session_write_close(); // Fast non-blocking release of PHP session lock
 
         try {
             $db = Database::getConnection();
-            self::ensureColumnsExist($db);
 
             // 1. Check if user still exists and if session was replaced by an approved login
             $userStmt = $db->prepare("SELECT user_id, active_session_token FROM users WHERE user_id = ? LIMIT 1");
@@ -609,6 +610,7 @@ class AuthController {
             $userRow = $userStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$userRow) {
+                if (session_status() === PHP_SESSION_NONE) session_start();
                 $_SESSION = [];
                 session_destroy();
                 echo json_encode(['status' => 'session_replaced', 'message' => 'User account not found.']);
@@ -617,6 +619,7 @@ class AuthController {
 
             if (!empty($userRow['active_session_token']) && !empty($currentSessionToken) && $userRow['active_session_token'] !== $currentSessionToken) {
                 // Session was replaced by an approved login on another device!
+                if (session_status() === PHP_SESSION_NONE) session_start();
                 $_SESSION = [];
                 session_destroy();
                 echo json_encode([
