@@ -21,13 +21,17 @@ class AuthController {
         try {
             $cols = $db->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
             $required = [
-                'remember_token'      => 'VARCHAR(255) DEFAULT NULL',
-                'remember_expires_at' => 'DATETIME DEFAULT NULL',
-                'remember_user_agent' => 'VARCHAR(500) DEFAULT NULL',
-                'otp_code'            => 'VARCHAR(10) DEFAULT NULL',
-                'otp_expires_at'      => 'DATETIME DEFAULT NULL',
-                'student_id'          => 'VARCHAR(50) DEFAULT NULL',
-                'employee_id'         => 'VARCHAR(50) DEFAULT NULL',
+                'remember_token'       => 'VARCHAR(255) DEFAULT NULL',
+                'remember_expires_at'  => 'DATETIME DEFAULT NULL',
+                'remember_user_agent'  => 'VARCHAR(500) DEFAULT NULL',
+                'otp_code'             => 'VARCHAR(10) DEFAULT NULL',
+                'otp_expires_at'       => 'DATETIME DEFAULT NULL',
+                'student_id'           => 'VARCHAR(50) DEFAULT NULL',
+                'employee_id'          => 'VARCHAR(50) DEFAULT NULL',
+                'active_session_token' => 'VARCHAR(255) DEFAULT NULL',
+                'last_heartbeat_at'    => 'DATETIME DEFAULT NULL',
+                'active_device_info'   => 'VARCHAR(255) DEFAULT NULL',
+                'active_ip_address'    => 'VARCHAR(45) DEFAULT NULL',
             ];
 
             foreach ($required as $col => $definition) {
@@ -35,6 +39,25 @@ class AuthController {
                     @$db->exec("ALTER TABLE users ADD COLUMN `{$col}` {$definition}");
                 }
             }
+
+            // Ensure login_requests table exists
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS `login_requests` (
+                    `request_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `current_session_token` VARCHAR(255) NULL,
+                    `new_session_token` VARCHAR(255) NULL,
+                    `device_info` VARCHAR(255) NOT NULL DEFAULT 'Unknown Device',
+                    `ip_address` VARCHAR(45) NOT NULL DEFAULT '127.0.0.1',
+                    `status` ENUM('pending', 'approved', 'rejected', 'expired') NOT NULL DEFAULT 'pending',
+                    `remember_me` TINYINT(1) NOT NULL DEFAULT 0,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `expires_at` DATETIME NOT NULL,
+                    `responded_at` DATETIME NULL,
+                    INDEX `idx_login_req_user_status` (`user_id`, `status`),
+                    INDEX `idx_login_req_expires` (`expires_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
         } catch (Throwable $e) {
             // Ignore if columns already present or table alteration locked
         }
@@ -148,11 +171,20 @@ class AuthController {
                 $trustedUser = $trustedStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($trustedUser) {
-                    // Device is remembered: bypass OTP challenge and log in directly!
+                    // Device is remembered: check if another device is currently active
+                    $activeSession = $this->hasActiveConcurrentSession($db, (int)$trustedUser['user_id'], $_SESSION['ams_session_token'] ?? null);
+                    if ($activeSession) {
+                        $approval = $this->initiateDeviceApproval($db, $trustedUser, $activeSession, true);
+                        header('Content-Type: application/json; charset=utf-8');
+                        echo json_encode($approval);
+                        exit;
+                    }
+
+                    // No other active session: bypass OTP challenge and log in directly!
                     $upStmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL, last_login_at = NOW() WHERE user_id = ?");
                     $upStmt->execute([$user['user_id']]);
 
-                    $this->establishUserSession($user);
+                    $this->establishUserSession($user, true);
 
                     header('Content-Type: application/json; charset=utf-8');
                     echo json_encode([
@@ -307,9 +339,18 @@ class AuthController {
                 ]);
             }
 
+            // Check if there is an active session currently logged in on another device
+            $activeSession = $this->hasActiveConcurrentSession($db, $userId, $_SESSION['ams_session_token'] ?? null);
+            if ($activeSession) {
+                $approval = $this->initiateDeviceApproval($db, $user, $activeSession, $rememberMe);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($approval);
+                exit;
+            }
+
             // Complete full session login
             unset($_SESSION['pending_auth']);
-            $this->establishUserSession($user);
+            $this->establishUserSession($user, $rememberMe);
 
             $redirectUrl = $this->getRoleRedirectUrl($user['role']);
 
@@ -505,8 +546,8 @@ class AuthController {
         if (!empty($_SESSION['user_id'])) {
             try {
                 $db = Database::getConnection();
-                // Clear active OTPs but preserve trusted device remember_token
-                $stmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE user_id = ?");
+                // Clear active OTPs and active session token so future logins are clean
+                $stmt = $db->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL, active_session_token = NULL, last_heartbeat_at = NULL WHERE user_id = ?");
                 $stmt->execute([(int)$_SESSION['user_id']]);
             } catch (Throwable $e) {}
         }
@@ -536,6 +577,284 @@ class AuthController {
     }
 
     /**
+     * GET /api/auth/check-pending-approval
+     * Polled by the active logged-in session to check if someone else is trying to sign in.
+     * Also updates heartbeat and verifies if this session was superseded by an approved login.
+     */
+    public function checkPendingApproval(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        }
+
+        if (empty($_SESSION['user_id'])) {
+            echo json_encode(['status' => 'unauthenticated']);
+            exit;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $currentSessionToken = $_SESSION['ams_session_token'] ?? '';
+
+        try {
+            $db = Database::getConnection();
+            self::ensureColumnsExist($db);
+
+            // 1. Check if user still exists and if session was replaced by an approved login
+            $userStmt = $db->prepare("SELECT user_id, active_session_token FROM users WHERE user_id = ? LIMIT 1");
+            $userStmt->execute([$userId]);
+            $userRow = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$userRow) {
+                $_SESSION = [];
+                session_destroy();
+                echo json_encode(['status' => 'session_replaced', 'message' => 'User account not found.']);
+                exit;
+            }
+
+            if (!empty($userRow['active_session_token']) && !empty($currentSessionToken) && $userRow['active_session_token'] !== $currentSessionToken) {
+                // Session was replaced by an approved login on another device!
+                $_SESSION = [];
+                session_destroy();
+                echo json_encode([
+                    'status'  => 'session_replaced',
+                    'message' => 'You have been signed out because this account was logged in on another device.'
+                ]);
+                exit;
+            }
+
+            // 2. Update heartbeat
+            $hbStmt = $db->prepare("UPDATE users SET last_heartbeat_at = NOW() WHERE user_id = ?");
+            $hbStmt->execute([$userId]);
+
+            // 3. Check for any active pending login request for this user
+            $reqStmt = $db->prepare("
+                SELECT request_id, device_info, ip_address, created_at, expires_at,
+                       TIMESTAMPDIFF(SECOND, NOW(), expires_at) AS remaining_seconds
+                FROM login_requests
+                WHERE user_id = :uid 
+                  AND status = 'pending' 
+                  AND expires_at > NOW()
+                ORDER BY created_at DESC
+                LIMIT 1
+            ");
+            $reqStmt->execute([':uid' => $userId]);
+            $pendingReq = $reqStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($pendingReq) {
+                echo json_encode([
+                    'status'  => 'has_pending_request',
+                    'request' => [
+                        'request_id'        => $pendingReq['request_id'],
+                        'device_info'       => $pendingReq['device_info'],
+                        'ip_address'        => $pendingReq['ip_address'],
+                        'remaining_seconds' => max(1, (int)$pendingReq['remaining_seconds']),
+                        'created_at'        => date('h:i:s A', strtotime($pendingReq['created_at']))
+                    ]
+                ]);
+                exit;
+            }
+
+            echo json_encode(['status' => 'no_pending_request']);
+            exit;
+
+        } catch (Throwable $e) {
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * POST /api/auth/respond-login-request
+     * Handles active user's approval ("Yes, That's Me") or rejection ("No, Deny Access")
+     */
+    public function respondLoginRequest(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        if (empty($_SESSION['user_id'])) {
+            $this->respondError('Unauthorized session.', 401);
+            return;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $raw = file_get_contents('php://input');
+        $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+        $requestId = trim($input['request_id'] ?? '');
+        $action    = strtolower(trim($input['action'] ?? ''));
+
+        if (empty($requestId) || !in_array($action, ['approve', 'reject', 'yes', 'no'], true)) {
+            $this->respondError('Invalid request parameters.', 400);
+            return;
+        }
+
+        $isApproved = ($action === 'approve' || $action === 'yes');
+
+        try {
+            $db = Database::getConnection();
+
+            $checkStmt = $db->prepare("
+                SELECT * FROM login_requests 
+                WHERE request_id = :rid AND user_id = :uid AND status = 'pending'
+                LIMIT 1
+            ");
+            $checkStmt->execute([':rid' => $requestId, ':uid' => $userId]);
+            $request = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$request) {
+                $this->respondError('Login request not found or already processed.', 404);
+                return;
+            }
+
+            if ($isApproved) {
+                // Update request to approved
+                $upStmt = $db->prepare("UPDATE login_requests SET status = 'approved', responded_at = NOW() WHERE request_id = ?");
+                $upStmt->execute([$requestId]);
+
+                // Destroy current active session so this device is logged out immediately
+                $_SESSION = [];
+                if (ini_get("session.use_cookies")) {
+                    $params = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000,
+                        $params["path"], $params["domain"],
+                        $params["secure"], $params["httponly"]
+                    );
+                }
+                session_destroy();
+
+                echo json_encode([
+                    'status'       => 'approved_and_logged_out',
+                    'message'      => 'Sign-in approved. This device has been signed out.',
+                    'redirect_url' => url('login?logged_out=1&msg=' . urlencode('You approved a login on another device. This session has been signed out.'))
+                ]);
+                exit;
+            } else {
+                // Reject attempt
+                $upStmt = $db->prepare("UPDATE login_requests SET status = 'rejected', responded_at = NOW() WHERE request_id = ?");
+                $upStmt->execute([$requestId]);
+
+                echo json_encode([
+                    'status'  => 'rejected',
+                    'message' => 'Login attempt denied and blocked. Your current session remains active and secure.'
+                ]);
+                exit;
+            }
+
+        } catch (Throwable $e) {
+            $this->respondError('Failed to process response: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * GET /api/auth/login-request-status
+     * Polled by the new device attempting to sign in (?request_id=...)
+     */
+    public function loginRequestStatus(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        }
+
+        $requestId = trim($_GET['request_id'] ?? '');
+
+        if (empty($requestId)) {
+            $this->respondError('Missing request_id.', 400);
+            return;
+        }
+
+        try {
+            $db = Database::getConnection();
+
+            $stmt = $db->prepare("
+                SELECT lr.*, TIMESTAMPDIFF(SECOND, NOW(), lr.expires_at) AS remaining_seconds,
+                       u.user_id, u.role, u.email, u.first_name, u.last_name, u.student_id, u.employee_id, u.avatar_path, u.status AS user_status
+                FROM login_requests lr
+                JOIN users u ON u.user_id = lr.user_id
+                WHERE lr.request_id = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$req) {
+                echo json_encode(['status' => 'not_found', 'message' => 'Login request expired or not found.']);
+                exit;
+            }
+
+            if ($req['status'] === 'approved' || $req['status'] === 'completed') {
+                // Establish user session on this newly authorized device
+                $user = [
+                    'user_id'     => (int)$req['user_id'],
+                    'role'        => $req['role'],
+                    'first_name'  => $req['first_name'],
+                    'last_name'   => $req['last_name'],
+                    'student_id'  => $req['student_id'],
+                    'employee_id' => $req['employee_id'],
+                    'email'       => $req['email'],
+                    'avatar_path' => $req['avatar_path']
+                ];
+
+                if (empty($_SESSION['user_id']) || empty($_SESSION['ams_session_token']) || $_SESSION['ams_session_token'] !== $req['new_session_token']) {
+                    $this->establishUserSession($user, (bool)$req['remember_me'], $req['new_session_token']);
+                    $db->prepare("UPDATE login_requests SET status = 'completed' WHERE request_id = ?")->execute([$requestId]);
+                }
+
+                echo json_encode([
+                    'status'       => 'approved',
+                    'message'      => 'Login approved! Loading your workspace...',
+                    'role'         => $user['role'],
+                    'redirect_url' => $this->getRoleRedirectUrl($user['role']),
+                    'user'         => $_SESSION['user'] ?? $user
+                ]);
+                exit;
+            }
+
+            if ($req['status'] === 'rejected') {
+                echo json_encode([
+                    'status'  => 'rejected',
+                    'message' => 'Your login is denied. The active logged-in session rejected this sign-in attempt.'
+                ]);
+                exit;
+            }
+
+            $remSec = (int)$req['remaining_seconds'];
+            if ($req['status'] === 'expired' || ($req['status'] === 'pending' && $remSec <= 0)) {
+                if ($req['status'] === 'pending') {
+                    $db->prepare("UPDATE login_requests SET status = 'expired' WHERE request_id = ? AND status = 'pending'")->execute([$requestId]);
+                }
+                echo json_encode([
+                    'status'  => 'expired',
+                    'message' => 'Login request timed out without authorization from your active session. Please sign in again.'
+                ]);
+                exit;
+            }
+
+            echo json_encode([
+                'status'             => 'pending',
+                'remaining_seconds'  => max(0, $remSec),
+                'device_info'        => $req['device_info']
+            ]);
+            exit;
+
+        } catch (Throwable $e) {
+            $this->respondError('Error checking status: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * GET /api/auth/me
      * Returns active session user details
      */
@@ -562,12 +881,116 @@ class AuthController {
     }
 
     /**
+     * Helper to detect if user is already actively logged in on another device
+     */
+    private function hasActiveConcurrentSession(PDO $db, int $userId, ?string $currentSessionToken): ?array {
+        try {
+            $sql = "
+                SELECT user_id, active_session_token, last_heartbeat_at, active_device_info, active_ip_address
+                FROM users
+                WHERE user_id = :uid
+                  AND active_session_token IS NOT NULL
+                  AND active_session_token != ''
+                  AND (last_heartbeat_at IS NULL OR last_heartbeat_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE))
+            ";
+            $params = [':uid' => $userId];
+
+            if (!empty($currentSessionToken)) {
+                $sql .= " AND active_session_token != :curr_tok ";
+                $params[':curr_tok'] = $currentSessionToken;
+            }
+
+            $sql .= " LIMIT 1 ";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Helper to initiate a 60-second device approval request
+     */
+    private function initiateDeviceApproval(PDO $db, array $user, array $activeSession, bool $rememberMe): array {
+        $requestId = bin2hex(random_bytes(24));
+        $newSessionToken = bin2hex(random_bytes(32));
+        $deviceInfo = $this->getDeviceInfo();
+        $ipAddress  = $this->getClientIp();
+
+        // Expire any existing pending requests for this user
+        $db->prepare("UPDATE login_requests SET status = 'expired' WHERE user_id = ? AND status = 'pending'")->execute([(int)$user['user_id']]);
+
+        $ins = $db->prepare("
+            INSERT INTO login_requests (request_id, user_id, current_session_token, new_session_token, device_info, ip_address, status, remember_me, created_at, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE))
+        ");
+        $ins->execute([
+            $requestId,
+            (int)$user['user_id'],
+            $activeSession['active_session_token'],
+            $newSessionToken,
+            $deviceInfo,
+            $ipAddress,
+            $rememberMe ? 1 : 0
+        ]);
+
+        return [
+            'status'             => 'awaiting_device_approval',
+            'request_id'         => $requestId,
+            'message'            => 'Another device is currently signed in. An authorization prompt has been sent to your active session.',
+            'active_device'      => $activeSession['active_device_info'] ?: 'Active Session',
+            'attempting_device'  => $deviceInfo,
+            'expires_in_seconds' => 300
+        ];
+    }
+
+    /**
+     * Helper to parse User-Agent into a clean human-friendly device string
+     */
+    private function getDeviceInfo(): string {
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device';
+        $browser = 'Browser';
+        $os = 'Device';
+
+        // Detect OS
+        if (preg_match('/windows nt 10/i', $ua))     $os = 'Windows 10/11';
+        elseif (preg_match('/windows nt 6\.3/i', $ua)) $os = 'Windows 8.1';
+        elseif (preg_match('/windows/i', $ua))        $os = 'Windows';
+        elseif (preg_match('/macintosh|mac os x/i', $ua)) $os = 'macOS';
+        elseif (preg_match('/iphone/i', $ua))         $os = 'iPhone';
+        elseif (preg_match('/ipad/i', $ua))           $os = 'iPad';
+        elseif (preg_match('/android/i', $ua))        $os = 'Android';
+        elseif (preg_match('/linux/i', $ua))          $os = 'Linux';
+
+        // Detect Browser
+        if (preg_match('/edg/i', $ua))               $browser = 'Microsoft Edge';
+        elseif (preg_match('/chrome|crios/i', $ua))  $browser = 'Chrome';
+        elseif (preg_match('/firefox|fxios/i', $ua)) $browser = 'Firefox';
+        elseif (preg_match('/safari/i', $ua))        $browser = 'Safari';
+        elseif (preg_match('/opera|opr/i', $ua))     $browser = 'Opera';
+
+        return "{$browser} on {$os}";
+    }
+
+    /**
+     * Helper to get client IP address
+     */
+    private function getClientIp(): string {
+        return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+
+    /**
      * Helper to establish full session variables for an authenticated user
      */
-    private function establishUserSession(array $user): void {
-        $_SESSION['user_id'] = (int)$user['user_id'];
-        $_SESSION['role']    = $user['role'];
-        $_SESSION['user']    = [
+    private function establishUserSession(array $user, bool $rememberMe = false, ?string $explicitSessionToken = null): void {
+        $sessionToken = $explicitSessionToken ?: bin2hex(random_bytes(32));
+        $_SESSION['user_id']           = (int)$user['user_id'];
+        $_SESSION['role']              = $user['role'];
+        $_SESSION['ams_session_token'] = $sessionToken;
+        $_SESSION['user']              = [
             'user_id'     => (int)$user['user_id'],
             'student_id'  => $user['student_id'] ?? null,
             'employee_id' => $user['employee_id'] ?? null,
@@ -588,6 +1011,28 @@ class AuthController {
         } else {
             unset($_SESSION['teacher_id'], $_SESSION['student_id']);
         }
+
+        try {
+            $db = Database::getConnection();
+            $deviceInfo = $this->getDeviceInfo();
+            $ipAddress  = $this->getClientIp();
+
+            $up = $db->prepare("
+                UPDATE users 
+                SET active_session_token = :token,
+                    last_heartbeat_at = NOW(),
+                    active_device_info = :device,
+                    active_ip_address = :ip,
+                    last_login_at = NOW()
+                WHERE user_id = :uid
+            ");
+            $up->execute([
+                ':token'  => $sessionToken,
+                ':device' => $deviceInfo,
+                ':ip'     => $ipAddress,
+                ':uid'    => (int)$user['user_id']
+            ]);
+        } catch (Throwable $e) {}
     }
 
     /**

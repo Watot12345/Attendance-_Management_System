@@ -55,8 +55,8 @@ if ($sessionUser && ($sessionUser['role'] ?? '') === $activeRole) {
 
     <!-- Institution / Campus Mark -->
     <div class="hidden sm:flex items-center gap-3">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
-        BCP
+      <div class="w-8 h-8 flex items-center justify-center shrink-0">
+        <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" class="w-8 h-8 object-contain">
       </div>
       <div>
         <div class="text-xs font-bold text-slate-900 leading-tight tracking-tight">Bestlink College of the Philippines</div>

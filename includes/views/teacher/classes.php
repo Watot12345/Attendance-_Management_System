@@ -55,7 +55,7 @@ if (empty($classes)) {
     $classes = $classStmtFallback->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// 2. Fetch session count & attendance metrics per section
+// 2. Fetch session count & attendance metrics per section using batch queries
 $totalEnrolledAll = 0;
 $totalSessionsAll = 0;
 $allSections = [];
@@ -64,30 +64,55 @@ $allYears = [];
 $totalPresentAll = 0;
 $totalLogsAll = 0;
 
+// Batch fetch session counts by section
+$sessionCountsBySection = [];
+try {
+    $sessCountStmt = $db->query("
+        SELECT section, COUNT(*) as cnt 
+        FROM qr_sessions 
+        WHERE section IS NOT NULL AND section != '' 
+        GROUP BY section
+    ");
+    if ($sessCountStmt) {
+        while ($row = $sessCountStmt->fetch(PDO::FETCH_ASSOC)) {
+            $sessionCountsBySection[$row['section']] = (int)$row['cnt'];
+        }
+    }
+} catch (Throwable $e) {}
+
+// Batch fetch attendance summary by section/subject
+$attStatsBySection = [];
+try {
+    $secAttStmt = $db->query("
+        SELECT 
+            COALESCE(qs.section, a.section, a.subject) as sec_key,
+            COUNT(*) as total_records,
+            SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN a.status = 'tardy' THEN 1 ELSE 0 END) as tardy_count
+        FROM attendance a
+        LEFT JOIN qr_sessions qs ON qs.qr_session_id = a.qr_session_id
+        GROUP BY COALESCE(qs.section, a.section, a.subject)
+    ");
+    if ($secAttStmt) {
+        while ($row = $secAttStmt->fetch(PDO::FETCH_ASSOC)) {
+            if (!empty($row['sec_key'])) {
+                $attStatsBySection[$row['sec_key']] = $row;
+            }
+        }
+    }
+} catch (Throwable $e) {}
+
 foreach ($classes as &$cls) {
     $sec = $cls['section'];
     $allSections[$sec] = $sec;
-    $allPrograms[$cls['course']] = $cls['course'];
-    $allYears[$cls['year_level']] = $cls['year_level'];
-    $totalEnrolledAll += (int)$cls['enrolled_count'];
+    if (!empty($cls['course'])) $allPrograms[$cls['course']] = $cls['course'];
+    if (!empty($cls['year_level'])) $allYears[$cls['year_level']] = $cls['year_level'];
+    $totalEnrolledAll += (int)($cls['enrolled_count'] ?? 0);
 
-    // Session count for this section
-    $sessStmt = $db->prepare("SELECT COUNT(*) FROM qr_sessions WHERE section = ?");
-    $sessStmt->execute([$sec]);
-    $sessionCount = (int)$sessStmt->fetchColumn();
+    $sessionCount = $sessionCountsBySection[$sec] ?? 0;
     $totalSessionsAll += $sessionCount;
 
-    // Attendance stats
-    $attStmt = $db->prepare("
-        SELECT 
-            COUNT(*) as total_records,
-            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = 'tardy' THEN 1 ELSE 0 END) as tardy_count
-        FROM attendance
-        WHERE subject = ? OR qr_session_id IN (SELECT qr_session_id FROM qr_sessions WHERE section = ?)
-    ");
-    $attStmt->execute([$cls['course_title'], $sec]);
-    $attRow = $attStmt->fetch(PDO::FETCH_ASSOC);
+    $attRow = $attStatsBySection[$sec] ?? ($attStatsBySection[$cls['course_title']] ?? null);
     $totalRecs = (int)($attRow['total_records'] ?? 0);
     $presentRecs = (int)($attRow['present_count'] ?? 0);
     $tardyRecs = (int)($attRow['tardy_count'] ?? 0);
@@ -121,6 +146,26 @@ $studentStmt = $db->prepare("
 $studentStmt->execute();
 $rawStudents = $studentStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Batch fetch attendance metrics for all students in ONE single query (O(1) memory lookup)
+$studentAttMap = [];
+try {
+    $stAttBulkStmt = $db->query("
+        SELECT 
+            student_id,
+            COUNT(*) as total_logs,
+            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = 'tardy' THEN 1 ELSE 0 END) as tardy_count,
+            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
+        FROM attendance
+        GROUP BY student_id
+    ");
+    if ($stAttBulkStmt) {
+        while ($row = $stAttBulkStmt->fetch(PDO::FETCH_ASSOC)) {
+            $studentAttMap[(int)$row['student_id']] = $row;
+        }
+    }
+} catch (Throwable $e) {}
+
 $rostersBySection = [];
 foreach ($rawStudents as $st) {
     $sec = $st['section'];
@@ -128,18 +173,7 @@ foreach ($rawStudents as $st) {
         $rostersBySection[$sec] = [];
     }
 
-    $stAttStmt = $db->prepare("
-        SELECT 
-            COUNT(*) as total_logs,
-            SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = 'tardy' THEN 1 ELSE 0 END) as tardy_count,
-            SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count
-        FROM attendance
-        WHERE student_id = ?
-    ");
-    $stAttStmt->execute([$st['user_id']]);
-    $att = $stAttStmt->fetch(PDO::FETCH_ASSOC);
-
+    $att = $studentAttMap[(int)$st['user_id']] ?? null;
     $sLogs = (int)($att['total_logs'] ?? 0);
     $sPres = (int)($att['present_count'] ?? 0);
     $sTardy = (int)($att['tardy_count'] ?? 0);
@@ -288,9 +322,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   4 => '4th Year',
                   default => $yearNum . 'th Year',
               };
-              $scheduleFormatted = htmlspecialchars($cls['schedule_day'] . ' • ' . date('h:i A', strtotime($cls['scheduled_time'])));
-              $roomFormatted     = htmlspecialchars($cls['room_number']);
-              $enrolled          = (int)$cls['enrolled_count'];
+              $schedDay = $cls['schedule_day'] ?? 'M-W-F';
+              $schedTime = !empty($cls['scheduled_time']) ? date('h:i A', strtotime($cls['scheduled_time'])) : 'TBA';
+              $scheduleFormatted = htmlspecialchars($schedDay . ' • ' . $schedTime);
+              $roomFormatted     = htmlspecialchars((string)($cls['room_number'] ?? 'TBA'));
+              $enrolled          = (int)($cls['enrolled_count'] ?? 0);
               $sessionCount      = (int)($cls['session_count'] ?? 0);
               $avgRate           = number_format((float)($cls['avg_rate'] ?? 100), 1) . '%';
             ?>

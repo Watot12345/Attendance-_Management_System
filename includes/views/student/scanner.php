@@ -89,39 +89,54 @@ $isSectionMatch = $activeSession && in_array($activeSession['section'], $student
 $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']) : 0;
 ?>
 
+<style>
+  #camera-stream-box {
+    max-width: 240px;
+    max-height: 240px;
+  }
+  #camera-stream-box video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 0.75rem;
+  }
+  #camera-stream-box #qr-shaded-region {
+    border-width: 20px !important;
+  }
+</style>
+
 <div class="app-layout">
   <?php require_once dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
   <div class="main-content">
     <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
 
-    <main class="page-body max-w-4xl mx-auto space-y-6">
+    <main class="page-body w-full space-y-5">
 
-      <!-- Header & Student Context Card -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-indigo-100 flex-shrink-0">
+      <!-- Student Profile Header Card -->
+      <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-[#1e3b8a] text-white font-bold text-base flex items-center justify-center shrink-0">
             <?= strtoupper(substr($currentStudent['first_name'] ?? 'J', 0, 1) . substr($currentStudent['last_name'] ?? 'D', 0, 1)) ?>
           </div>
           <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">Student Portal Check-In</span>
-              <span class="text-xs text-slate-400 font-mono">ID: <?= htmlspecialchars((string)$studentNumber, ENT_QUOTES, 'UTF-8') ?></span>
+            <div class="flex items-center gap-2">
+              <h1 class="text-base font-bold text-slate-900 leading-tight"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?></h1>
+              <span class="text-[11px] text-slate-400 font-mono">ID: <?= htmlspecialchars((string)$studentNumber, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
-            <h1 class="text-xl font-bold text-slate-800"><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?></h1>
             <p class="text-xs text-slate-500 mt-0.5">
-              Enrolled: <span class="font-semibold text-slate-700"><?= !empty($studentSections) ? 'Section ' . implode(', ', array_map('htmlspecialchars', $studentSections)) : 'No assigned section' ?></span>
+              Enrolled: <strong class="text-slate-700 font-semibold"><?= !empty($studentSections) ? 'Section ' . implode(', ', array_map('htmlspecialchars', $studentSections)) : 'Unassigned' ?></strong>
             </p>
           </div>
         </div>
 
-        <!-- Quick Student Switcher for Test & Grading Review -->
-        <div class="w-full md:w-auto flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+        <!-- Student Switcher for Testing -->
+        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-full sm:w-auto">
           <label for="test-student-select" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Testing As:</label>
-          <select id="test-student-select" onchange="window.location.href='?student_id=' + this.value" class="text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer w-full sm:w-auto">
+          <select id="test-student-select" onchange="window.location.href='?student_id=' + this.value" class="text-xs font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer">
             <?php foreach ($allStudents as $st): ?>
               <option value="<?= (int)$st['user_id'] ?>" <?= ((int)$st['user_id'] === $studentUserId) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($st['first_name'] . ' ' . $st['last_name'], ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($st['student_id'] ?: 'N/A', ENT_QUOTES, 'UTF-8') ?> - Sec <?= htmlspecialchars($st['sections'] ?: 'None', ENT_QUOTES, 'UTF-8') ?>)
+                <?= htmlspecialchars($st['first_name'] . ' ' . $st['last_name'], ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($st['student_id'] ?: 'N/A', ENT_QUOTES, 'UTF-8') ?>)
               </option>
             <?php endforeach; ?>
           </select>
@@ -130,160 +145,168 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
 
       <!-- Live Active Session Detection Banner -->
       <?php if ($activeSession): ?>
-        <div class="rounded-2xl p-5 border <?= $isSectionMatch ? 'bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border-emerald-300 shadow-sm' : 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border-amber-300' ?> flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div class="space-y-1">
+        <div class="rounded-xl p-4 border <?= $isSectionMatch ? 'bg-emerald-50/90 border-emerald-300' : 'bg-amber-50/90 border-amber-300' ?> flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs">
+          <div class="space-y-0.5">
             <div class="flex items-center gap-2">
-              <span class="relative flex h-3 w-3">
+              <span class="relative flex h-2.5 w-2.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full <?= $isSectionMatch ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75' ?>"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 <?= $isSectionMatch ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 <?= $isSectionMatch ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
               </span>
               <span class="text-xs font-bold uppercase tracking-wider <?= $isSectionMatch ? 'text-emerald-800' : 'text-amber-800' ?>">
-                <?= $isSectionMatch ? 'Live Attendance Session in Progress' : 'Active Session (Section Mismatch Warning)' ?>
+                <?= $isSectionMatch ? 'Live Attendance Session' : 'Active Session (Section Mismatch)' ?>
               </span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white border border-slate-200 text-slate-700 shadow-xs">
-                Section <?= htmlspecialchars($activeSession['section'], ENT_QUOTES, 'UTF-8') ?>
+              <span class="px-2 py-0.2 rounded text-[10px] font-bold bg-white border border-slate-200 text-slate-700">
+                Sec <?= htmlspecialchars($activeSession['section'], ENT_QUOTES, 'UTF-8') ?>
               </span>
             </div>
-            <p class="text-sm font-semibold text-slate-800">
-              <?= htmlspecialchars($activeSession['course_title'] ?? 'Web Systems and Technologies', ENT_QUOTES, 'UTF-8') ?>
-              <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($activeSession['course_code'] ?? 'IT301', ENT_QUOTES, 'UTF-8') ?>)</span>
-            </p>
-            <p class="text-xs text-slate-600">
-              Instructor: <strong class="text-slate-800"><?= htmlspecialchars($activeSession['teacher_name'], ENT_QUOTES, 'UTF-8') ?></strong> • Room <?= htmlspecialchars($activeSession['room_number'] ?? '402', ENT_QUOTES, 'UTF-8') ?>
-              <?php if (!$isSectionMatch): ?>
-                • <span class="text-amber-700 font-medium">Your assigned section is <?= htmlspecialchars(implode(', ', $studentSections), ENT_QUOTES, 'UTF-8') ?>.</span>
-              <?php endif; ?>
+            <p class="text-xs text-slate-700 font-medium">
+              <strong><?= htmlspecialchars($activeSession['course_title'] ?? 'Web Systems', ENT_QUOTES, 'UTF-8') ?></strong> (<?= htmlspecialchars($activeSession['course_code'] ?? 'IT301', ENT_QUOTES, 'UTF-8') ?>)
+              • Instructor: <?= htmlspecialchars($activeSession['teacher_name'], ENT_QUOTES, 'UTF-8') ?> • Room <?= htmlspecialchars($activeSession['room_number'] ?? '402', ENT_QUOTES, 'UTF-8') ?>
             </p>
           </div>
 
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-            <div class="text-left sm:text-right">
-              <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block">Session Closes In</span>
-              <span id="session-countdown-timer" class="font-mono font-bold text-base text-slate-800" data-seconds="<?= $remainingSec ?>">
+          <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <div class="text-left md:text-right">
+              <span class="text-[10px] text-slate-500 uppercase tracking-wider block leading-none">Closes In</span>
+              <span id="session-countdown-timer" class="font-mono font-bold text-sm text-slate-800" data-seconds="<?= $remainingSec ?>">
                 <?= sprintf('%02d:%02d', floor($remainingSec / 60), $remainingSec % 60) ?>
               </span>
             </div>
-            <button type="button" onclick="autofillToken('<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>')" class="btn btn-sm px-3.5 py-2 rounded-xl text-xs font-bold text-white <?= $isSectionMatch ? 'bg-emerald-600 hover:bg-emerald-700 shadow-sm' : 'bg-amber-600 hover:bg-amber-700 shadow-sm' ?> transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-              <span>Autofill Code (<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>)</span>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            <button type="button" onclick="autofillToken('<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>')" class="btn btn-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white <?= $isSectionMatch ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700' ?> transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <span>Autofill (<?= htmlspecialchars($activeSession['qr_code'], ENT_QUOTES, 'UTF-8') ?>)</span>
             </button>
           </div>
         </div>
       <?php else: ?>
-        <div class="rounded-2xl p-4 bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-2.5">
+        <div class="rounded-xl p-3 bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
             <span class="text-slate-400">ℹ️</span>
-            <span><strong>No Active Live Session:</strong> Instructors generate live attendance QR sessions from their Teacher Portal. You can still scan or submit tokens below to test validation states.</span>
+            <span><strong>No Active Live Session:</strong> You can scan a code or enter tokens below to verify attendance.</span>
           </div>
-          <a href="<?php echo url('teacher/live-session'); ?>" class="text-indigo-600 hover:text-indigo-700 font-semibold whitespace-nowrap text-xs flex items-center gap-1">
-            <span>Teacher Live Session</span> →
+          <a href="<?php echo url('teacher/live-session'); ?>" class="text-[#1e3b8a] hover:underline font-semibold whitespace-nowrap text-xs">
+            Teacher Live Session →
           </a>
         </div>
       <?php endif; ?>
 
-      <!-- Main Scanning & Manual Entry Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        <!-- Main Scanner Viewfinder (7 cols) -->
-        <div class="md:col-span-7 space-y-4">
-          <div class="bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-800 text-white relative overflow-hidden">
-            <!-- Camera Viewfinder with Live Stream -->
-            <div id="camera-stream-box" class="relative w-full aspect-square max-w-[340px] mx-auto rounded-xl bg-slate-950 border-2 border-slate-700 flex flex-col items-center justify-center overflow-hidden">
-              <!-- Grid background simulation -->
-              <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
-
-              <!-- Animated Scan Laser line -->
-              <div class="absolute left-6 right-6 h-0.5 bg-gradient-to-r from-indigo-500 via-emerald-400 to-indigo-500 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-bounce pointer-events-none z-20"></div>
-
-              <!-- Reticle Corners -->
-              <div class="w-48 h-48 relative z-10 flex flex-col justify-between pointer-events-none">
-                <div class="flex justify-between">
-                  <div class="w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg"></div>
-                  <div class="w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg"></div>
-                </div>
-                <div class="text-center">
-                  <span class="px-2.5 py-1 rounded bg-black/60 backdrop-blur text-[11px] font-medium text-slate-300">Align QR within frame</span>
-                </div>
-                <div class="flex justify-between">
-                  <div class="w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg"></div>
-                  <div class="w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Viewfinder Controls -->
-            <div class="flex items-center justify-between mt-5 pt-4 border-t border-slate-800 text-xs text-slate-400">
+      <!-- Minimalist Dual Column Layout -->
+        <div class="flex flex-col md:flex-row gap-5 items-stretch">
+          
+          <!-- Left: Compact Camera Viewfinder (50% width) -->
+          <div class="flex-1 min-w-0 bg-white rounded-xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-between">
+            <div class="w-full flex items-center justify-between mb-3.5 pb-2 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Camera: <strong id="camera-status-text" class="text-white">Active (Back)</strong></span>
+                <span id="camera-status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Live Camera Scanner</span>
               </div>
-              <button type="button" class="text-indigo-400 hover:text-indigo-300 transition cursor-pointer font-medium" onclick="toggleCamera()">Switch Camera</button>
+              <div class="flex items-center gap-2">
+                <button type="button" id="switch-camera-btn" class="hidden text-xs text-[#1e3b8a] hover:underline font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleCamera()">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  <span>Switch</span>
+                </button>
+                <button type="button" id="header-camera-toggle-btn" class="text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs" onclick="toggleCameraPower()">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <span id="header-camera-toggle-text">Open Camera</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Compact Square Viewfinder Box -->
+            <div id="camera-stream-box" class="relative w-56 h-56 sm:w-60 sm:h-60 rounded-xl bg-slate-950 border border-slate-700 flex flex-col items-center justify-center overflow-hidden shadow-inner my-auto">
+              <!-- Subtle backdrop -->
+              <div class="absolute inset-0 bg-slate-900/40"></div>
+
+              <!-- Camera Off / Placeholder UI -->
+              <div id="camera-placeholder" class="relative z-20 flex flex-col items-center justify-center p-4 text-center">
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 flex items-center justify-center mb-2.5 shadow-inner">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <p class="text-xs font-semibold text-slate-200 mb-2.5">Camera is Closed</p>
+                <button type="button" onclick="startCamera()" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-bold shadow-md transition flex items-center gap-2 cursor-pointer border-2 border-blue-400 hover:border-blue-300 active:scale-95">
+                  <svg class="w-3.5 h-3.5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Open Camera</span>
+                </button>
+              </div>
+
+              <!-- Reticle Frame & Laser (shown when active) -->
+              <div id="camera-overlay-frame" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10">
+                <!-- Scan Laser Line -->
+                <div class="absolute left-4 right-4 h-0.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-bounce pointer-events-none z-20"></div>
+
+                <div class="w-36 h-36 relative flex flex-col justify-between pointer-events-none">
+                  <div class="flex justify-between">
+                    <div class="w-5 h-5 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
+                    <div class="w-5 h-5 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
+                  </div>
+                  <div class="text-center">
+                    <span class="px-2 py-0.5 rounded bg-black/60 text-[10px] font-medium text-slate-300">Align QR Code</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <div class="w-5 h-5 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
+                    <div class="w-5 h-5 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Viewfinder Footer Info -->
+            <div class="w-full flex items-center justify-between mt-3 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
+              <span>Status: <strong id="camera-status-text" class="text-slate-700 font-semibold">Inactive</strong></span>
+              <span id="camera-hint-text" class="text-slate-400">Click Open Camera to scan</span>
             </div>
           </div>
-        </div>
 
-        <!-- Right Side: Manual Token Fallback & Simulation Panel (5 cols) -->
-        <div class="md:col-span-5 space-y-4">
-          <!-- Manual Token Entry Card -->
-          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <h3 class="font-bold text-slate-800 text-sm mb-1">Backup: Enter Token Manually</h3>
-            <p class="text-xs text-slate-500 mb-4">If your camera cannot scan the screen, enter the 6-character session token displayed below the teacher's QR code.</p>
+          <!-- Right: Manual Entry & Test Scenarios (50% width) -->
+          <div class="flex-1 min-w-0 flex flex-col gap-4">
+            
+            <!-- Manual Token Entry Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs flex-1 flex flex-col justify-center">
+              <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-1">Manual 6-Digit Token</h3>
+              <p class="text-xs text-slate-500 mb-3">If camera is unavailable, enter the code from your instructor's screen:</p>
 
-            <form id="token-attendance-form" onsubmit="submitTokenAttendance(event)" class="space-y-3">
-              <div>
-                <label for="manual-token" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">6-Digit Session Token</label>
-                <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 748291" required class="w-full px-3.5 py-2.5 text-center font-mono font-bold text-lg uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 focus:bg-white">
+              <form id="token-attendance-form" onsubmit="submitTokenAttendance(event)" class="space-y-3">
+                <div>
+                  <input type="text" id="manual-token" name="token" maxlength="8" placeholder="e.g. 748291" required class="w-full px-3 py-2 text-center font-mono font-bold text-base uppercase tracking-widest rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-[#1e3b8a] bg-slate-50 focus:bg-white transition">
+                </div>
+
+                <div id="token-error-msg" class="hidden text-xs text-rose-600 font-medium bg-rose-50 border border-rose-200 p-2 rounded-lg text-center"></div>
+
+                <button type="submit" id="submit-token-btn" class="w-full py-2 px-4 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white font-semibold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
+                  <span>Submit Attendance Token</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+              </form>
+            </div>
+
+            <!-- Quick Outcome Simulation -->
+            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
+              <div class="flex items-center gap-1.5 mb-2.5">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Test QR Scan Outcomes</span>
               </div>
 
-              <div id="token-error-msg" class="hidden text-xs text-rose-600 font-medium bg-rose-50 border border-rose-200 p-2.5 rounded-lg text-center"></div>
+              <div class="grid grid-cols-2 gap-2">
+                <a href="<?php echo url('student/scan-result?status=success'); ?>" class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition text-xs group">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span class="font-medium text-slate-700 truncate">1. Success</span>
+                </a>
 
-              <button type="submit" id="submit-token-btn" class="btn btn-primary w-full py-2.5 px-4 rounded-lg font-semibold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer">
-                <span>Submit Attendance Token</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-              </button>
-            </form>
-          </div>
+                <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition text-xs group">
+                  <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                  <span class="font-medium text-slate-700 truncate">2. Duplicate</span>
+                </a>
 
-          <!-- Interactive Test Scanner Simulator -->
-          <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-sm">🧪</span>
-              <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Test QR Scan Outcomes</h3>
+                <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition text-xs group">
+                  <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                  <span class="font-medium text-slate-700 truncate">3. Section Error</span>
+                </a>
+
+                <a href="<?php echo url('student/scan-result?status=expired'); ?>" class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200 hover:border-rose-500 hover:bg-rose-50/40 transition text-xs group">
+                  <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                  <span class="font-medium text-slate-700 truncate">4. Expired QR</span>
+                </a>
+              </div>
             </div>
-            <p class="text-xs text-slate-500 mb-3">Simulate scanning various tokens to test the 4 distinct feedback states defined in the specification:</p>
 
-            <div class="space-y-2">
-              <a href="<?php echo url('student/scan-result?status=success'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-semibold text-slate-700">Test Success Check-in</span>
-                </div>
-                <span class="text-[11px] text-emerald-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
-              </a>
-
-              <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span class="font-semibold text-slate-700">Test Duplicate Check-in</span>
-                </div>
-                <span class="text-[11px] text-blue-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
-              </a>
-
-              <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span class="font-semibold text-slate-700">Test Wrong Section Reject</span>
-                </div>
-                <span class="text-[11px] text-amber-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
-              </a>
-
-              <a href="<?php echo url('student/scan-result?status=expired'); ?>" class="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition text-xs group">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span class="font-semibold text-slate-700">Test Expired QR Token</span>
-                </div>
-                <span class="text-[11px] text-rose-600 font-semibold group-hover:translate-x-0.5 transition">Preview →</span>
-              </a>
-            </div>
           </div>
         </div>
       </div>
@@ -305,12 +328,26 @@ function autofillToken(token) {
   }
 }
 
-async function initLiveScanner() {
-  const readerElement = document.getElementById('camera-stream-box');
-  if (!readerElement || typeof Html5Qrcode === 'undefined') return;
+async function startCamera() {
+  const placeholder = document.getElementById('camera-placeholder');
+  const overlayFrame = document.getElementById('camera-overlay-frame');
+  const statusDot = document.getElementById('camera-status-dot');
+  const statusText = document.getElementById('camera-status-text');
+  const hintText = document.getElementById('camera-hint-text');
+  const headerBtn = document.getElementById('header-camera-toggle-btn');
+  const headerBtnText = document.getElementById('header-camera-toggle-text');
+  const switchBtn = document.getElementById('switch-camera-btn');
+
+  if (statusText) statusText.textContent = 'Starting camera...';
 
   try {
-    html5QrScanner = new Html5Qrcode("camera-stream-box");
+    if (!html5QrScanner) {
+      html5QrScanner = new Html5Qrcode("camera-stream-box");
+    }
+
+    if (placeholder) placeholder.classList.add('hidden');
+    if (overlayFrame) overlayFrame.classList.remove('hidden');
+
     const config = { 
       fps: 10, 
       qrbox: { width: 220, height: 220 },
@@ -323,23 +360,79 @@ async function initLiveScanner() {
       onQrCodeSuccess,
       onQrCodeError
     );
+
     isScanningActive = true;
-    const statusText = document.getElementById('camera-status-text');
-    if (statusText) statusText.textContent = `Active (${currentCameraFacingMode === 'environment' ? 'Back' : 'Front'})`;
+    if (statusDot) {
+      statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+    }
+    if (statusText) {
+      statusText.textContent = `Active (${currentCameraFacingMode === 'environment' ? 'Back' : 'Front'})`;
+    }
+    if (hintText) {
+      hintText.textContent = 'Point QR code into box';
+    }
+    if (switchBtn) {
+      switchBtn.classList.remove('hidden');
+    }
+    if (headerBtn && headerBtnText) {
+      headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300';
+      headerBtnText.textContent = 'Close Camera';
+    }
   } catch (err) {
     console.warn('Camera access unavailable or denied:', err);
-    const statusText = document.getElementById('camera-status-text');
-    if (statusText) statusText.textContent = 'Manual Entry Ready';
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (overlayFrame) overlayFrame.classList.add('hidden');
+    if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+    if (statusText) statusText.textContent = 'Access Denied / Not Found';
+    if (hintText) hintText.textContent = 'Use manual 6-digit code';
+    if (headerBtn && headerBtnText) {
+      headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs';
+      headerBtnText.textContent = 'Retry Camera';
+    }
+  }
+}
+
+async function stopCamera() {
+  const placeholder = document.getElementById('camera-placeholder');
+  const overlayFrame = document.getElementById('camera-overlay-frame');
+  const statusDot = document.getElementById('camera-status-dot');
+  const statusText = document.getElementById('camera-status-text');
+  const hintText = document.getElementById('camera-hint-text');
+  const headerBtn = document.getElementById('header-camera-toggle-btn');
+  const headerBtnText = document.getElementById('header-camera-toggle-text');
+  const switchBtn = document.getElementById('switch-camera-btn');
+
+  if (html5QrScanner && isScanningActive) {
+    try {
+      await html5QrScanner.stop();
+    } catch (_) {}
+    isScanningActive = false;
+  }
+
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (overlayFrame) overlayFrame.classList.add('hidden');
+  if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+  if (statusText) statusText.textContent = 'Inactive';
+  if (hintText) hintText.textContent = 'Click Open Camera to scan';
+  if (switchBtn) switchBtn.classList.add('hidden');
+  if (headerBtn && headerBtnText) {
+    headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs';
+    headerBtnText.textContent = 'Open Camera';
+  }
+}
+
+function toggleCameraPower() {
+  if (isScanningActive) {
+    stopCamera();
+  } else {
+    startCamera();
   }
 }
 
 function onQrCodeSuccess(decodedText) {
   if (!decodedText) return;
   // Stop scanning once code detected to prevent multiple submissions
-  if (html5QrScanner && isScanningActive) {
-    html5QrScanner.stop().catch(() => {});
-    isScanningActive = false;
-  }
+  stopCamera();
   
   // Extract 6-digit code if full URL or token
   let token = decodedText.trim();
@@ -366,7 +459,7 @@ async function toggleCamera() {
       isScanningActive = false;
     }
     currentCameraFacingMode = (currentCameraFacingMode === "environment") ? "user" : "environment";
-    await initLiveScanner();
+    await startCamera();
   } catch (e) {
     console.error('Failed to switch camera:', e);
   }
@@ -411,6 +504,23 @@ async function processAttendanceCheckIn(token) {
     if (resp.ok && data.status === 'success') {
       try {
         sessionStorage.setItem('last_attendance_record', JSON.stringify(data.record || {}));
+        
+        // Instant Real-Time Cross-Window / Live Feed Signal
+        const eventPayload = {
+          type: 'SCAN_RECORDED',
+          section: data.record?.section || '',
+          attendance_id: data.attendance_id || data.record?.attendance_id,
+          student_name: data.record?.student_name,
+          status: data.record?.status,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('ams_live_scan_event', JSON.stringify(eventPayload));
+        
+        if (typeof window.BroadcastChannel === 'function') {
+          const channel = new BroadcastChannel('ams_attendance_channel');
+          channel.postMessage(eventPayload);
+          channel.close();
+        }
       } catch (e) {}
       const targetUrl = (typeof window.url === 'function')
         ? window.url('student/scan-result?status=success')
@@ -447,8 +557,6 @@ async function processAttendanceCheckIn(token) {
 
 // Session countdown timer ticker
 document.addEventListener('DOMContentLoaded', () => {
-  initLiveScanner();
-
   const timerEl = document.getElementById('session-countdown-timer');
   if (timerEl) {
     let sec = parseInt(timerEl.getAttribute('data-seconds'), 10) || 0;

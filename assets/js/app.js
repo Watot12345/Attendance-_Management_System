@@ -587,14 +587,14 @@ const APP = {
     });
   },
 
-  /* ── Inactivity Auto-Logout Manager (1 Minute Inactivity, 10s Countdown) ── */
+  /* ── Inactivity Auto-Logout Manager (5 Minutes Inactivity, 30s Countdown) ── */
   inactivityManager: {
-    INACTIVITY_TIME_MS: 50 * 1000, // 50s until warning (total = 60s / 1 min)
-    COUNTDOWN_SECONDS: 10,
+    INACTIVITY_TIME_MS: 4.5 * 60 * 1000, // 4.5 mins until warning (total = 5 mins / 300s)
+    COUNTDOWN_SECONDS: 30,
     
     inactivityTimer: null,
     countdownInterval: null,
-    remainingSeconds: 10,
+    remainingSeconds: 30,
     isWarningShown: false,
     lastActivityTime: Date.now(),
     isInitialized: false,
@@ -663,9 +663,9 @@ const APP = {
                 </svg>
               </div>
               <h3 class="text-lg font-bold text-slate-900 tracking-tight mb-1">Session Inactivity Warning</h3>
-              <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">You have been inactive for nearly 1 minute. For your security, you will be automatically signed out in:</p>
+              <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">You have been inactive for nearly 5 minutes. For your security, you will be automatically signed out in:</p>
               <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-50 border-2 border-rose-500 text-rose-600 font-black text-2xl mb-6 shadow-inner tracking-tight">
-                <span id="inactivity-countdown-timer">10</span>s
+                <span id="inactivity-countdown-timer">30</span>s
               </div>
               <div class="flex items-center gap-3">
                 <button type="button" onclick="APP.inactivityManager.logoutNow()" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer">Sign Out Now</button>
@@ -776,6 +776,273 @@ const APP = {
         window.location.href = logoutUrl;
       }, 300);
     }
+  },
+
+  /* ── Cross-Device Concurrent Login Approval Manager ──────── */
+  deviceApprovalManager: {
+    POLL_INTERVAL_MS: 1200,
+    pollTimer: null,
+    countdownInterval: null,
+    remainingSeconds: 300,
+    activeRequestId: null,
+    isModalOpen: false,
+    isInitialized: false,
+
+    formatTime(sec) {
+      const s = Math.max(0, parseInt(sec, 10) || 0);
+      const mins = Math.floor(s / 60);
+      const rem = s % 60;
+      return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
+    },
+
+    init() {
+      if (this.isInitialized) return;
+
+      // Do not run on login or reset pages
+      const isAuthPage = document.getElementById('credentials-form') || 
+                         document.getElementById('auth-flow-title') ||
+                         document.getElementById('reset-email-input');
+      if (isAuthPage) return;
+
+      this.isInitialized = true;
+      this.startPolling();
+
+      // Listen for tab focus / visibility for instantaneous response
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.checkPending();
+        }
+      });
+      window.addEventListener('focus', () => {
+        this.checkPending();
+      });
+    },
+
+    startPolling() {
+      if (this.pollTimer) clearInterval(this.pollTimer);
+      this.checkPending();
+      this.pollTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          this.checkPending();
+        }
+      }, this.POLL_INTERVAL_MS);
+    },
+
+    async checkPending() {
+      try {
+        const basePath = this.getBasePath();
+        const res = await fetch(basePath + '/api/auth/check-pending-approval', {
+          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.status === 'session_replaced') {
+          // Session was replaced by an approved login on another device
+          if (this.pollTimer) clearInterval(this.pollTimer);
+          if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+            APP.showLoadingScreen({
+              title: 'Signed Out',
+              subtitle: data.message || 'Another device has been authorized to sign into your account.'
+            });
+          }
+          setTimeout(() => {
+            window.location.href = basePath + '/login?logged_out=1&msg=' + encodeURIComponent(data.message || 'Session replaced by new login.');
+          }, 600);
+          return;
+        }
+
+        if (data.status === 'has_pending_request' && data.request) {
+          this.showModal(data.request);
+        } else if (data.status === 'no_pending_request' && this.isModalOpen) {
+          this.hideModal();
+        }
+      } catch (e) {}
+    },
+
+    showModal(req) {
+      if (this.isModalOpen && this.activeRequestId === req.request_id) return;
+      this.activeRequestId = req.request_id;
+      this.isModalOpen = true;
+      this.remainingSeconds = req.remaining_seconds || 300;
+      this.resetButtons();
+
+      const modal = document.getElementById('device-approval-modal');
+      const box = document.getElementById('device-approval-box');
+      const deviceName = document.getElementById('device-approval-device-name');
+      const ipEl = document.getElementById('device-approval-ip');
+      const timeEl = document.getElementById('device-approval-time');
+      const countdownEl = document.getElementById('device-approval-countdown');
+      const reqIdInput = document.getElementById('device-approval-request-id');
+
+      if (deviceName) deviceName.textContent = req.device_info || 'Unknown Device';
+      if (ipEl) ipEl.textContent = req.ip_address || '127.0.0.1';
+      if (timeEl) timeEl.textContent = req.created_at || 'Just now';
+      if (countdownEl) countdownEl.textContent = this.formatTime(this.remainingSeconds);
+      if (reqIdInput) reqIdInput.value = req.request_id;
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          modal.classList.remove('opacity-0');
+          if (box) {
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+          }
+        });
+      }
+
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+      this.countdownInterval = setInterval(() => {
+        this.remainingSeconds--;
+        if (countdownEl) countdownEl.textContent = this.formatTime(this.remainingSeconds);
+        if (this.remainingSeconds <= 0) {
+          clearInterval(this.countdownInterval);
+          this.hideModal();
+        }
+      }, 1000);
+    },
+
+    hideModal() {
+      this.isModalOpen = false;
+      this.activeRequestId = null;
+      if (this.countdownInterval) clearInterval(this.countdownInterval);
+      this.resetButtons();
+
+      const modal = document.getElementById('device-approval-modal');
+      const box = document.getElementById('device-approval-box');
+      if (modal) {
+        modal.classList.add('opacity-0');
+        if (box) {
+          box.classList.remove('scale-100');
+          box.classList.add('scale-95');
+        }
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          this.resetButtons();
+        }, 200);
+      }
+    },
+
+    resetButtons() {
+      const approveBtn = document.getElementById('device-approval-approve-btn');
+      const denyBtn = document.getElementById('device-approval-deny-btn');
+      const approveIcon = document.getElementById('device-approval-approve-icon');
+      const approveSpinner = document.getElementById('device-approval-approve-spinner');
+      const approveText = document.getElementById('device-approval-approve-text');
+      const denyIcon = document.getElementById('device-approval-deny-icon');
+      const denySpinner = document.getElementById('device-approval-deny-spinner');
+      const denyText = document.getElementById('device-approval-deny-text');
+
+      if (approveBtn) {
+        approveBtn.disabled = false;
+        approveBtn.classList.remove('opacity-60', 'pointer-events-none');
+      }
+      if (denyBtn) {
+        denyBtn.disabled = false;
+        denyBtn.classList.remove('opacity-60', 'pointer-events-none');
+      }
+      if (approveIcon) approveIcon.classList.remove('hidden');
+      if (approveSpinner) approveSpinner.classList.add('hidden');
+      if (approveText) approveText.textContent = "Yes, That's Me";
+
+      if (denyIcon) denyIcon.classList.remove('hidden');
+      if (denySpinner) denySpinner.classList.add('hidden');
+      if (denyText) denyText.textContent = "No, Deny Access";
+    },
+
+    async respond(action) {
+      const reqIdInput = document.getElementById('device-approval-request-id');
+      const requestId = this.activeRequestId || (reqIdInput ? reqIdInput.value : '');
+      if (!requestId) return;
+
+      const approveBtn = document.getElementById('device-approval-approve-btn');
+      const denyBtn = document.getElementById('device-approval-deny-btn');
+      const approveIcon = document.getElementById('device-approval-approve-icon');
+      const approveSpinner = document.getElementById('device-approval-approve-spinner');
+      const approveText = document.getElementById('device-approval-approve-text');
+      const denyIcon = document.getElementById('device-approval-deny-icon');
+      const denySpinner = document.getElementById('device-approval-deny-spinner');
+      const denyText = document.getElementById('device-approval-deny-text');
+
+      // Set loading state on the selected action button and disable both
+      if (approveBtn) {
+        approveBtn.disabled = true;
+        approveBtn.classList.add('opacity-60', 'pointer-events-none');
+      }
+      if (denyBtn) {
+        denyBtn.disabled = true;
+        denyBtn.classList.add('opacity-60', 'pointer-events-none');
+      }
+
+      if (action === 'approve') {
+        if (approveIcon) approveIcon.classList.add('hidden');
+        if (approveSpinner) approveSpinner.classList.remove('hidden');
+        if (approveText) approveText.textContent = 'Authorizing...';
+      } else {
+        if (denyIcon) denyIcon.classList.add('hidden');
+        if (denySpinner) denySpinner.classList.remove('hidden');
+        if (denyText) denyText.textContent = 'Denying Access...';
+      }
+
+      try {
+        const basePath = this.getBasePath();
+        const res = await fetch(basePath + '/api/auth/respond-login-request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            request_id: requestId,
+            action: action
+          })
+        });
+
+        const data = await res.json();
+
+        if (action === 'approve' || data.status === 'approved_and_logged_out') {
+          this.hideModal();
+          if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+            APP.showLoadingScreen({
+              title: 'Device Authorized',
+              subtitle: 'Signing out this device...'
+            });
+          }
+          setTimeout(() => {
+            window.location.href = data.redirect_url || (basePath + '/login?logged_out=1');
+          }, 300);
+        } else {
+          this.hideModal();
+          if (typeof APP !== 'undefined' && APP.toast && APP.toast.warning) {
+            APP.toast.warning('Sign-in attempt blocked. Your current session remains secure.');
+          } else if (typeof toast !== 'undefined' && toast.warning) {
+            toast.warning('Sign-in attempt blocked. Your current session remains secure.');
+          }
+        }
+      } catch (e) {
+        console.error('Error responding to login request:', e);
+        this.hideModal();
+      } finally {
+        this.resetButtons();
+      }
+    },
+
+    getBasePath() {
+      const logoutBtn = document.querySelector('a[href*="logout"]');
+      if (logoutBtn && logoutBtn.getAttribute('href')) {
+        const href = logoutBtn.getAttribute('href');
+        const idx = href.indexOf('/logout');
+        if (idx !== -1) return href.substring(0, idx);
+      }
+      const themeLink = document.querySelector('link[rel="stylesheet"][href*="Project_theme.css"]');
+      if (themeLink && themeLink.getAttribute('href')) {
+        const href = themeLink.getAttribute('href');
+        const idx = href.indexOf('/Project_theme.css');
+        if (idx !== -1) return href.substring(0, idx);
+      }
+      return '';
+    }
   }
 };
 
@@ -816,10 +1083,14 @@ if (typeof APP !== 'undefined' && APP.toast) {
   };
 }
 
-/* ── Auto-open manual entry modal and initialize Inactivity Manager ───── */
+/* ── Auto-open manual entry modal and initialize Inactivity & Device Approval Managers ───── */
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof APP !== 'undefined' && APP.inactivityManager && typeof APP.inactivityManager.init === 'function') {
     APP.inactivityManager.init();
+  }
+
+  if (typeof APP !== 'undefined' && APP.deviceApprovalManager && typeof APP.deviceApprovalManager.init === 'function') {
+    APP.deviceApprovalManager.init();
   }
 
   if (new URLSearchParams(window.location.search).get('action') === 'manual-entry') {

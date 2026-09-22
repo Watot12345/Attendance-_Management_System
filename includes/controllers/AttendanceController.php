@@ -359,6 +359,8 @@ class AttendanceController {
     public function getLiveAttendanceFeed(): void {
         if (!headers_sent()) {
             header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
         }
 
         try {
@@ -367,17 +369,26 @@ class AttendanceController {
             $today = date('Y-m-d');
             $reqSection = trim($_GET['section'] ?? '');
 
-            // Auto-deactivate any sessions whose 30m window has already passed
-            $db->exec("UPDATE qr_sessions SET is_active = 0 WHERE is_active = 1 AND `end` <= NOW()");
-
             // 1. Check if teacher currently has an active QR session for this section
             $activeSession = null;
             if (!empty($reqSection)) {
-                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, is_active FROM qr_sessions WHERE teacher_id = ? AND section = ? AND is_active = 1 AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt = $db->prepare("
+                    SELECT qr_session_id, section, qr_code, is_active 
+                    FROM qr_sessions 
+                    WHERE teacher_id = ? AND section = ? AND is_active = 1 AND `end` > NOW() 
+                    ORDER BY qr_session_id DESC 
+                    LIMIT 1
+                ");
                 $sessStmt->execute([$teacherId, $reqSection]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             } else {
-                $sessStmt = $db->prepare("SELECT qr_session_id, section, qr_code, is_active FROM qr_sessions WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW() ORDER BY qr_session_id DESC LIMIT 1");
+                $sessStmt = $db->prepare("
+                    SELECT qr_session_id, section, qr_code, is_active 
+                    FROM qr_sessions 
+                    WHERE teacher_id = ? AND is_active = 1 AND `end` > NOW() 
+                    ORDER BY qr_session_id DESC 
+                    LIMIT 1
+                ");
                 $sessStmt->execute([$teacherId]);
                 $activeSession = $sessStmt->fetch(PDO::FETCH_ASSOC);
             }
@@ -633,6 +644,8 @@ class AttendanceController {
     public function recordCheckIn(): void {
         if (!headers_sent()) {
             header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
         }
 
         try {
@@ -675,21 +688,32 @@ class AttendanceController {
             $sessionId = (int)$session['qr_session_id'];
             $sessionSection = trim($session['section'] ?? '');
 
-            // 2. Resolve student
+            // 2. Resolve student quickly via indexed lookup
             $student = null;
             if (!empty($studentIdentifier)) {
-                $stStmt = $db->prepare("
-                    SELECT user_id, student_id, first_name, last_name, email
-                    FROM users
-                    WHERE (user_id = :id_num OR student_id = :st_num OR LOWER(email) = LOWER(:email))
-                      AND role = 'student'
-                    LIMIT 1
-                ");
-                $stStmt->execute([
-                    ':id_num' => is_numeric($studentIdentifier) ? (int)$studentIdentifier : 0,
-                    ':st_num' => $studentIdentifier,
-                    ':email'  => $studentIdentifier
-                ]);
+                if (is_numeric($studentIdentifier) && (int)$studentIdentifier > 0) {
+                    $stStmt = $db->prepare("
+                        SELECT user_id, student_id, first_name, last_name, email
+                        FROM users
+                        WHERE (user_id = :id_num OR student_id = :st_num) AND role = 'student'
+                        LIMIT 1
+                    ");
+                    $stStmt->execute([
+                        ':id_num' => (int)$studentIdentifier,
+                        ':st_num' => $studentIdentifier
+                    ]);
+                } else {
+                    $stStmt = $db->prepare("
+                        SELECT user_id, student_id, first_name, last_name, email
+                        FROM users
+                        WHERE (student_id = :st_num OR LOWER(email) = LOWER(:email)) AND role = 'student'
+                        LIMIT 1
+                    ");
+                    $stStmt->execute([
+                        ':st_num' => $studentIdentifier,
+                        ':email'  => $studentIdentifier
+                    ]);
+                }
                 $student = $stStmt->fetch(PDO::FETCH_ASSOC);
 
                 if (!$student) {
@@ -808,6 +832,7 @@ class AttendanceController {
                 SELECT attendance_id, status, `time`
                 FROM attendance
                 WHERE student_id = ? AND teacher_id = ? AND `date` = ?
+                LIMIT 1
             ");
             $dupStmt->execute([$studentUserId, $teacherId, $today]);
             $existing = $dupStmt->fetch(PDO::FETCH_ASSOC);
@@ -826,7 +851,9 @@ class AttendanceController {
             // 5. Determine attendance status (present / tardy)
             $status = in_array($statusOverride, ['present', 'tardy', 'absent']) ? $statusOverride : 'present';
 
-            // 6. Insert into `attendance` table
+            // 6. Fast Atomic Insert in Transaction
+            $db->beginTransaction();
+
             $insStmt = $db->prepare("
                 INSERT INTO attendance (student_id, teacher_id, qr_session_id, `date`, `time`, subject, status, schedule_date, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
@@ -834,7 +861,7 @@ class AttendanceController {
             $insStmt->execute([$studentUserId, $teacherId, $sessionId, $today, $nowTime, $subject, $status, $today]);
             $attendanceId = (int)$db->lastInsertId();
 
-            // 7. Insert audit log
+            // 7. Insert audit log within same transaction
             try {
                 $auditStmt = $db->prepare("
                     INSERT INTO audit_logs (user_id, action, description, reference_type, reference_id, created_at)
@@ -847,11 +874,14 @@ class AttendanceController {
                 ]);
             } catch (Exception $e) {}
 
+            $db->commit();
+
             echo json_encode([
                 'status'        => 'success',
                 'message'       => "Attendance recorded: {$student['first_name']} {$student['last_name']} marked " . ucfirst($status),
                 'attendance_id' => $attendanceId,
                 'record'        => [
+                    'attendance_id'  => $attendanceId,
                     'student_id'     => $studentUserId,
                     'student_name'   => "{$student['first_name']} {$student['last_name']}",
                     'student_number' => $student['student_id'],

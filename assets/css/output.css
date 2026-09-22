@@ -115,23 +115,25 @@ h1, h2, h3, h4, h5, h6, .font-display {
 #sidebar .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  color: #94A3B8;
-  font-size: 0.875rem;
-  font-weight: 500;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  color: #e0f2fe;
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease;
   text-decoration: none;
 }
 #sidebar .nav-item:hover {
-  background-color: var(--color-navy-800);
-  color: #E2E8F0;
+  background-color: #395299 !important;
+  color: #ffffff !important;
 }
 #sidebar .nav-item.active {
-  background-color: var(--color-teal-500);
-  color: #ffffff;
+  background-color: #395299 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
 }
 #sidebar .nav-section {
   padding: 0.375rem 1rem;

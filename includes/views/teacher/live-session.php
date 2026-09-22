@@ -13,15 +13,53 @@ if (!empty($_SESSION['teacher_id'])) {
     $teacherId = (int)$_SESSION['user_id'];
 }
 
-// Fetch all distinct sections for this teacher from class_roster
+// Fetch all assigned sections for this teacher from class_roster
 $secStmt = $db->prepare("
-    SELECT DISTINCT section, course_code, course_title, room_number, scheduled_time, schedule_day
+    SELECT 
+        section,
+        course_code,
+        course_title,
+        room_number,
+        scheduled_time,
+        schedule_day,
+        COUNT(DISTINCT student_id) AS enrolled_count
     FROM class_roster
-    WHERE teacher_id = ?
-    ORDER BY section ASC
+    WHERE teacher_id = ? AND section IS NOT NULL AND section != ''
+    GROUP BY section, course_code, course_title, room_number, scheduled_time, schedule_day
+    ORDER BY section ASC, enrolled_count DESC
 ");
 $secStmt->execute([$teacherId]);
-$teacherSections = $secStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+$rawSections = $secStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+// Fallback to all sections if none assigned specifically to this teacher
+if (empty($rawSections)) {
+    $fbStmt = $db->query("
+        SELECT 
+            section,
+            course_code,
+            course_title,
+            room_number,
+            scheduled_time,
+            schedule_day,
+            COUNT(DISTINCT student_id) AS enrolled_count
+        FROM class_roster
+        WHERE section IS NOT NULL AND section != ''
+        GROUP BY section, course_code, course_title, room_number, scheduled_time, schedule_day
+        ORDER BY section ASC, enrolled_count DESC
+    ");
+    $rawSections = $fbStmt ? $fbStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+}
+
+// Deduplicate by section: keep the primary/most populated course entry for each unique section
+$teacherSections = [];
+$seenSections = [];
+foreach ($rawSections as $sec) {
+    $sKey = (string)$sec['section'];
+    if (!isset($seenSections[$sKey])) {
+        $seenSections[$sKey] = true;
+        $teacherSections[] = $sec;
+    }
+}
 
 // Fetch currently running QR sessions for this teacher
 $actSecStmt = $db->prepare("
@@ -102,15 +140,14 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     pointer-events: none;
   }
 </style>
-<body class="min-h-screen">
-  <div class="flex min-h-screen">
-    <?php include dirname(__DIR__) . '/partials/sidebar.php'; ?>
+<div class="app-layout">
+  <?php require_once dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <?php include dirname(__DIR__) . '/partials/navbar.php'; ?>
+  <div class="main-content">
+    <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
 
-      <!-- Content Area -->
-      <main class="flex-1 p-6 bg-surface">
+    <!-- Content Area -->
+    <main class="page-body">
         <!-- Minimalist Live Header -->
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
@@ -235,10 +272,10 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-          <!-- ════ LEFT COLUMN: DYNAMIC QR CODE CARD ════ -->
-          <div class="lg:col-span-5 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col items-center justify-between text-center relative overflow-hidden" id="qr-card-container">
+          <!-- ════ LEFT COLUMN: UNIFIED DYNAMIC QR + METRIC CARDS SIDE-BY-SIDE ════ -->
+          <div class="lg:col-span-7 xl:col-span-8 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col justify-between relative overflow-hidden" id="qr-card-container">
             <!-- ════ BLURRY LOADING OVERLAY IN FRONT OF DYNAMIC QR ════ -->
-            <div id="qr-card-loading-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center qr-card-blur-overlay">
+            <div id="qr-card-loading-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center qr-card-blur-overlay hidden is-hidden">
               <div class="relative w-14 h-14 mb-3 flex items-center justify-center">
                 <div class="absolute inset-0 rounded-full border-2 border-slate-200"></div>
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-teal-600 border-r-teal-500 animate-spin"></div>
@@ -250,9 +287,13 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
               <p id="qr-loading-sub" class="text-[11px] text-slate-500 mt-0.5">Please wait</p>
             </div>
 
-            <div class="w-full flex flex-col items-center">
+            <div class="w-full flex flex-col">
+              <!-- Card Header -->
               <div class="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Dynamic Anti-Screenshot QR</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Dynamic Anti-Screenshot QR</span>
+                </div>
                 <span class="text-xs font-mono bg-teal-50 border border-teal-200 text-teal-800 font-bold px-2.5 py-0.5 rounded-full" id="token-display">READY</span>
               </div>
 
@@ -261,94 +302,101 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
                 <div id="qr-timer-bar" class="bg-gradient-to-r from-teal-500 to-emerald-500 h-2 transition-all duration-1000 ease-linear" style="width: 0%;"></div>
               </div>
 
-              <!-- 1. Ready To Start Box (Square Box) -->
-              <div id="qr-ready-box" class="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-2xl mx-auto w-[250px] h-[250px] aspect-square transition-all text-center animate-fade-in">
-                <div class="w-14 h-14 rounded-2xl bg-teal-100/80 text-teal-600 flex items-center justify-center mx-auto mb-2.5 shadow-xs">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+              <!-- ════ SIDE-BY-SIDE: QR VIEW (LEFT) + METRICS CARDS (RIGHT) ════ -->
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center my-auto">
+                <!-- Left: QR Boxes & Session Controls -->
+                <div class="md:col-span-6 flex flex-col items-center justify-center text-center">
+                  <!-- 1. Ready To Start Box -->
+                  <div id="qr-ready-box" class="flex flex-col items-center justify-center p-5 bg-slate-50 border border-slate-200 rounded-2xl mx-auto w-[220px] h-[220px] aspect-square transition-all text-center animate-fade-in">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-100/80 text-teal-600 flex items-center justify-center mx-auto mb-2 shadow-xs">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800 line-clamp-1" id="ready-box-title">Section <?= htmlspecialchars($selectedSectionKey) ?></h4>
+                    <p class="text-[11px] text-slate-500 mt-0.5 mb-2.5 leading-tight">
+                      Ready to start session
+                    </p>
+                    <button type="button" class="btn btn-primary text-xs font-bold py-1.5 px-3.5 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span>Generate QR</span>
+                    </button>
+                  </div>
+
+                  <!-- 2. Active Dynamic QR Box Container -->
+                  <div id="qr-active-box" class="hidden flex-col items-center justify-center mx-auto transition-all">
+                    <div id="qrcode-container" class="w-[220px] h-[220px] aspect-square flex items-center justify-center mx-auto">
+                      <!-- QR Code Rendered dynamically via qrcode-generator.js -->
+                    </div>
+                    <div class="flex items-center justify-center gap-1.5 mt-2.5 text-xs font-medium text-slate-600">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span>Expires in <span id="countdown-text" class="text-slate-800 font-bold">30m 00s</span></span>
+                    </div>
+                  </div>
+
+                  <!-- 3. Empty State Box -->
+                  <div id="qr-empty-box" class="hidden flex-col items-center justify-center p-5 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl mx-auto w-[220px] h-[220px] aspect-square text-center animate-fade-in">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-200/80 text-slate-400 flex items-center justify-center mx-auto mb-2 shadow-inner">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800">Session Closed</h4>
+                    <p class="text-[11px] text-slate-500 mt-0.5 mb-2.5 leading-tight">
+                      Attendance window ended
+                    </p>
+                    <button type="button" class="btn btn-primary text-xs font-bold py-1.5 px-3.5 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      <span>Generate QR</span>
+                    </button>
+                  </div>
+
+                  <!-- Controls in Card (Active State): Pause/Resume & Rotate QR -->
+                  <div id="qr-refresh-btn-wrap" class="hidden mt-3.5 flex items-center justify-center gap-2">
+                    <button type="button" id="btn-pause-resume-session" class="btn btn-secondary text-xs font-bold flex items-center gap-1.5 py-1.5 px-3 shadow-2xs rounded-xl cursor-pointer hover:bg-slate-100 transition" onclick="togglePauseResumeSession()" title="Pause countdown & scanning">
+                      <svg id="icon-pause-session" class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <svg id="icon-resume-session" class="w-3.5 h-3.5 text-teal-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span id="text-pause-resume">Pause</span>
+                    </button>
+                    <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-1.5 py-1.5 px-3 shadow-2xs rounded-xl cursor-pointer" onclick="openRotateQRModal()" title="Rotate QR code">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                      <span>Rotate QR</span>
+                    </button>
+                  </div>
                 </div>
-                <h4 class="text-xs font-bold text-slate-800 line-clamp-1" id="ready-box-title">Section <?= htmlspecialchars($selectedSectionKey) ?></h4>
-                <p class="text-[11px] text-slate-500 mt-0.5 mb-3 leading-tight">
-                  Ready to start session
-                </p>
-                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span>Generate QR</span>
-                </button>
+
+                <!-- Right: 4 Metrics Cards Side-by-Side (2x2 Grid) -->
+                <div class="md:col-span-6 grid grid-cols-2 gap-3" id="metric-cards-container">
+                  <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrolled</p>
+                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                    <p class="metric-val text-2xl font-bold text-slate-800 mt-1" id="metric-enrolled">0</p>
+                  </div>
+                  <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
+                    <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Present</p>
+                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                    <p class="metric-val text-2xl font-bold text-emerald-600 mt-1" id="metric-present">0</p>
+                  </div>
+                  <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
+                    <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Tardy</p>
+                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                    <p class="metric-val text-2xl font-bold text-amber-600 mt-1" id="metric-tardy">0</p>
+                  </div>
+                  <div class="bg-rose-50/60 p-4 rounded-xl border border-rose-200/70 text-center relative overflow-hidden flex flex-col justify-center min-h-[100px]">
+                    <p class="text-xs font-semibold text-rose-600 uppercase tracking-wider">Pending</p>
+                    <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
+                    <p class="metric-val text-2xl font-bold text-rose-600 mt-1" id="metric-pending">0</p>
+                  </div>
+                </div>
               </div>
 
-              <!-- 2. Active Dynamic QR Box Container (Perfect Square Box) -->
-              <div id="qr-active-box" class="hidden flex-col items-center justify-center mx-auto transition-all">
-                <div id="qrcode-container" class="w-[240px] h-[240px] aspect-square flex items-center justify-center mx-auto">
-                  <!-- QR Code Rendered dynamically via qrcode-generator.js -->
-                </div>
-                <div class="flex items-center justify-center gap-1.5 mt-3 text-xs font-medium text-slate-600">
-                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span>Expires in <span id="countdown-text" class="text-slate-800 font-bold">30m 00s</span></span>
-                </div>
-              </div>
-
-              <!-- 3. Empty State Box (Square Box) -->
-              <div id="qr-empty-box" class="hidden flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl mx-auto w-[250px] h-[250px] aspect-square text-center animate-fade-in">
-                <div class="w-14 h-14 rounded-2xl bg-slate-200/80 text-slate-400 flex items-center justify-center mx-auto mb-2.5 shadow-inner">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <h4 class="text-xs font-bold text-slate-800">Session Closed</h4>
-                <p class="text-[11px] text-slate-500 mt-0.5 mb-3 leading-tight">
-                  Attendance window ended
-                </p>
-                <button type="button" class="btn btn-primary text-xs font-bold py-2 px-4 shadow-sm rounded-xl flex items-center gap-1.5 mx-auto cursor-pointer" onclick="requestGenerateQR(this)">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  <span>Generate QR</span>
-                </button>
-              </div>
-
-              <!-- Controls in Card (Active State): Pause/Resume & Rotate QR -->
-              <div id="qr-refresh-btn-wrap" class="hidden mt-4 flex items-center justify-center gap-2.5">
-                <button type="button" id="btn-pause-resume-session" class="btn btn-secondary text-xs font-bold flex items-center gap-1.5 py-2 px-3.5 shadow-2xs rounded-xl cursor-pointer hover:bg-slate-100 transition" onclick="togglePauseResumeSession()" title="Pause countdown & scanning">
-                  <svg id="icon-pause-session" class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <svg id="icon-resume-session" class="w-3.5 h-3.5 text-teal-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span id="text-pause-resume">Pause</span>
-                </button>
-                <button type="button" class="btn btn-primary text-xs font-bold flex items-center gap-1.5 py-2 px-3.5 shadow-2xs rounded-xl cursor-pointer" onclick="openRotateQRModal()" title="Rotate QR code">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  <span>Rotate QR</span>
-                </button>
-              </div>
-
-              <p id="qr-footer-note" class="text-xs text-text-muted mt-4">
+              <!-- Card Footer Note -->
+              <p id="qr-footer-note" class="text-xs text-text-muted mt-5 pt-3 border-t border-slate-100 text-center">
                 Students scan with an authenticated device enrolled in <strong>Section <?= htmlspecialchars($selectedSectionKey) ?></strong>. Screenshots expire after 30 minutes.
               </p>
             </div>
           </div>
 
-          <!-- ════ RIGHT COLUMN: LIVE FEED & METRICS FROM DATABASE ════ -->
-          <div class="lg:col-span-7 flex flex-col gap-5">
-            <!-- Attendance Counters with Uniform Clean Styling -->
-            <div class="grid grid-cols-4 gap-3" id="metric-cards-container">
-              <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 text-center relative overflow-hidden">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrolled</p>
-                <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                <p class="metric-val text-2xl font-bold text-slate-800 mt-0.5" id="metric-enrolled">0</p>
-              </div>
-              <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 text-center relative overflow-hidden">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Present</p>
-                <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                <p class="metric-val text-2xl font-bold text-slate-800 mt-0.5" id="metric-present">0</p>
-              </div>
-              <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 text-center relative overflow-hidden">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tardy</p>
-                <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                <p class="metric-val text-2xl font-bold text-slate-800 mt-0.5" id="metric-tardy">0</p>
-              </div>
-              <div class="bg-white p-4 rounded-xl shadow-card border border-slate-100 text-center relative overflow-hidden">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</p>
-                <div class="metric-skeleton hidden my-1.5 h-7 w-12 mx-auto bg-slate-200/80 rounded-lg animate-pulse"></div>
-                <p class="metric-val text-2xl font-bold text-slate-800 mt-0.5" id="metric-pending">0</p>
-              </div>
-            </div>
-
+          <!-- ════ RIGHT COLUMN: LIVE SCAN FEED ════ -->
+          <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
             <!-- Live Scan Stream Card -->
-            <div class="bg-white rounded-xl shadow-card border border-slate-100 flex-1 flex flex-col overflow-hidden min-h-[420px]">
+            <div class="bg-white rounded-2xl shadow-card border border-slate-100 flex-1 flex flex-col overflow-hidden min-h-[460px]">
               <div class="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-base font-bold text-text-primary flex items-center gap-2">
                   <span class="relative flex h-2.5 w-2.5">
@@ -597,8 +645,10 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       </div>
     </div>
   </div>
+      </main>
+    </div>
+  </div>
 
-  <?php include dirname(__DIR__) . '/partials/footer.php'; ?>
   <script src="<?= url('assets/js/qrcode-generator.js') ?>"></script>
 
   <script>
@@ -1439,7 +1489,13 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     window.lastRenderSignature = '';
 
     // Load Live Attendance Feed & Metrics directly from database (NO FALLBACKS - Real Counts Only)
+    window.isFeedFetchInProgress = false;
     async function loadLiveFeed(isManualRefresh = false, refreshBtnEl = null) {
+      if (window.isFeedFetchInProgress && !isManualRefresh) {
+        return;
+      }
+      window.isFeedFetchInProgress = true;
+
       const reqSec = currentSection;
       const refreshIcon = refreshBtnEl ? refreshBtnEl.querySelector('svg') : null;
       if (refreshIcon) {
@@ -1447,9 +1503,12 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       }
 
       try {
-        const url = `<?= url("api/teacher/attendance/live-feed") ?>?section=${encodeURIComponent(reqSec)}`;
+        const url = `<?= url("api/teacher/attendance/live-feed") ?>?section=${encodeURIComponent(reqSec)}&_t=${Date.now()}`;
         const res = await fetch(url, {
-          headers: { 'Accept': 'application/json' }
+          headers: { 
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
         });
         const data = await res.json();
 
@@ -1485,6 +1544,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       } catch (err) {
         console.error('Error fetching live feed:', err);
       } finally {
+        window.isFeedFetchInProgress = false;
         if (String(reqSec) === String(currentSection)) {
           setMetricsLoading(false);
         }
@@ -2091,8 +2151,42 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
         }, 120);
       });
 
-      // 3. Poll real database feed every 3 seconds
-      liveFeedPolling = setInterval(() => loadLiveFeed(false), 3000);
+      // 3. Fast High-Performance Polling: every 1000ms (1 second)
+      if (liveFeedPolling) clearInterval(liveFeedPolling);
+      liveFeedPolling = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadLiveFeed(false);
+        }
+      }, 1000);
+
+      // 4. Real-Time Cross-Tab / Cross-Window Synchronization
+      if (typeof window.BroadcastChannel === 'function') {
+        try {
+          const liveChannel = new BroadcastChannel('ams_attendance_channel');
+          liveChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'SCAN_RECORDED') {
+              loadLiveFeed(true);
+            }
+          };
+        } catch (e) {}
+      }
+
+      // Storage event listener for cross-tab scans on same origin
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'ams_live_scan_event' && e.newValue) {
+          loadLiveFeed(true);
+        }
+      });
+
+      // Tab visibility change: refresh immediately when faculty switches back to this tab
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          loadLiveFeed(true);
+          if (currentSection) {
+            checkActiveSession(currentSection);
+          }
+        }
+      });
     });
 
     window.addEventListener('beforeunload', () => {
@@ -2100,6 +2194,5 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
       if (liveFeedPolling) clearInterval(liveFeedPolling);
     });
   </script>
-</body>
-</html>
-<script>APP.highlightNav('classes');</script>
+  <script>if (window.APP && typeof APP.highlightNav === 'function') APP.highlightNav('classes');</script>
+  <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>

@@ -82,10 +82,13 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
   <link rel="stylesheet" href="<?php echo url('Project_theme.css'); ?>">
   <style>
     :root {
-      --primary-pink: #E11D48;
-      --primary-pink-hover: #BE123C;
+      --primary-blue: #1e3b8a;
+      --primary-blue-hover: #172554;
+      --primary-sky: #0284c7;
+      --primary-sky-light: #e0f2fe;
       --dark-surface: #0F172A;
       --border-color: #E2E8F0;
+      --bg-surface: #f2f6fa;
     }
     * {
       box-sizing: border-box;
@@ -121,9 +124,9 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       justify-content: space-between;
       padding: 56px 68px;
       position: relative;
-      background: #FFFFFF;
+      background: #f2f6fa;
       overflow: hidden;
-      border-right: 1px solid #F1F5F9;
+      border-right: 1px solid #E2E8F0;
     }
 
     .hero-inner {
@@ -148,15 +151,12 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     .brand-icon-box {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: #0F172A;
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      flex-shrink: 0;
     }
 
     .brand-text-col {
@@ -206,7 +206,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
-      color: var(--primary-pink);
+      color: #0284c7;
       text-transform: uppercase;
       margin-bottom: 20px;
     }
@@ -222,7 +222,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     .hero-h1 span.highlight {
-      background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
+      background: linear-gradient(135deg, #1e3b8a 0%, #0284c7 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -287,12 +287,12 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       gap: 6px;
       padding: 5px 14px;
       border-radius: 9999px;
-      background: #FFF1F2;
-      border: 1px solid #FFE4E6;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
       font-size: 10.5px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: var(--primary-pink);
+      color: #0284c7;
       text-transform: uppercase;
     }
 
@@ -300,15 +300,15 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--primary-pink);
-      box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
-      animation: pulsePink 1.8s infinite;
+      background: #0284c7;
+      box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+      animation: pulseSky 1.8s infinite;
     }
 
-    @keyframes pulsePink {
-      0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6); }
-      70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+    @keyframes pulseSky {
+      0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.6); }
+      70% { box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
     }
 
     /* ── Right Auth Panel ────────────────────────────────── */
@@ -336,7 +336,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
-      color: var(--primary-pink);
+      color: #0284c7;
       text-transform: uppercase;
       margin-bottom: 8px;
     }
@@ -479,7 +479,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     /* Primary Submit Button */
     .btn-auth-submit {
       width: 100%;
-      background: #0F172A;
+      background: #1e3b8a;
       color: #FFFFFF;
       border: none;
       border-radius: 10px;
@@ -497,9 +497,9 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     .btn-auth-submit:hover {
-      background: #1E293B;
+      background: #172554;
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.15);
+      box-shadow: 0 6px 16px -2px rgba(30, 59, 138, 0.25);
     }
 
     .btn-auth-submit:active {
@@ -520,6 +520,22 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
     #credentials-step-container {
       animation: fadeInStep 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #approval-step-container {
+      display: none;
+      animation: fadeInStep 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.85); opacity: 0.6; }
+      50% { transform: scale(1.35); opacity: 0.1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     @keyframes fadeInStep {
@@ -769,9 +785,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
         <div class="brand-header">
           <div class="brand-logo-wrap">
             <div class="brand-icon-box">
-              <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-              </svg>
+              <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
             <div class="brand-text-col">
               <span class="brand-title-main">
@@ -803,7 +817,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           </h1>
 
           <p class="hero-paragraph">
-            Institutional portal for live RFID attendance tracking, digital excuse slip processing, biometric sync, and analytics.
+            Institutional portal for live Qr code attendance tracking, digital excuse slip processing, biometric sync, and analytics.
           </p>
 
           <!-- 3 Highlight Features -->
@@ -1003,6 +1017,103 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
             </div>
 
           </form>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             STEP 3: CONCURRENT LOGIN - ACTIVE SESSION APPROVAL
+             ══════════════════════════════════════════════════════════ -->
+        <div id="approval-step-container" style="display: none;">
+          <!-- WAITING SUB-STATE -->
+          <div id="approval-state-waiting">
+            <div style="text-align: center; padding: 24px 16px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; margin-bottom: 20px;">
+              <div style="position: relative; width: 64px; height: 64px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <div style="position: absolute; inset: 0; border-radius: 50%; background: #0284c7; opacity: 0.15; animation: pulseRing 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;"></div>
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: #e0f2fe; border: 2px solid #bae6fd; display: flex; align-items: center; justify-content: center; color: #0284c7; position: relative; z-index: 2;">
+                  <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+              </div>
+
+              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+                Check Your Other Device
+              </h4>
+              <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 16px; max-width: 320px; margin-left: auto; margin-right: auto;">
+                An active session was detected on another device. A security prompt has been sent to authorize this sign-in attempt.
+              </p>
+
+              <!-- Live Timer & Progress -->
+              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px;">
+                  <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block; animation: blink 1.2s ease-in-out infinite;"></span>
+                    Awaiting authorization...
+                  </span>
+                  <span id="approval-timer-badge" style="font-family: monospace; font-weight: 700; color: #0284c7;">60s</span>
+                </div>
+                <div style="height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                  <div id="approval-progress-fill" style="height: 100%; width: 100%; background: linear-gradient(90deg, #1e3b8a, #0284c7); transition: width 1s linear;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cancel Button -->
+            <button type="button" class="btn-auth-submit" onclick="cancelApprovalWaiting()" style="background: #ffffff; color: #475569; border: 1.5px solid #cbd5e1; box-shadow: none;">
+              <span>Cancel Sign In</span>
+            </button>
+          </div>
+
+          <!-- DENIED SUB-STATE -->
+          <div id="approval-state-denied" style="display: none;">
+            <div style="text-align: center; padding: 24px 16px; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 16px; margin-bottom: 20px;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; border: 2px solid #fca5a5; display: flex; align-items: center; justify-content: center; color: #dc2626; margin: 0 auto 14px;">
+                <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                </svg>
+              </div>
+
+              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #991b1b; margin-bottom: 6px;">
+                Your login is denied
+              </h4>
+              <p style="font-size: 13px; color: #7f1d1d; line-height: 1.5; margin-bottom: 12px;">
+                The user currently signed into this account on another device rejected this login request.
+              </p>
+              <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #991b1b; text-align: left;">
+                🔒 If you did not initiate this or believe your password was compromised, please reset your password immediately.
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button type="button" class="btn-auth-submit" onclick="backToCredentialsStep()">
+                <span>Try Again</span>
+              </button>
+              <button type="button" class="btn-auth-submit" onclick="openForgotPasswordModal()" style="background: #f8fafc; color: #0f172a; border: 1.5px solid #cbd5e1; box-shadow: none;">
+                <span>Reset Password</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- EXPIRED SUB-STATE -->
+          <div id="approval-state-expired" style="display: none;">
+            <div style="text-align: center; padding: 24px 16px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 16px; margin-bottom: 20px;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; color: #d97706; margin: 0 auto 14px;">
+                <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+
+              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #92400e; margin-bottom: 6px;">
+                Request Expired
+              </h4>
+              <p style="font-size: 13px; color: #78350f; line-height: 1.5; margin-bottom: 6px;">
+                The active device did not respond within the time limit.
+              </p>
+            </div>
+
+            <button type="button" class="btn-auth-submit" onclick="backToCredentialsStep()">
+              <span>Return to Sign In</span>
+            </button>
+          </div>
         </div>
 
         <!-- Support / Assistance Callout -->
@@ -1219,6 +1330,9 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     let modalResendInterval = null;
     let resetActiveEmail = '';
     let resetActiveOtp = '';
+    let approvalPollInterval = null;
+    let approvalCountdownInterval = null;
+    let activeApprovalRequestId = null;
 
     // Password Visibility Toggle
     function togglePasswordVisibility(inputId, iconId) {
@@ -1282,7 +1396,12 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     // Step 2 OTP Transition
     function showOtpStep(maskedEmail) {
       hideAlert();
+      if (approvalPollInterval) clearInterval(approvalPollInterval);
+      if (approvalCountdownInterval) clearInterval(approvalCountdownInterval);
+      activeApprovalRequestId = null;
+
       document.getElementById('credentials-step-container').style.display = 'none';
+      document.getElementById('approval-step-container').style.display = 'none';
       document.getElementById('otp-step-container').style.display = 'block';
 
       document.getElementById('auth-flow-eyebrow').textContent = '2-FACTOR VERIFICATION';
@@ -1300,9 +1419,148 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       startResendCountdown();
     }
 
+    let isApprovalFinished = false;
+
+    function formatApprovalCountdown(sec) {
+      const s = Math.max(0, parseInt(sec, 10) || 0);
+      const mins = Math.floor(s / 60);
+      const rem = s % 60;
+      return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
+    }
+
+    // Step 3 Device Approval Waiting Transition
+    function showApprovalWaitingStep(data) {
+      hideAlert();
+      isApprovalFinished = false;
+      if (resendInterval) clearInterval(resendInterval);
+      if (approvalCountdownInterval) clearInterval(approvalCountdownInterval);
+      if (approvalPollInterval) clearInterval(approvalPollInterval);
+
+      document.getElementById('credentials-step-container').style.display = 'none';
+      document.getElementById('otp-step-container').style.display = 'none';
+      document.getElementById('approval-step-container').style.display = 'block';
+
+      document.getElementById('approval-state-waiting').style.display = 'block';
+      document.getElementById('approval-state-denied').style.display = 'none';
+      document.getElementById('approval-state-expired').style.display = 'none';
+
+      document.getElementById('auth-flow-eyebrow').textContent = 'DEVICE AUTHORIZATION';
+      document.getElementById('auth-flow-title').textContent = 'Authorize This Device';
+      document.getElementById('auth-flow-subtitle').textContent = 'Confirming identity with your active device session.';
+
+      activeApprovalRequestId = data.request_id;
+      const totalSeconds = data.expires_in_seconds || 300;
+      let remainingSeconds = totalSeconds;
+
+      const timerBadge = document.getElementById('approval-timer-badge');
+      const progressFill = document.getElementById('approval-progress-fill');
+
+      if (timerBadge) timerBadge.textContent = formatApprovalCountdown(remainingSeconds);
+      if (progressFill) progressFill.style.width = '100%';
+
+      approvalCountdownInterval = setInterval(() => {
+        if (isApprovalFinished) return;
+        remainingSeconds--;
+        if (timerBadge) timerBadge.textContent = formatApprovalCountdown(Math.max(0, remainingSeconds));
+        if (progressFill) {
+          const pct = Math.max(0, (remainingSeconds / totalSeconds) * 100);
+          progressFill.style.width = `${pct}%`;
+        }
+
+        if (remainingSeconds <= 0) {
+          clearInterval(approvalCountdownInterval);
+          if (!isApprovalFinished) {
+            handleApprovalExpired();
+          }
+        }
+      }, 1000);
+
+      // Fast polling every 800ms for immediate reaction when active device approves/rejects
+      approvalPollInterval = setInterval(async () => {
+        if (!activeApprovalRequestId || isApprovalFinished) return;
+        try {
+          const res = await fetch(`<?php echo url("api/auth/login-request-status"); ?>?request_id=${encodeURIComponent(activeApprovalRequestId)}`, {
+            headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+          });
+          const pollData = await res.json();
+          if (!res.ok || isApprovalFinished) return;
+
+          if (pollData.status === 'approved' || pollData.status === 'completed') {
+            isApprovalFinished = true;
+            clearInterval(approvalPollInterval);
+            clearInterval(approvalCountdownInterval);
+            activeApprovalRequestId = null;
+            
+            showAlert(pollData.message || 'Login approved! Loading your workspace...', false);
+            if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
+              APP.showLoadingScreen({
+                title: 'Session Authorized',
+                subtitle: 'Redirecting to your dashboard...'
+              });
+            }
+            setTimeout(() => {
+              window.location.href = pollData.redirect_url || '<?php echo url("dashboard"); ?>';
+            }, 300);
+          } else if (pollData.status === 'rejected') {
+            isApprovalFinished = true;
+            clearInterval(approvalPollInterval);
+            clearInterval(approvalCountdownInterval);
+            activeApprovalRequestId = null;
+            handleApprovalDenied(pollData.message);
+          } else if (pollData.status === 'expired') {
+            if (!isApprovalFinished) {
+              isApprovalFinished = true;
+              clearInterval(approvalPollInterval);
+              clearInterval(approvalCountdownInterval);
+              activeApprovalRequestId = null;
+              handleApprovalExpired();
+            }
+          }
+        } catch (e) {
+          console.warn('Poll approval error:', e);
+        }
+      }, 800);
+    }
+
+    function handleApprovalDenied(msg) {
+      if (isApprovalFinished && document.getElementById('approval-state-denied').style.display === 'block') return;
+      document.getElementById('approval-state-waiting').style.display = 'none';
+      document.getElementById('approval-state-expired').style.display = 'none';
+      document.getElementById('approval-state-denied').style.display = 'block';
+
+      document.getElementById('auth-flow-eyebrow').textContent = 'ACCESS DENIED';
+      document.getElementById('auth-flow-title').textContent = 'Login Denied';
+      document.getElementById('auth-flow-subtitle').textContent = 'This sign-in attempt was rejected.';
+    }
+
+    function handleApprovalExpired() {
+      if (isApprovalFinished) return;
+      document.getElementById('approval-state-waiting').style.display = 'none';
+      document.getElementById('approval-state-denied').style.display = 'none';
+      document.getElementById('approval-state-expired').style.display = 'block';
+
+      document.getElementById('auth-flow-eyebrow').textContent = 'REQUEST TIMED OUT';
+      document.getElementById('auth-flow-title').textContent = 'Authorization Expired';
+      document.getElementById('auth-flow-subtitle').textContent = 'The active device did not respond in time.';
+    }
+
+    function cancelApprovalWaiting() {
+      isApprovalFinished = true;
+      if (approvalPollInterval) clearInterval(approvalPollInterval);
+      if (approvalCountdownInterval) clearInterval(approvalCountdownInterval);
+      activeApprovalRequestId = null;
+      backToCredentialsStep();
+    }
+
     function backToCredentialsStep() {
       hideAlert();
+      isApprovalFinished = true;
+      if (approvalPollInterval) clearInterval(approvalPollInterval);
+      if (approvalCountdownInterval) clearInterval(approvalCountdownInterval);
+      activeApprovalRequestId = null;
+
       document.getElementById('otp-step-container').style.display = 'none';
+      document.getElementById('approval-step-container').style.display = 'none';
       document.getElementById('credentials-step-container').style.display = 'block';
 
       document.getElementById('auth-flow-eyebrow').textContent = 'SECURE SIGN IN';
@@ -1441,6 +1699,8 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           }, 300);
         } else if (res.ok && data.status === 'otp_required') {
           showOtpStep(data.masked_email);
+        } else if (res.ok && data.status === 'awaiting_device_approval') {
+          showApprovalWaitingStep(data);
         } else {
           showAlert(data.message || 'Invalid institutional ID/email or password.');
         }
@@ -1503,6 +1763,8 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           setTimeout(() => {
             window.location.href = data.redirect_url;
           }, 350);
+        } else if (res.ok && data.status === 'awaiting_device_approval') {
+          showApprovalWaitingStep(data);
         } else {
           showAlert(data.message || 'Invalid or expired verification code.');
           btn.disabled = false;

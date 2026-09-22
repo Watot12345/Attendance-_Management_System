@@ -76,6 +76,7 @@
   function isGlobalElement(el) {
     if (!el || el.nodeType !== 1) return true;
     if (el.classList.contains('app-layout') || el.classList.contains('sidebar-overlay')) return true;
+    if (el.querySelector && (el.querySelector('#sidebar') || el.querySelector('main') || el.querySelector('.main-content'))) return true;
     if (el.id && GLOBAL_ELEMENT_IDS.indexOf(el.id) !== -1) return true;
     if (el.tagName === 'SCRIPT') {
       var src = el.getAttribute('src') || '';
@@ -131,29 +132,30 @@
 
       if (isActive) {
         link.classList.remove(
-          'text-slate-300', 'hover:text-white', 'hover:bg-slate-800/80',
-          'text-rose-400', 'hover:text-rose-300', 'hover:bg-rose-950/30',
-          'text-blue-400', 'hover:text-blue-300', 'hover:bg-blue-950/30',
-          'border', 'border-rose-500/20', 'border-blue-500/20'
+          'text-slate-300', 'text-blue-100', 'hover:text-white', 'hover:bg-[#395299]', 'hover:bg-white/10', 'hover:bg-slate-800/80',
+          'text-rose-400', 'text-rose-300', 'hover:text-rose-300', 'hover:bg-rose-950/30',
+          'text-blue-400', 'text-sky-300', 'hover:text-blue-300', 'hover:bg-blue-950/30',
+          'border', 'border-rose-500/20', 'border-rose-400/20', 'border-blue-500/20', 'border-sky-400/20'
         );
-        if (link.classList.contains('text-rose-400')) {
-          link.classList.add('bg-rose-600', 'text-white', 'shadow-md', 'shadow-rose-600/30', 'font-bold');
+        if (link.classList.contains('text-rose-400') || link.classList.contains('text-rose-300')) {
+          link.classList.add('bg-rose-600', 'text-white', 'font-bold');
         } else {
-          link.classList.add('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/30', 'font-bold');
+          link.classList.add('bg-[#395299]', 'text-white', 'font-bold');
         }
+        link.classList.add('active');
         link.querySelectorAll('svg').forEach(function (svg) {
-          svg.classList.remove('text-slate-400', 'text-rose-400', 'text-blue-400');
+          svg.classList.remove('text-slate-400', 'text-rose-400', 'text-rose-300', 'text-blue-400', 'text-sky-200/70', 'text-sky-300');
           svg.classList.add('text-white');
         });
       } else {
         link.classList.remove(
-          'bg-blue-600', 'bg-rose-600', 'text-white',
-          'shadow-md', 'shadow-blue-600/30', 'shadow-rose-600/30', 'font-bold'
+          'bg-[#395299]', 'bg-sky-500', 'bg-blue-600', 'bg-rose-600', 'text-white', 'active',
+          'shadow-md', 'shadow-blue-600/30', 'shadow-sky-500/30', 'shadow-rose-600/30', 'font-bold'
         );
-        link.classList.add('text-slate-300');
+        link.classList.add('text-blue-100', 'hover:text-white', 'hover:bg-[#395299]');
         link.querySelectorAll('svg').forEach(function (svg) {
           svg.classList.remove('text-white');
-          svg.classList.add('text-slate-400');
+          svg.classList.add('text-sky-200/70');
         });
       }
     });

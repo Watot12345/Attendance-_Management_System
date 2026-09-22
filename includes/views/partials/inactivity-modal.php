@@ -30,12 +30,12 @@
 
     <!-- Message Body -->
     <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">
-      You have been inactive for nearly 1 minute. For your security, you will be automatically signed out in:
+      You have been inactive for nearly 5 minutes. For your security, you will be automatically signed out in:
     </p>
 
     <!-- Big Countdown Badge -->
     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-50 border-2 border-rose-500 text-rose-600 font-black text-2xl mb-6 shadow-inner tracking-tight">
-      <span id="inactivity-countdown-timer">10</span>s
+      <span id="inactivity-countdown-timer">30</span>s
     </div>
 
     <!-- Action Buttons -->

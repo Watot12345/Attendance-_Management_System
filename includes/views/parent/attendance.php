@@ -4,34 +4,36 @@
   <div class="flex min-h-screen">
     <!-- Minimal Parent Sidebar -->
     <div id="sidebar-overlay" onclick="APP.closeSidebar()"></div>
-    <aside id="sidebar" class="flex flex-col">
-      <div class="px-4 py-5 flex items-center gap-3 border-b border-white/10">
-        <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-white font-bold text-sm">BCP</div>
+    <aside id="sidebar" class="flex flex-col bg-[#1e3b8a] text-white border-r border-blue-900/30">
+      <div class="px-4 py-5 flex items-center gap-3 border-b border-white/10 bg-transparent">
+        <div class="w-9 h-9 flex items-center justify-center shrink-0 bg-transparent shadow-none">
+          <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" class="w-9 h-9 object-contain">
+        </div>
         <div>
           <div class="text-white text-sm font-semibold leading-tight">Parent Portal</div>
-          <div class="text-xs text-slate-400 leading-tight">Attendance System</div>
+          <div class="text-xs text-sky-200/80 leading-tight">Attendance System</div>
         </div>
       </div>
-      <nav class="flex-1 py-3 px-3 space-y-0.5">
-        <a href="#" class="nav-item active">
+      <nav class="flex-1 py-4 px-3.5 space-y-1.5">
+        <a href="#" class="nav-item active bg-[#395299] text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-3">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Attendance
         </a>
-        <a href="#" class="nav-item">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Alert History
+        <a href="#" class="nav-item text-blue-100 hover:text-white hover:bg-[#395299] px-3.5 py-2.5 rounded-xl flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0 text-sky-200/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Alert History
         </a>
-        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="nav-item">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Submit Excuse
+        <a href="<?php echo url('dashboard/excuse-slips?tab=submit'); ?>" class="nav-item text-blue-100 hover:text-white hover:bg-[#395299] px-3.5 py-2.5 rounded-xl flex items-center gap-3">
+          <svg class="w-5 h-5 shrink-0 text-sky-200/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Submit Excuse
         </a>
       </nav>
-      <div class="px-4 py-3 border-t border-white/10">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-xs font-semibold">MD</div>
+      <div class="px-4 py-3 border-t border-white/10 bg-black/10">
+        <div class="flex items-center gap-3 p-2 rounded-xl bg-white/10 border border-white/10">
+          <div class="w-8 h-8 rounded-full bg-sky-600 flex items-center justify-center text-white text-xs font-semibold">MD</div>
           <div class="flex-1 min-w-0">
-            <div class="text-sm text-white truncate">Maria Dela Cruz</div>
-            <div class="text-xs text-slate-400">Parent</div>
+            <div class="text-sm text-white truncate font-bold">Maria Dela Cruz</div>
+            <div class="text-xs text-sky-200/80">Parent</div>
           </div>
         </div>
-        <a href="<?php echo url('logout'); ?>" class="nav-item mt-2 text-red-400 hover:text-red-300">
+        <a href="<?php echo url('logout'); ?>" class="nav-item mt-2 text-rose-300 hover:text-white hover:bg-white/10">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Logout
         </a>
       </div>

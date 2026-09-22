@@ -4,6 +4,9 @@
   <!-- Reusable Inactivity Auto-Logout Warning Modal Component -->
   <?php require_once __DIR__ . '/inactivity-modal.php'; ?>
 
+  <!-- Reusable Cross-Device Concurrent Login Approval Modal Component -->
+  <?php require_once __DIR__ . '/device-approval-modal.php'; ?>
+
   <!-- SPA Top Progress Bar -->
   <div id="spa-progress-bar"></div>
 
