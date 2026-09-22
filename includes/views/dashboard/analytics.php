@@ -30,7 +30,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span id="model-status-text">Model Active</span>
             </span>
-            <button id="btn-retrain-ml" type="button" class="btn btn-primary btn-sm flex items-center gap-2 font-bold shadow-xs cursor-pointer" onclick="triggerModelRetrain()">
+            <button id="btn-retrain-ml" type="button" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[#1e3b8a] hover:bg-[#162c69] shadow-md shadow-[#1e3b8a]/20 transition cursor-pointer" onclick="triggerModelRetrain()">
               <svg id="retrain-spinner" class="w-4 h-4 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
               <span>Retrain Model</span>
             </button>
@@ -40,7 +40,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
         <!-- Tab Navigation Bar -->
         <div class="bg-white rounded-2xl p-1.5 shadow-xs border border-slate-200/80 inline-flex flex-wrap gap-1">
           <button id="tab-btn-overview" type="button"
-                  class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-xs"
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#1e3b8a] text-white shadow-xs"
                   onclick="switchAnalyticsTab('overview')">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             <span>Overview &amp; Trends</span>
@@ -50,21 +50,21 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                   onclick="switchAnalyticsTab('patterns')">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <span>Detected Patterns</span>
-            <span id="badge-pattern-count" class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-blue-50 text-blue-700">3</span>
+            <span id="badge-pattern-count" class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">3</span>
           </button>
           <button id="tab-btn-at-risk" type="button"
                   class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   onclick="switchAnalyticsTab('at-risk')">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             <span>At-Risk Students</span>
-            <span id="badge-at-risk-count" class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">5</span>
+            <span id="badge-at-risk-count" class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800">5</span>
           </button>
           <button id="tab-btn-clusters" type="button"
                   class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   onclick="switchAnalyticsTab('clusters')">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             <span>Behavioral Clusters</span>
-            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-black bg-purple-50 text-purple-700">K-Means</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700">K-Means</span>
           </button>
         </div>
 
@@ -83,7 +83,50 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                 </div>
                 <span id="trend-window-pill" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-200/80">90-Day Window</span>
               </div>
-              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative" style="height:310px;">
+              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative overflow-hidden" style="height:310px;">
+                <!-- Skeleton Loader for Trend Chart -->
+                <div id="trend-chart-skeleton" class="absolute inset-0 p-4 flex flex-col justify-between animate-pulse pointer-events-none z-10 bg-slate-50/95 rounded-xl">
+                  <div class="flex items-center justify-between">
+                    <div class="h-3 bg-slate-200 rounded w-32"></div>
+                    <div class="flex items-center gap-3">
+                      <div class="h-2.5 bg-slate-200 rounded w-24"></div>
+                      <div class="h-2.5 bg-slate-200 rounded w-28"></div>
+                    </div>
+                  </div>
+                  <div class="flex-1 flex items-end justify-between gap-2 px-2 py-4">
+                    <div class="w-full h-full flex items-end justify-between gap-2 border-b border-l border-slate-200/80 pb-2 pl-2">
+                      <div class="w-[7%] bg-slate-200/70 rounded-t h-[60%]"></div>
+                      <div class="w-[7%] bg-slate-200/80 rounded-t h-[75%]"></div>
+                      <div class="w-[7%] bg-slate-200/70 rounded-t h-[68%]"></div>
+                      <div class="w-[7%] bg-slate-200/90 rounded-t h-[82%]"></div>
+                      <div class="w-[7%] bg-slate-200/70 rounded-t h-[70%]"></div>
+                      <div class="w-[7%] bg-slate-200/80 rounded-t h-[88%]"></div>
+                      <div class="w-[7%] bg-slate-200/90 rounded-t h-[92%]"></div>
+                      <div class="w-[7%] bg-slate-200/80 rounded-t h-[85%]"></div>
+                      <div class="w-[7%] bg-slate-200/70 rounded-t h-[78%]"></div>
+                      <div class="w-[7%] bg-slate-200/85 rounded-t h-[90%]"></div>
+                      <div class="w-[7%] bg-slate-200/75 rounded-t h-[84%]"></div>
+                      <div class="w-[7%] bg-slate-200/70 rounded-t h-[72%]"></div>
+                    </div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-300 px-4">
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                  </div>
+                </div>
+
+                <!-- Empty State for Trend Chart -->
+                <div id="trend-empty-state" class="hidden absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-slate-50/95 rounded-xl z-5">
+                  <div class="w-12 h-12 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-400 mb-2.5">
+                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                  </div>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-800">No Attendance Records Recorded Yet</h4>
+                  <p class="text-[11px] text-slate-500 max-w-sm mt-1 leading-relaxed">Daily presence trends and machine learning benchmark projections will calculate automatically once live class sessions or scans are logged.</p>
+                </div>
+
                 <canvas id="analytics-trend-chart"></canvas>
               </div>
             </div>
@@ -93,12 +136,12 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               <div>
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Dynamic Filters</h3>
-                  <button type="button" class="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer" onclick="resetAnalyticsFilters()">Reset</button>
+                  <button type="button" class="text-[11px] font-bold text-[#1e3b8a] hover:underline cursor-pointer" onclick="resetAnalyticsFilters()">Reset</button>
                 </div>
                 <div class="space-y-3">
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Date Range</label>
-                    <select id="filter-date-range" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition">
+                    <select id="filter-date-range" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
                       <option value="90" selected>Last 90 Days (Full Semester Horizon)</option>
                       <option value="60">Last 60 Days (Midterm Horizon)</option>
                       <option value="30">Last 30 Days (Recent Active Month)</option>
@@ -106,7 +149,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Year Level</label>
-                    <select id="filter-grade" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition">
+                    <select id="filter-grade" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
                       <option value="all" selected>All Year Levels</option>
                       <option value="1">1st Year (Freshman)</option>
                       <option value="2">2nd Year (Sophomore)</option>
@@ -116,14 +159,14 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Section</label>
-                    <select id="filter-section" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition">
+                    <select id="filter-section" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
                       <option value="all" selected>All Sections</option>
                       <option value="A">Section A</option>
                       <option value="B">Section B</option>
                       <option value="C">Section C</option>
                     </select>
                   </div>
-                  <button type="button" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs cursor-pointer mt-1" onclick="applyAnalyticsFilters()">
+                  <button type="button" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#1e3b8a] hover:bg-[#162c69] text-white transition shadow-xs cursor-pointer mt-1" onclick="applyAnalyticsFilters()">
                     Apply Filters
                   </button>
                 </div>
@@ -252,7 +295,48 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                 </div>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">Mon Spike</span>
               </div>
-              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative" style="height:210px;">
+              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative overflow-hidden" style="height:210px;">
+                <!-- Skeleton Loader for Day Chart -->
+                <div id="day-chart-skeleton" class="absolute inset-0 p-4 flex flex-col justify-between animate-pulse pointer-events-none z-10 bg-slate-50/95 rounded-xl">
+                  <div class="flex justify-between items-center">
+                    <div class="h-2.5 bg-slate-200 rounded w-20"></div>
+                    <div class="h-2 bg-slate-200 rounded w-12"></div>
+                  </div>
+                  <div class="flex-1 flex items-end justify-around gap-2 px-2 py-2 border-b border-slate-200/70">
+                    <div class="flex flex-col items-center gap-1.5 w-8">
+                      <div class="w-full bg-rose-200/80 rounded-t h-28"></div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-8">
+                      <div class="w-full bg-slate-200 rounded-t h-12"></div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-8">
+                      <div class="w-full bg-slate-200 rounded-t h-14"></div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-8">
+                      <div class="w-full bg-slate-200 rounded-t h-10"></div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1.5 w-8">
+                      <div class="w-full bg-slate-200 rounded-t h-16"></div>
+                    </div>
+                  </div>
+                  <div class="flex justify-around pt-1">
+                    <div class="h-2 bg-slate-200 rounded w-6"></div>
+                    <div class="h-2 bg-slate-200 rounded w-6"></div>
+                    <div class="h-2 bg-slate-200 rounded w-6"></div>
+                    <div class="h-2 bg-slate-200 rounded w-6"></div>
+                    <div class="h-2 bg-slate-200 rounded w-6"></div>
+                  </div>
+                </div>
+
+                <!-- Empty State for Day Chart -->
+                <div id="day-empty-state" class="hidden absolute inset-0 p-4 flex flex-col items-center justify-center text-center bg-slate-50/95 rounded-xl z-5">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-400 mb-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-800">No Weekday Absences</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 max-w-[180px]">Absence distributions will show when logs are available.</p>
+                </div>
+
                 <canvas id="day-chart"></canvas>
               </div>
             </div>
@@ -266,7 +350,51 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                 </div>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">College Cohorts</span>
               </div>
-              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative" style="height:210px;">
+              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative overflow-hidden" style="height:210px;">
+                <!-- Skeleton Loader for Grade Chart -->
+                <div id="grade-chart-skeleton" class="absolute inset-0 p-4 flex flex-col justify-between animate-pulse pointer-events-none z-10 bg-slate-50/95 rounded-xl">
+                  <div class="flex justify-between items-center">
+                    <div class="h-2.5 bg-slate-200 rounded w-24"></div>
+                    <div class="flex gap-2">
+                      <div class="h-2 bg-rose-200 rounded w-10"></div>
+                      <div class="h-2 bg-amber-200 rounded w-10"></div>
+                    </div>
+                  </div>
+                  <div class="flex-1 flex items-end justify-around gap-2 px-1 py-2 border-b border-slate-200/70">
+                    <div class="flex items-end gap-1">
+                      <div class="w-3.5 bg-rose-200 rounded-t h-20"></div>
+                      <div class="w-3.5 bg-amber-200 rounded-t h-24"></div>
+                    </div>
+                    <div class="flex items-end gap-1">
+                      <div class="w-3.5 bg-rose-200 rounded-t h-12"></div>
+                      <div class="w-3.5 bg-amber-200 rounded-t h-16"></div>
+                    </div>
+                    <div class="flex items-end gap-1">
+                      <div class="w-3.5 bg-rose-200 rounded-t h-10"></div>
+                      <div class="w-3.5 bg-amber-200 rounded-t h-14"></div>
+                    </div>
+                    <div class="flex items-end gap-1">
+                      <div class="w-3.5 bg-rose-200 rounded-t h-8"></div>
+                      <div class="w-3.5 bg-amber-200 rounded-t h-12"></div>
+                    </div>
+                  </div>
+                  <div class="flex justify-around pt-1">
+                    <div class="h-2 bg-slate-200 rounded w-8"></div>
+                    <div class="h-2 bg-slate-200 rounded w-8"></div>
+                    <div class="h-2 bg-slate-200 rounded w-8"></div>
+                    <div class="h-2 bg-slate-200 rounded w-8"></div>
+                  </div>
+                </div>
+
+                <!-- Empty State for Grade Chart -->
+                <div id="grade-empty-state" class="hidden absolute inset-0 p-4 flex flex-col items-center justify-center text-center bg-slate-50/95 rounded-xl z-5">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-400 mb-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-800">No Cohort Metrics</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 max-w-[180px]">Year level comparisons will render once attendance is marked.</p>
+                </div>
+
                 <canvas id="grade-chart"></canvas>
               </div>
             </div>
@@ -280,7 +408,47 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                 </div>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Institution</span>
               </div>
-              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative" style="height:210px;">
+              <div class="w-full rounded-xl bg-slate-50/70 p-2 relative overflow-hidden" style="height:210px;">
+                <!-- Skeleton Loader for Status Doughnut Chart -->
+                <div id="status-doughnut-skeleton" class="absolute inset-0 p-4 flex flex-col items-center justify-between animate-pulse pointer-events-none z-10 bg-slate-50/95 rounded-xl">
+                  <div class="w-full flex justify-between items-center">
+                    <div class="h-2.5 bg-slate-200 rounded w-24"></div>
+                    <div class="h-2 bg-slate-200 rounded w-10"></div>
+                  </div>
+                  <div class="relative flex items-center justify-center my-auto">
+                    <div class="w-24 h-24 rounded-full border-8 border-slate-200 flex items-center justify-center">
+                      <div class="w-10 h-10 rounded-full bg-slate-100"></div>
+                    </div>
+                  </div>
+                  <div class="w-full grid grid-cols-2 gap-2 pt-1">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-teal-200"></div>
+                      <div class="h-2 bg-slate-200 rounded w-12"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-amber-200"></div>
+                      <div class="h-2 bg-slate-200 rounded w-10"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-blue-200"></div>
+                      <div class="h-2 bg-slate-200 rounded w-14"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-2 h-2 rounded-full bg-rose-200"></div>
+                      <div class="h-2 bg-slate-200 rounded w-12"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty State for Status Doughnut Chart -->
+                <div id="status-empty-state" class="hidden absolute inset-0 p-4 flex flex-col items-center justify-center text-center bg-slate-50/95 rounded-xl z-5">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-400 mb-2">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-800">No Status Records</h4>
+                  <p class="text-[10px] text-slate-500 mt-0.5 max-w-[180px]">Present, tardy, and unexcused ratios will display here.</p>
+                </div>
+
                 <canvas id="status-doughnut-chart"></canvas>
               </div>
             </div>

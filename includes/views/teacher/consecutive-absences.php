@@ -1,6 +1,8 @@
 <?php
 $page_title = '3+ Consecutive Absence Dropout Watchlist';
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
+require_once dirname(__DIR__, 2) . '/core/Cache.php';
 require_once dirname(__DIR__, 2) . '/controllers/TeacherController.php';
 
 $teacherId = TeacherController::resolveCurrentTeacherId();

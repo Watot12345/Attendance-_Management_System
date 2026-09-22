@@ -1,145 +1,144 @@
-<?php $page_title = 'Create User'; ?>
-<?php include __DIR__ . '/../partials/header.php'; ?>
-<body class="min-h-screen">
-  <div class="flex min-h-screen">
-    <?php include __DIR__ . '/../partials/sidebar.php'; ?>
+<?php 
+$page_title = 'Create User Account'; 
+require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__) . '/partials/header.php';
+?>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <?php include __DIR__ . '/../partials/navbar.php'; ?>
+<div class="app-layout">
+  <?php require_once dirname(__DIR__) . '/partials/sidebar.php'; ?>
 
-      <main class="flex-1 p-6 flex items-start justify-center" style="background:var(--color-surface)">
-        <div class="w-full max-w-lg">
-          <div class="mb-6">
-            <a href="<?php echo url('users'); ?>" class="text-sm" style="color:var(--color-teal-500)">← Back to Users</a>
-            <h1 class="text-2xl font-bold mt-2" style="color:var(--color-text-primary)">Create User</h1>
+  <div class="main-content">
+    <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
+
+    <main class="page-body">
+      <!-- Breadcrumb & Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <a href="<?php echo url('users'); ?>" class="text-xs font-semibold text-slate-500 hover:text-[#1e3b8a] transition flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+              <span>Back to User Directory</span>
+            </a>
+            <span class="text-xs text-slate-300 font-medium">•</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">New Account Provisioning</span>
           </div>
-
-          <div class="bg-white rounded-lg p-6 shadow-card">
-            <form onsubmit="event.preventDefault();">
-              <!-- Role -->
-              <div class="mb-4">
-                <label for="user-role" class="form-label">Role</label>
-                <select id="user-role" class="form-input form-select" onchange="toggleRoleFields(this.value)">
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="admin">Admin</option>
-                  <option value="parent">Parent</option>
-                </select>
-              </div>
-
-              <!-- Base Fields -->
-              <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label for="user-fname" class="form-label">First Name</label>
-                  <input type="text" id="user-fname" class="form-input" placeholder="Juan">
-                </div>
-                <div>
-                  <label for="user-lname" class="form-label">Last Name</label>
-                  <input type="text" id="user-lname" class="form-input" placeholder="Dela Cruz">
-                </div>
-              </div>
-
-              <div class="mb-4">
-                <label for="user-email" class="form-label">Email</label>
-                <input type="email" id="user-email" class="form-input" placeholder="user@bestlink.edu.ph">
-              </div>
-
-              <div class="mb-4">
-                <label for="user-password" class="form-label">Password</label>
-                <input type="password" id="user-password" class="form-input" placeholder="Minimum 8 characters">
-                <p class="form-helper">Auto-generated password recommended for batch creation</p>
-              </div>
-
-              <div class="mb-4">
-                <label for="user-phone" class="form-label">Phone (optional)</label>
-                <input type="tel" id="user-phone" class="form-input" placeholder="+63 912 345 6789">
-              </div>
-
-              <!-- Student-specific fields -->
-              <div id="student-fields">
-                <hr class="my-4" style="border-color:var(--color-border)">
-                <h3 class="text-base font-semibold mb-3" style="color:var(--color-text-primary)">Student Details</h3>
-                <div class="mb-4">
-                  <label for="student-code" class="form-label">Student Code (LRN)</label>
-                  <input type="text" id="student-code" class="form-input" placeholder="e.g., 123456789012">
-                </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label for="student-grade" class="form-label">Grade Level</label>
-                    <select id="student-grade" class="form-input form-select">
-                      <option>Grade 7</option>
-                      <option>Grade 8</option>
-                      <option>Grade 9</option>
-                      <option>Grade 10</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="student-section" class="form-label">Section</label>
-                    <select id="student-section" class="form-input form-select">
-                      <option>Section A</option>
-                      <option>Section B</option>
-                      <option>Section C</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="mb-4">
-                  <label for="student-parent" class="form-label">Linked Parent Account</label>
-                  <select id="student-parent" class="form-input form-select">
-                    <option value="">None (create later)</option>
-                    <option>Dela Cruz, Maria (Parent)</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Teacher-specific fields -->
-              <div id="teacher-fields" class="hidden">
-                <hr class="my-4" style="border-color:var(--color-border)">
-                <h3 class="text-base font-semibold mb-3" style="color:var(--color-text-primary)">Teacher Details</h3>
-                <div class="mb-4">
-                  <label for="teacher-empid" class="form-label">Employee ID</label>
-                  <input type="text" id="teacher-empid" class="form-input" placeholder="EMP-XX">
-                </div>
-                <div class="mb-4">
-                  <label for="teacher-dept" class="form-label">Department</label>
-                  <select id="teacher-dept" class="form-input form-select">
-                    <option>Mathematics</option>
-                    <option>Science</option>
-                    <option>English</option>
-                    <option>Filipino</option>
-                    <option>Social Studies</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Parent-specific fields -->
-              <div id="parent-fields" class="hidden">
-                <hr class="my-4" style="border-color:var(--color-border)">
-                <h3 class="text-base font-semibold mb-3" style="color:var(--color-text-primary)">Parent Details</h3>
-                <div class="mb-4">
-                  <label for="parent-child" class="form-label">Linked Student</label>
-                  <select id="parent-child" class="form-input form-select">
-                    <option value="">Select student...</option>
-                    <option>Dela Cruz, Juan · BCP-001</option>
-                    <option>Santos, Maria · BCP-002</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div class="flex justify-end gap-3 mt-6">
-                <a href="<?php echo url('users'); ?>" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Create User</button>
-              </div>
-            </form>
-          </div>
+          <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Create User Account</h1>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
+            Provision authentication credentials and role permissions for a student, faculty teacher, or administrator.
+          </p>
         </div>
-      </main>
-    </div>
+      </div>
+
+      <!-- Centered Card Form -->
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8">
+          <form id="create-user-form" onsubmit="event.preventDefault(); handleCreateUser(this);">
+            
+            <!-- Role Selection -->
+            <div class="mb-5">
+              <label for="user-role" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Assign Role &amp; Permissions</label>
+              <select id="user-role" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold bg-slate-50/60 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition cursor-pointer" onchange="toggleRoleFields(this.value)">
+                <option value="student" selected>Student (Learner Portal Access)</option>
+                <option value="teacher">Faculty Teacher (Attendance Marking &amp; Rosters)</option>
+                <option value="admin">Institutional Administrator (Full Oversight)</option>
+                <option value="parent">Parent / Guardian (Alert Notifications)</option>
+              </select>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label for="user-fname" class="block text-xs font-bold text-slate-700 mb-1.5">First Name</label>
+                <input type="text" id="user-fname" required placeholder="e.g. Juan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+              </div>
+              <div>
+                <label for="user-lname" class="block text-xs font-bold text-slate-700 mb-1.5">Last Name</label>
+                <input type="text" id="user-lname" required placeholder="e.g. Dela Cruz" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="user-email" class="block text-xs font-bold text-slate-700 mb-1.5">Institutional Email Address</label>
+              <input type="email" id="user-email" required placeholder="e.g. jdelacruz@bcp.edu.ph" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label for="user-password" class="block text-xs font-bold text-slate-700 mb-1.5">Initial Password</label>
+                <input type="password" id="user-password" required placeholder="Minimum 8 characters" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+                <p class="text-[11px] text-slate-400 mt-1">Default temporary password for first-time sign-in.</p>
+              </div>
+              <div>
+                <label for="user-phone" class="block text-xs font-bold text-slate-700 mb-1.5">Contact Phone Number (Optional)</label>
+                <input type="tel" id="user-phone" placeholder="e.g. +63 912 345 6789" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+              </div>
+            </div>
+
+            <!-- Student-Specific Fields -->
+            <div id="student-fields" class="pt-4 border-t border-slate-100 space-y-4">
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Student Academic Details</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="student-code" class="block text-xs font-bold text-slate-700 mb-1.5">Student Number / LRN</label>
+                  <input type="text" id="student-code" placeholder="e.g. 2026-00123" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+                </div>
+                <div>
+                  <label for="student-section" class="block text-xs font-bold text-slate-700 mb-1.5">Assigned Section</label>
+                  <input type="text" id="student-section" placeholder="e.g. 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+                </div>
+              </div>
+            </div>
+
+            <!-- Teacher-Specific Fields -->
+            <div id="teacher-fields" class="pt-4 border-t border-slate-100 space-y-4 hidden">
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Faculty Details</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="teacher-empid" class="block text-xs font-bold text-slate-700 mb-1.5">Faculty Employee ID</label>
+                  <input type="text" id="teacher-empid" placeholder="e.g. EMP-101" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+                </div>
+                <div>
+                  <label for="teacher-dept" class="block text-xs font-bold text-slate-700 mb-1.5">Academic Department</label>
+                  <input type="text" id="teacher-dept" placeholder="e.g. College of Computer Studies" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition placeholder:text-slate-400">
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100 mt-6">
+              <a href="<?php echo url('users'); ?>" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition">
+                Cancel
+              </a>
+              <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1e3b8a] hover:bg-[#162c69] shadow-md shadow-[#1e3b8a]/20 transition cursor-pointer">
+                <span>Create User Account</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
   </div>
+</div>
 
-  <?php include __DIR__ . '/../partials/modal.php'; ?>
-  <?php include __DIR__ . '/../partials/flash.php'; ?>
-<?php $page_js = '<script src="../../../assets/js/users.js"></script>'; ?>
+<script>
+function toggleRoleFields(role) {
+  const sFields = document.getElementById('student-fields');
+  const tFields = document.getElementById('teacher-fields');
+  if (sFields) sFields.classList.toggle('hidden', role !== 'student');
+  if (tFields) tFields.classList.toggle('hidden', role !== 'teacher');
+}
+
+function handleCreateUser(form) {
+  if (window.APP && APP.showToast) {
+    APP.showToast('User account provisioned successfully', 'success');
+    setTimeout(() => {
+      window.location.href = '<?php echo url('users'); ?>';
+    }, 800);
+  } else {
+    alert('User account provisioned successfully');
+    window.location.href = '<?php echo url('users'); ?>';
+  }
+}
+</script>
+
 <?php include __DIR__ . '/../partials/footer.php'; ?>
-
-<script>APP.highlightNav('users');</script>

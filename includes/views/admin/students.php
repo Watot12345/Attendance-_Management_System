@@ -15,29 +15,29 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1e3b8a]/10 text-[#1e3b8a] border border-[#1e3b8a]/20">Admin Portal</span>
             <span class="text-xs text-slate-400 font-medium">•</span>
             <span class="text-xs text-slate-500 font-semibold">Master Accounts Directory</span>
           </div>
           <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Student Accounts &amp; Master Roster</h1>
           <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Manage institutional student accounts, create credentials manually, or batch import students via Excel/CSV spreadsheets containing student names and student numbers.
+            Manage institutional student accounts, create credentials manually, or batch import students via Excel/CSV spreadsheets.
           </p>
         </div>
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-2.5 shrink-0">
           <!-- Import Excel Button -->
-          <button type="button" onclick="openExcelModal()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg transition flex items-center gap-2 group">
-            <svg class="w-4 h-4 text-emerald-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button type="button" onclick="openExcelModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-2 group cursor-pointer">
+            <svg class="w-4 h-4 text-emerald-600 group-hover:scale-105 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <span>Import Excel / CSV Roster</span>
+            <span>Import Excel / CSV</span>
           </button>
 
           <!-- Create Manually Button -->
-          <button type="button" onclick="openManualStudentModal()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 group">
-            <svg class="w-4 h-4 text-blue-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button type="button" onclick="openManualStudentModal()" class="px-4 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 group cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200 group-hover:scale-105 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
             </svg>
             <span>+ Create Account Manually</span>
@@ -48,11 +48,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <!-- Quick Metrics Grid -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-[#1e3b8a]/10 border border-[#1e3b8a]/15 flex items-center justify-center text-[#1e3b8a] shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           </div>
           <div>
-            <div id="stat-total-students" class="text-xl font-black text-slate-900"><?= number_format($totalStudents ?? 0) ?></div>
+            <div id="stat-total-students" class="text-xl font-bold text-slate-900"><?= number_format($totalStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Total Enrolled</div>
           </div>
         </div>
@@ -62,17 +62,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-emerald-600"><?= number_format($activeStudents ?? 0) ?></div>
+            <div class="text-xl font-bold text-emerald-600"><?= number_format($activeStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Active Portal Users</div>
           </div>
         </div>
 
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-indigo-600"><?= number_format($qrPairedStudents ?? 0) ?></div>
+            <div class="text-xl font-bold text-sky-700"><?= number_format($qrPairedStudents ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">RFID / QR Paired</div>
           </div>
         </div>
@@ -82,7 +82,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
           <div>
-            <div class="text-xl font-black text-amber-600"><?= number_format($pendingSetup ?? 0) ?></div>
+            <div class="text-xl font-bold text-amber-600"><?= number_format($pendingSetup ?? 0) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Pending Setup</div>
           </div>
         </div>
@@ -93,10 +93,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <!-- Search box -->
           <div class="relative w-full sm:w-80">
-            <input type="text" id="search-student" placeholder="Search by name, student ID, email..." class="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="debouncedFilterStudents()">
+            <input type="text" id="search-student" placeholder="Search by name, student ID, email..." class="w-full pl-9 pr-9 py-2 text-xs bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition" oninput="debouncedFilterStudents()">
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <!-- Loading Spinner (shown while debouncing / filtering) -->
-            <div id="search-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-blue-600">
+            <!-- Loading Spinner -->
+            <div id="search-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#1e3b8a]">
               <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
@@ -105,7 +105,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
 
           <!-- Program filter -->
-          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
+          <select id="filter-program" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:border-[#1e3b8a] font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Programs &amp; Courses</option>
             <option value="BSIT">BS Information Technology (BSIT)</option>
             <option value="BSIS">BS Information Systems (BSIS)</option>
@@ -114,7 +114,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </select>
 
           <!-- Year Level Filter -->
-          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
+          <select id="filter-year" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:border-[#1e3b8a] font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Year Levels</option>
             <option value="1">1st Year</option>
             <option value="2">2nd Year</option>
@@ -123,7 +123,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </select>
 
           <!-- Status filter -->
-          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-blue-500 font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
+          <select id="filter-status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-slate-50/60 focus:bg-white focus:outline-none focus:border-[#1e3b8a] font-semibold text-slate-700 transition cursor-pointer" onchange="debouncedFilterStudents()">
             <option value="all">All Statuses</option>
             <option value="active">Active Accounts Only</option>
             <option value="inactive">Inactive / Suspended</option>
@@ -139,7 +139,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden mb-8">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50/90 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+            <thead class="bg-slate-50/80 text-slate-500 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
                 <th class="py-3.5 px-4">Student ID / Number</th>
                 <th class="py-3.5 px-4">Student Full Name</th>
@@ -167,23 +167,23 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     $fullName = htmlspecialchars($st['first_name'] . ' ' . $st['last_name']);
                     $initials = strtoupper(substr($st['first_name'], 0, 1) . substr($st['last_name'], 0, 1));
                   ?>
-                  <tr class="student-row hover:bg-slate-50/80 transition" 
+                  <tr class="student-row hover:bg-slate-50/60 transition-colors" 
                       data-program="<?= htmlspecialchars($st['course']) ?>" 
                       data-year="<?= htmlspecialchars($st['grade_level']) ?>" 
                       data-year-num="<?= (int) ($st['year_level'] ?? 3) ?>" 
                       data-status="<?= strtolower($st['status'] ?? 'active') ?>" 
                       data-text="<?= strtolower($st['student_code'] . ' ' . $fullName . ' ' . $st['email'] . ' ' . $st['course'] . ' ' . $st['grade_level'] . ' ' . $st['section']) ?>">
                     
-                    <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
+                    <td class="py-3.5 px-4 font-mono font-semibold text-[#1e3b8a]">
                       <div class="flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full <?= $st['status'] === 'active' ? 'bg-emerald-500' : 'bg-slate-400' ?>"></span>
+                        <span class="w-1.5 h-1.5 rounded-full <?= $st['status'] === 'active' ? 'bg-emerald-500' : 'bg-slate-300' ?>"></span>
                         <span><?= htmlspecialchars($st['student_code']) ?></span>
                       </div>
                     </td>
 
                     <td class="py-3.5 px-4">
                       <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                           <?= $initials ?>
                         </div>
                         <div>
@@ -197,15 +197,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     <td class="py-3.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($st['course']) ?> • <?= htmlspecialchars($st['grade_level']) ?></td>
                     
                     <td class="py-3.5 px-4">
-                      <span class="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold text-[10.5px]">
+                      <span class="px-2 py-0.5 rounded-md bg-[#1e3b8a]/10 text-[#1e3b8a] font-mono font-bold text-[10.5px]">
                         <?= htmlspecialchars($st['section']) ?>
                       </span>
                     </td>
 
                     <td class="py-3.5 px-4">
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $st['status'] === 'active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600' ?>">
-                        <?= ucfirst(htmlspecialchars($st['status'])) ?> Account
-                      </span>
+                      <?php if ($st['status'] === 'active'): ?>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          Active Account
+                        </span>
+                      <?php else: ?>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          <?= ucfirst(htmlspecialchars($st['status'])) ?>
+                        </span>
+                      <?php endif; ?>
                     </td>
 
                     <td class="py-3.5 px-4 text-right">
@@ -233,7 +239,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <!-- Student Master Table Pagination Footer Bar -->
-        <div id="student-pagination-bar" class="px-5 py-3.5 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div id="student-pagination-bar" class="px-5 py-3.5 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <!-- Left: Showing X to Y of Z student record(s) -->
           <div class="text-slate-500 font-medium" id="student-pagination-info">
             Showing <span id="pagination-start" class="font-bold text-slate-800">1</span> to <span id="pagination-end" class="font-bold text-slate-800"><?= min(15, count($students)) ?></span> of <span id="pagination-total" class="font-bold text-slate-800"><?= count($students) ?></span> student record(s)
@@ -253,17 +259,17 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <!-- MODAL 1: CREATE STUDENT ACCOUNT MANUALLY -->
 <!-- ========================================================================= -->
 <div id="manualStudentModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+  <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
     <!-- Modal Header -->
-    <div class="px-6 py-5 bg-gradient-to-r from-blue-700 to-indigo-700 text-white flex items-center justify-between">
+    <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
       <div>
         <div class="flex items-center gap-2">
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Manual Entry</span>
-          <span class="text-xs text-blue-200 font-medium">Admin Form</span>
+          <span class="text-xs text-sky-200 font-medium">Admin Form</span>
         </div>
-        <h3 class="text-lg font-black tracking-tight mt-1">Create Student Account Manually</h3>
+        <h3 class="text-lg font-bold tracking-tight mt-0.5">Create Student Account Manually</h3>
       </div>
-      <button type="button" onclick="closeManualStudentModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+      <button type="button" onclick="closeManualStudentModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
@@ -277,9 +283,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
             Student Number / ID <span class="text-rose-500">*</span>
           </label>
           <div class="relative">
-            <input type="text" id="m-student-id" name="student_id" required placeholder="23011XXXX" data-next-id="<?= htmlspecialchars($nextStudentId ?? '230110007') ?>" class="w-full pl-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-slate-800 outline-none transition" style="padding-left: 1rem; padding-right: 4.75rem;">
-            <button type="button" onclick="autoGenerateStudentId()" title="Auto-generate Student Number" class="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition flex items-center gap-1 border border-blue-200 shadow-2xs group cursor-pointer">
-              <svg class="w-3.5 h-3.5 text-blue-600 group-hover:rotate-45 transition duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <input type="text" id="m-student-id" name="student_id" required placeholder="23011XXXX" data-next-id="<?= htmlspecialchars($nextStudentId ?? '230110007') ?>" class="w-full pl-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] font-mono font-bold text-slate-800 outline-none transition" style="padding-left: 1rem; padding-right: 4.75rem;">
+            <button type="button" onclick="autoGenerateStudentId()" title="Auto-generate Student Number" class="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#1e3b8a] text-[11px] font-semibold transition flex items-center gap-1 border border-slate-200 cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-[#1e3b8a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
               <span>Auto</span>
@@ -293,7 +299,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-student-name" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Student Full Name <span class="text-rose-500">*</span>
           </label>
-          <input type="text" id="m-student-name" name="full_name" required placeholder="e.g. Christian Paul D. Ramos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-slate-800 outline-none">
+          <input type="text" id="m-student-name" name="full_name" required placeholder="e.g. Christian Paul D. Ramos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] font-semibold text-slate-800 outline-none">
         </div>
       </div>
 
@@ -303,7 +309,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-course" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Course Program <span class="text-rose-500">*</span>
           </label>
-          <select id="m-course" name="course" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <select id="m-course" name="course" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-semibold text-slate-800 outline-none">
             <option value="BSIT">BS Information Technology (BSIT)</option>
             <option value="BSIS">BS Information Systems (BSIS)</option>
             <option value="BSCS">BS Computer Science (BSCS)</option>
@@ -316,7 +322,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-year" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Year Level <span class="text-rose-500">*</span>
           </label>
-          <select id="m-year" name="year_level" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-semibold text-slate-800 outline-none">
+          <select id="m-year" name="year_level" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-semibold text-slate-800 outline-none">
             <option value="1st Year">1st Year</option>
             <option value="2nd Year">2nd Year</option>
             <option value="3rd Year" selected>3rd Year</option>
@@ -330,10 +336,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
             Assigned Section <span class="text-rose-500">*</span>
           </label>
           <div class="relative">
-            <input type="text" id="m-section" name="section" required placeholder="e.g. 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 outline-none bg-slate-50/70 font-mono transition">
+            <input type="text" id="m-section" name="section" required placeholder="e.g. 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-bold text-slate-800 outline-none bg-slate-50/70 font-mono transition">
           </div>
           <div id="m-section-capacity-badge" class="text-[11px] mt-1.5 font-medium text-slate-500 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#1e3b8a]"></span>
             <span id="m-section-status-text">Auto-assigned based on Course &amp; Year Level</span>
           </div>
         </div>
@@ -345,7 +351,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-email-prefix" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Institutional Email <span class="text-rose-500">*</span>
           </label>
-          <div class="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition bg-white shadow-2xs">
+          <div class="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-[#1e3b8a]/20 focus-within:border-[#1e3b8a] transition bg-white shadow-2xs">
             <input type="text" id="m-email-prefix" name="email_prefix" required placeholder="student.name" class="w-full px-3.5 py-2.5 text-xs font-mono font-medium text-slate-800 outline-none bg-transparent" autocomplete="off">
             <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-500 bg-slate-50 border-l border-slate-200 select-none shrink-0 font-mono">
               @bcp.edu.ph
@@ -359,7 +365,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <label for="m-parent" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Parent/Guardian Mobile or Email
           </label>
-          <input type="text" id="m-parent" name="parent_contact" placeholder="0917-000-0000 / parent@email.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 outline-none">
+          <input type="text" id="m-parent" name="parent_contact" placeholder="0917-000-0000 / parent@email.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-medium text-slate-800 outline-none">
         </div>
       </div>
 
@@ -369,15 +375,15 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <div class="font-bold text-slate-800">Initial Student Password</div>
           <div class="text-[11px] text-slate-500">Format: # + 1st &amp; 2nd letter of Last Name + 8080. Prompted to change on first login.</div>
         </div>
-        <span id="m-password-preview" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-blue-700 text-xs shadow-2xs">#La8080</span>
+        <span id="m-password-preview" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-[#1e3b8a] text-xs shadow-2xs">#La8080</span>
       </div>
 
       <!-- Action Footer -->
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-        <button type="button" onclick="closeManualStudentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition">
+        <button type="button" onclick="closeManualStudentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" id="btn-manual-submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
+        <button type="submit" id="btn-manual-submit" class="px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           <span>Save &amp; Create Student Account</span>
         </button>
@@ -390,47 +396,47 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <!-- MODAL 2: IMPORT EXCEL / CSV ROSTER FILE -->
 <!-- ========================================================================= -->
 <div id="excelImportModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+  <div class="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
     <form id="excel-import-form" action="<?= url('admin/students/import') ?>" method="POST" enctype="multipart/form-data">
       <!-- Header -->
-      <div class="px-6 py-5 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white flex items-center justify-between">
+      <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
         <div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Bulk CSV / Excel Importer</span>
-            <span class="text-xs text-emerald-200 font-medium">Batch Account Provisioning</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Bulk CSV / Excel</span>
+            <span class="text-xs text-sky-200 font-medium">Batch Account Provisioning</span>
           </div>
-          <h3 class="text-lg font-black tracking-tight mt-1">Import Student Accounts via Spreadsheet</h3>
+          <h3 class="text-lg font-bold tracking-tight mt-0.5">Import Student Accounts via Spreadsheet</h3>
         </div>
-        <button type="button" onclick="closeExcelModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+        <button type="button" onclick="closeExcelModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
       <div class="p-6 space-y-5">
         <!-- Excel Guidelines -->
-        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-3.5">
-          <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+          <div class="w-8 h-8 rounded-xl bg-[#1e3b8a]/10 text-[#1e3b8a] flex items-center justify-center shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <div class="text-xs text-emerald-950">
+          <div class="text-xs text-slate-800">
             <div class="font-bold mb-0.5">Required Spreadsheet Format (.csv, .txt):</div>
-            <p class="text-emerald-800 text-[11.5px] leading-relaxed">
-              Ensure your spreadsheet includes headers: <strong class="font-mono text-emerald-950">student_id</strong>, <strong class="font-mono text-emerald-950">full_name</strong>, <strong class="font-mono text-emerald-950">email</strong>, <strong class="font-mono text-emerald-950">course</strong>, and <strong class="font-mono text-emerald-950">section</strong>. Student accounts with default credentials (<code class="bg-emerald-200/60 px-1 py-0.5 rounded text-emerald-900 font-semibold font-mono"># + Last Name Initials + 8080 (e.g. #Ra8080)</code>) and class roster mappings will be created automatically.
+            <p class="text-slate-600 text-[11.5px] leading-relaxed">
+              Ensure your spreadsheet includes headers: <strong class="font-mono text-slate-900">student_id</strong>, <strong class="font-mono text-slate-900">full_name</strong>, <strong class="font-mono text-slate-900">email</strong>, <strong class="font-mono text-slate-900">course</strong>, and <strong class="font-mono text-slate-900">section</strong>. Student accounts with default credentials (<code class="bg-slate-200/70 px-1 py-0.5 rounded text-slate-800 font-semibold font-mono"># + Last Name Initials + 8080 (e.g. #Ra8080)</code>) and class roster mappings will be created automatically.
             </p>
           </div>
         </div>
 
         <!-- Drag and Drop Dropzone -->
-        <div id="excel-dropzone" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-7 text-center transition cursor-pointer bg-slate-50/70 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-2 group" onclick="triggerExcelFileInput()">
+        <div id="excel-dropzone" class="border-2 border-dashed border-slate-300 hover:border-[#1e3b8a] rounded-2xl p-7 text-center transition cursor-pointer bg-slate-50/70 hover:bg-slate-50 flex flex-col items-center justify-center gap-2 group" onclick="triggerExcelFileInput()">
           <input type="file" id="excel-file-input" name="csv_file" accept=".csv,.txt" class="hidden" onchange="handleExcelFileSelected(event)">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition shadow-xs">
+          <div class="w-12 h-12 rounded-2xl bg-[#1e3b8a]/10 text-[#1e3b8a] flex items-center justify-center group-hover:scale-105 transition shadow-xs">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
           </div>
           <div class="text-xs font-bold text-slate-800">
             Click to choose CSV spreadsheet or drag and drop here
           </div>
           <div class="text-[11px] text-slate-400">Supported formats: .CSV, .TXT (Comma-separated values)</div>
-          <div id="selected-file-pill" class="hidden mt-2 px-3 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-800 font-mono text-xs font-bold flex items-center gap-2">
+          <div id="selected-file-pill" class="hidden mt-2 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-xs font-bold flex items-center gap-2">
             <span>📄</span>
             <span id="selected-file-name">official_students_2026.csv</span>
           </div>
@@ -441,7 +447,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           <div class="flex items-center justify-between">
             <div class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
               <span>Parsed Records Preview</span>
-              <span id="excel-preview-count" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Ready to Import</span>
+              <span id="excel-preview-count" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Ready to Import</span>
             </div>
             <span class="text-[11px] text-slate-400 font-medium">Previewing records from chosen file</span>
           </div>
@@ -466,16 +472,16 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <!-- Modal Footer -->
         <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-          <button type="button" onclick="downloadExcelTemplate()" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1.5">
+          <button type="button" onclick="downloadExcelTemplate()" class="text-xs font-semibold text-[#1e3b8a] hover:underline flex items-center gap-1.5 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             <span>Download CSV Template (.csv)</span>
           </button>
 
           <div class="flex items-center gap-2.5">
-            <button type="button" onclick="closeExcelModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition">
+            <button type="button" onclick="closeExcelModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
               Close
             </button>
-            <button type="button" id="btn-process-excel" onclick="processExcelImport()" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+            <button type="button" id="btn-process-excel" onclick="processExcelImport()" class="px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span>Create Accounts from CSV</span>
             </button>

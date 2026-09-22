@@ -266,6 +266,24 @@ select {
   max-width: 100% !important;
   width: 100% !important;
 }
+
+/* Minimalist Table & Text Truncation System */
+.table-text-truncate {
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 640px) {
+  .table-text-truncate {
+    max-width: 220px;
+  }
+}
+@media (min-width: 1024px) {
+  .table-text-truncate {
+    max-width: 260px;
+  }
+}
 </style>
 
 <div class="app-layout">
@@ -277,11 +295,11 @@ select {
     <main class="page-body px-3 py-4 sm:px-6 sm:py-6 md:px-8 max-w-7xl mx-auto space-y-4 sm:space-y-6 w-full min-w-0 max-w-full">
       
       <!-- Top Banner / Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm w-full min-w-0 max-w-full overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs w-full min-w-0 max-w-full overflow-hidden">
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-              <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60 shrink-0">
+              <svg class="w-3 h-3 text-[#1e3b8a]" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
               Export Center &amp; Analytics
             </span>
             <span class="text-[11px] sm:text-xs text-slate-400 font-medium break-words">Class Roster &bull; Users Verification &bull; Attendance Ledger</span>
@@ -295,15 +313,15 @@ select {
         <!-- Header Action Export Button -->
         <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
           <!-- Advanced Export Options Modal Trigger -->
-          <button type="button" onclick="openExportModal()" title="Open Export Configuration Dialog" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <button type="button" onclick="openExportModal()" title="Open Export Configuration Dialog" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1e3b8a] hover:bg-[#162c69] shadow-md shadow-[#1e3b8a]/20 transition cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>Export Reports...</span>
           </button>
         </div>
       </div>
 
       <!-- Filter Controls & Search Bar (Placed at Top) -->
-      <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-sm space-y-3.5 w-full min-w-0 max-w-full overflow-hidden">
+      <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-3.5 w-full min-w-0 max-w-full overflow-hidden">
         
         <!-- Top Tier: Full-Width Spacious Search Bar -->
         <div class="relative w-full min-w-0">
@@ -377,7 +395,7 @@ select {
       <!-- KPI Summary Cards (Unified Cohesive Color Theme) -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full min-w-0 max-w-full">
         <!-- Card 1: Total Roster -->
-        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
           <div class="flex items-center justify-between gap-1">
             <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Enrolled Roster</span>
             <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
@@ -392,7 +410,7 @@ select {
         </div>
 
         <!-- Card 2: Registered in Users Table -->
-        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
           <div class="flex items-center justify-between gap-1">
             <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">In Users Table</span>
             <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
@@ -407,7 +425,7 @@ select {
         </div>
 
         <!-- Card 3: Overall Attendance Rate -->
-        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
           <div class="flex items-center justify-between gap-1">
             <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Attendance Rate</span>
             <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
@@ -422,7 +440,7 @@ select {
         </div>
 
         <!-- Card 4: Attendance Status Mix -->
-        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
+        <div class="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-400 transition w-full min-w-0">
           <div class="flex items-center justify-between gap-1">
             <span class="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Session Counts</span>
             <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
@@ -451,7 +469,7 @@ select {
       <div id="export-charts-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 w-full min-w-0 max-w-full">
         
         <!-- Left Column: Section Attendance Rates -->
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
           <div class="flex items-center justify-between mb-2">
             <div class="min-w-0">
               <h3 class="font-bold text-slate-800 text-xs sm:text-sm truncate">Section Attendance Rates</h3>
@@ -469,7 +487,7 @@ select {
         <!-- Right Column: 2 Charts in a Row on tablet/desktop, stacked on mobile -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 w-full min-w-0 max-w-full">
           <!-- Chart: Attendance Status Breakdown -->
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
             <div class="flex items-center justify-between mb-2">
               <div class="min-w-0">
                 <h3 class="font-bold text-slate-800 text-xs truncate">Attendance Breakdown</h3>
@@ -485,7 +503,7 @@ select {
           </div>
 
           <!-- Chart: Academic Majors / Programs Distribution (Pie Chart) -->
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden">
             <div class="flex items-center justify-between mb-2">
               <div class="min-w-0">
                 <h3 class="font-bold text-slate-800 text-xs truncate">Students by Major</h3>
@@ -503,35 +521,37 @@ select {
 
       </div>
 
-      <!-- Main Ledger Table -->
-      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden w-full min-w-0 max-w-full">
-        <div class="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
-          <div class="flex items-center gap-2.5">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-            <h2 class="font-bold text-slate-900 text-xs sm:text-sm">Class Roster &amp; Attendance Registry Ledger</h2>
+      <!-- Main Ledger Table (Minimalist & Precision Truncated) -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden w-full min-w-0 max-w-full">
+        <div class="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/40">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0"></span>
+            <h2 class="font-bold text-slate-900 text-xs sm:text-sm tracking-tight truncate">Class Roster &amp; Attendance Registry Ledger</h2>
           </div>
-          <div class="flex items-center gap-2 text-[11px] text-slate-400">
-            <span>Live Joined Dataset</span>
+          <div class="flex items-center gap-2 text-[11px] text-slate-400 shrink-0">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-500 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Dataset
+            </span>
             <span class="sm:hidden inline-flex items-center gap-1 text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-              Scroll table &rarr;
+              Scroll &rarr;
             </span>
           </div>
         </div>
 
         <div class="overflow-x-auto w-full max-w-full">
-          <table class="w-full text-left text-xs min-w-[640px]" id="roster-attendance-table">
-            <thead class="bg-slate-50/80 text-slate-600 uppercase font-bold text-[11px] tracking-wider border-b border-slate-200">
+          <table class="w-full text-left text-xs min-w-[720px]" id="roster-attendance-table">
+            <thead class="bg-slate-50/80 text-slate-500 uppercase font-bold text-[10px] sm:text-[11px] tracking-wider border-b border-slate-200">
               <tr>
-                <th class="py-3.5 px-4">Student Info</th>
-                <th class="py-3.5 px-4">Section &amp; Course</th>
-                <th class="py-3.5 px-4">Class Schedule / Room</th>
-                <th class="py-3.5 px-4 text-center">In Users Table?</th>
-                <th class="py-3.5 px-4 text-center">Attendance Counts (P / T / A)</th>
-                <th class="py-3.5 px-4 text-right">Attendance Rate</th>
+                <th class="py-3 px-4 font-semibold">Student Info</th>
+                <th class="py-3 px-4 font-semibold">Section &amp; Academic Program</th>
+                <th class="py-3 px-4 font-semibold">Schedule &amp; Course</th>
+                <th class="py-3 px-4 text-center font-semibold">Account Status</th>
+                <th class="py-3 px-4 text-center font-semibold">Sessions (P / T / A)</th>
+                <th class="py-3 px-4 text-right font-semibold">Attendance Rate</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 text-slate-700" id="roster-table-body">
+            <tbody class="divide-y divide-slate-100 text-slate-700 bg-white" id="roster-table-body">
               <?php if (empty($rosterData)): ?>
                 <tr>
                   <td colspan="6" class="py-16 px-4 text-center">
@@ -567,11 +587,20 @@ select {
                   $hasData = (int)$row['total_attendance'] > 0 && $row['attendance_rate'] !== null;
                   $rate = $hasData ? (float)$row['attendance_rate'] : null;
                   $rateBadgeClass = $rate !== null 
-                    ? ($rate >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($rate >= 75 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'))
+                    ? ($rate >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' : ($rate >= 75 ? 'bg-amber-50 text-amber-700 border-amber-200/80' : 'bg-rose-50 text-rose-700 border-rose-200/80'))
                     : 'bg-slate-50 text-slate-400 border-slate-200 font-semibold';
                   $studentNum = $row['user_student_number'] ?: ($row['roster_student_id'] ?: 'N/A');
+                  $userEmail = !empty($row['user_email']) ? trim($row['user_email']) : '';
+                  $courseTitle = !empty($row['course_title']) ? trim($row['course_title']) : 'Web Systems';
+                  $courseCode = !empty($row['course_code']) ? trim($row['course_code']) : 'IT301';
+                  $roomNum = !empty($row['room_number']) ? trim($row['room_number']) : '402';
+                  $schedDay = !empty($row['schedule_day']) ? trim($row['schedule_day']) : 'Mon';
+                  $schedTime = !empty($row['scheduled_time']) ? trim($row['scheduled_time']) : '08:00';
+                  $courseName = !empty($row['course']) ? trim($row['course']) : 'BSIT';
+                  $majorName = !empty($row['major']) ? trim($row['major']) : 'N/A';
+                  $yearLvl = !empty($row['year_level']) ? trim($row['year_level']) : '3';
                 ?>
-                  <tr class="hover:bg-slate-50/70 transition roster-row" 
+                  <tr class="hover:bg-slate-50/60 transition roster-row" 
                       data-index="<?php echo $index; ?>"
                       data-student-name="<?php echo strtolower(htmlspecialchars($fullName)); ?>"
                       data-student-id="<?php echo strtolower(htmlspecialchars($studentNum)); ?>"
@@ -585,68 +614,81 @@ select {
                     
                     <!-- Student Info -->
                     <td class="py-3 px-4">
-                      <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full <?php echo $isInUsers ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'; ?> font-black flex items-center justify-center text-xs shrink-0">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl <?php echo $isInUsers ? 'bg-blue-50 text-blue-700 border border-blue-200/60' : 'bg-slate-100 text-slate-600 border border-slate-200'; ?> font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
                           <?php echo strtoupper(substr($row['first_name'] ?: 'S', 0, 1) . substr($row['last_name'] ?: 'N', 0, 1)); ?>
                         </div>
-                        <div>
-                          <div class="font-bold text-slate-900"><?php echo htmlspecialchars($fullName); ?></div>
-                          <div class="text-[11px] text-slate-400 font-mono">ID: <?php echo htmlspecialchars($studentNum); ?></div>
+                        <div class="min-w-0 flex-1">
+                          <div class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[170px] sm:max-w-[210px]" title="<?php echo htmlspecialchars($fullName); ?>">
+                            <?php echo htmlspecialchars($fullName); ?>
+                          </div>
+                          <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 truncate max-w-[170px] sm:max-w-[210px]" title="Student ID: <?php echo htmlspecialchars($studentNum); ?>">
+                            <span>ID: <?php echo htmlspecialchars($studentNum); ?></span>
+                          </div>
                         </div>
                       </div>
                     </td>
 
-                    <!-- Section & Course -->
-                    <td class="py-3 px-4">
-                      <div class="font-bold text-blue-700">Sec <?php echo htmlspecialchars($row['section']); ?></div>
-                      <div class="text-[11px] text-slate-500 font-medium">
-                        <span class="font-bold text-slate-700"><?php echo htmlspecialchars($row['course'] ?: 'BSIT'); ?></span>
+                    <!-- Section & Academic Details -->
+                    <td class="py-3 px-4 min-w-0">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                          Sec <?php echo htmlspecialchars($row['section']); ?>
+                        </span>
+                      </div>
+                      <div class="text-[11px] text-slate-500 font-medium truncate max-w-[160px] sm:max-w-[190px] mt-1" title="<?php echo htmlspecialchars($courseName . ' • Major: ' . $majorName . ' • Yr ' . $yearLvl); ?>">
+                        <span class="font-bold text-slate-700"><?php echo htmlspecialchars($courseName); ?></span>
                         <?php if (!empty($row['major'])): ?>
-                          &bull; Major: <span class="font-semibold text-slate-700"><?php echo htmlspecialchars($row['major']); ?></span>
+                          &bull; <span class="text-slate-600"><?php echo htmlspecialchars($row['major']); ?></span>
                         <?php endif; ?>
-                        &bull; Yr <?php echo htmlspecialchars($row['year_level'] ?: '3'); ?>
+                        &bull; Yr <?php echo htmlspecialchars($yearLvl); ?>
                       </div>
                     </td>
 
-                    <!-- Schedule / Room -->
-                    <td class="py-3 px-4">
-                      <div class="font-semibold text-slate-800"><?php echo htmlspecialchars($row['course_code'] ?: 'IT301'); ?> - <?php echo htmlspecialchars($row['course_title'] ?: 'Web Systems'); ?></div>
-                      <div class="text-[11px] text-slate-400">Rm <?php echo htmlspecialchars($row['room_number'] ?: '402'); ?> &bull; <?php echo htmlspecialchars($row['schedule_day'] ?: 'Mon'); ?> <?php echo htmlspecialchars($row['scheduled_time'] ?: '08:00'); ?></div>
+                    <!-- Schedule & Course -->
+                    <td class="py-3 px-4 min-w-0">
+                      <div class="font-semibold text-slate-800 text-xs truncate max-w-[180px] sm:max-w-[230px]" title="<?php echo htmlspecialchars($courseCode . ' - ' . $courseTitle); ?>">
+                        <span class="font-bold text-slate-900"><?php echo htmlspecialchars($courseCode); ?></span>
+                        <span class="text-slate-600">- <?php echo htmlspecialchars($courseTitle); ?></span>
+                      </div>
+                      <div class="text-[11px] text-slate-400 truncate max-w-[180px] sm:max-w-[230px] mt-0.5" title="Room <?php echo htmlspecialchars($roomNum); ?> • <?php echo htmlspecialchars($schedDay . ' ' . $schedTime); ?>">
+                        Rm <?php echo htmlspecialchars($roomNum); ?> &bull; <?php echo htmlspecialchars($schedDay); ?> <?php echo htmlspecialchars($schedTime); ?>
+                      </div>
                     </td>
 
-                    <!-- In Users Table? -->
-                    <td class="py-3 px-4 text-center">
+                    <!-- In Users Table? (Account Status) -->
+                    <td class="py-3 px-4 text-center min-w-0">
                       <?php if ($isInUsers): ?>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                          Registered (#<?php echo htmlspecialchars($row['user_id']); ?>)
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                          <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                          Registered
                         </span>
-                        <?php if (!empty($row['user_email'])): ?>
-                          <div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[150px] mx-auto" title="<?php echo htmlspecialchars($row['user_email']); ?>"><?php echo htmlspecialchars($row['user_email']); ?></div>
+                        <?php if (!empty($userEmail)): ?>
+                          <div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px] mx-auto" title="<?php echo htmlspecialchars($userEmail); ?>"><?php echo htmlspecialchars($userEmail); ?></div>
                         <?php endif; ?>
                       <?php else: ?>
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
                           Roster Only
                         </span>
                       <?php endif; ?>
                     </td>
 
-                    <!-- Attendance Counts -->
+                    <!-- Attendance Counts (Sessions) -->
                     <td class="py-3 px-4 text-center">
-                      <div class="inline-flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 font-semibold">
+                      <div class="inline-flex items-center gap-1.5 bg-slate-50/80 px-2.5 py-1 rounded-lg border border-slate-200/60 font-semibold text-xs">
                         <span class="text-emerald-600 font-bold" title="Present"><?php echo $row['present_count']; ?>P</span>
                         <span class="text-slate-300">/</span>
                         <span class="text-amber-600 font-bold" title="Tardy"><?php echo $row['tardy_count']; ?>T</span>
                         <span class="text-slate-300">/</span>
                         <span class="text-rose-600 font-bold" title="Absent"><?php echo $row['absent_count']; ?>A</span>
-                        <span class="text-slate-400 text-[10px] font-normal">(<?php echo $row['total_attendance']; ?> tot)</span>
+                        <span class="text-slate-400 text-[10px] font-normal ml-0.5" title="Total Sessions">(<?php echo $row['total_attendance']; ?>)</span>
                       </div>
                     </td>
 
                     <!-- Attendance Rate -->
                     <td class="py-3 px-4 text-right">
-                      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border <?php echo $rateBadgeClass; ?>">
+                      <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border <?php echo $rateBadgeClass; ?>">
                         <span><?php echo $rate !== null ? number_format($rate, 1) . '%' : '—'; ?></span>
                       </div>
                     </td>
@@ -658,26 +700,16 @@ select {
         </div>
 
         <!-- Table Pagination Footer Bar -->
-        <div id="roster-pagination-bar" class="px-4 sm:px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <!-- Left: Info & Rows per page -->
-          <div class="flex items-center gap-3 flex-wrap">
+        <div id="roster-pagination-bar" class="px-4 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <!-- Left: Record Stats -->
+          <div class="flex items-center gap-2">
             <span class="text-slate-500 font-medium" id="roster-pagination-info">
-              Showing <strong class="text-slate-800 font-bold" id="roster-page-start">1</strong> to <strong class="text-slate-800 font-bold" id="roster-page-end">15</strong> of <strong class="text-slate-800 font-bold" id="roster-page-total"><?php echo count($rosterData); ?></strong> students
+              Showing <strong class="text-slate-800 font-bold" id="roster-page-start">1</strong> to <strong class="text-slate-800 font-bold" id="roster-page-end">10</strong> of <strong class="text-slate-800 font-bold" id="roster-page-total"><?php echo count($rosterData); ?></strong> students
             </span>
-            <div class="flex items-center gap-1.5 border-l border-slate-200 pl-3">
-              <label for="roster-page-size" class="text-[11px] font-semibold text-slate-500">Per page:</label>
-              <select id="roster-page-size" onchange="changeRosterPageSize(this.value)" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer">
-                <option value="15" selected>15</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="-1">All</option>
-              </select>
-            </div>
           </div>
 
-          <!-- Right: Page Navigation Buttons -->
-          <div class="flex items-center gap-1 self-center sm:self-auto flex-wrap" id="roster-pagination-controls">
+          <!-- Right: Page Navigation Buttons (Previous / Numbers / Next) -->
+          <div class="flex items-center gap-1.5 self-center sm:self-auto flex-wrap" id="roster-pagination-controls">
             <!-- Buttons dynamically populated by renderRosterPagination -->
           </div>
         </div>
@@ -1073,7 +1105,7 @@ function updateMajorDropdown(selectedCourse) {
 // ROSTER PAGINATION & FILTER LOGIC
 // ==========================================
 let rosterCurrentPage = 1;
-let rosterPageSize = 15;
+let rosterPageSize = 10;
 let rosterMatchingRows = [];
 
 function onCourseFilterChange() {
@@ -1156,13 +1188,13 @@ function applyFilters(resetToPageOne = false) {
   window.AMS_EXPORTS_CACHE.filteredRecords = visibleRecords;
 
   // Pagination slicing
-  const pageSize = parseInt(rosterPageSize, 10);
-  const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(visibleCount / (pageSize || 15)));
+  const pageSize = parseInt(rosterPageSize, 10) || 10;
+  const totalPages = Math.max(1, Math.ceil(visibleCount / pageSize));
   if (rosterCurrentPage > totalPages) rosterCurrentPage = totalPages;
   if (rosterCurrentPage < 1) rosterCurrentPage = 1;
 
-  const startIdx = pageSize === -1 ? 0 : (rosterCurrentPage - 1) * pageSize;
-  const endIdx = pageSize === -1 ? visibleCount : Math.min(startIdx + pageSize, visibleCount);
+  const startIdx = (rosterCurrentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, visibleCount);
 
   rosterMatchingRows.forEach((row, idx) => {
     if (idx >= startIdx && idx < endIdx) {
@@ -1335,8 +1367,7 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
   if (endEl) endEl.textContent = endIdx.toLocaleString();
   if (totalEl) totalEl.textContent = totalMatching.toLocaleString();
 
-  const pageSize = parseInt(rosterPageSize, 10);
-  if (pageSize === -1 || totalPages <= 1) {
+  if (totalPages <= 1) {
     controls.innerHTML = `
       <span class="text-[11px] font-semibold text-slate-400 px-2">Page 1 of 1</span>
     `;
@@ -1345,15 +1376,15 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
 
   let html = '';
 
-  // Prev button
+  // Previous button
   const prevDisabled = rosterCurrentPage <= 1;
   html += `
     <button type="button" 
             onclick="changeRosterPage(${rosterCurrentPage - 1})"
             ${prevDisabled ? 'disabled' : ''}
-            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+            class="px-3 py-1.5 rounded-xl border text-xs font-semibold transition inline-flex items-center gap-1.5 ${prevDisabled ? 'border-slate-200/60 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      <span>Prev</span>
+      <span>Previous</span>
     </button>
   `;
 
@@ -1367,7 +1398,7 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
 
   if (startPage > 1) {
     html += `
-      <button type="button" onclick="changeRosterPage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">1</button>
+      <button type="button" onclick="changeRosterPage(1)" class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs flex items-center justify-center">1</button>
     `;
     if (startPage > 2) {
       html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
@@ -1378,11 +1409,11 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
     const isActive = p === rosterCurrentPage;
     if (isActive) {
       html += `
-        <button type="button" class="w-8 h-8 rounded-lg border border-blue-600 bg-blue-600 text-xs font-black text-white shadow-xs">${p}</button>
+        <button type="button" class="w-8 h-8 rounded-xl bg-[#1e3b8a] text-xs font-black text-white shadow-xs flex items-center justify-center">${p}</button>
       `;
     } else {
       html += `
-        <button type="button" onclick="changeRosterPage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${p}</button>
+        <button type="button" onclick="changeRosterPage(${p})" class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs flex items-center justify-center">${p}</button>
       `;
     }
   }
@@ -1392,7 +1423,7 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
       html += `<span class="px-1 text-slate-400 font-bold">…</span>`;
     }
     html += `
-      <button type="button" onclick="changeRosterPage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer">${totalPages}</button>
+      <button type="button" onclick="changeRosterPage(${totalPages})" class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs flex items-center justify-center">${totalPages}</button>
     `;
   }
 
@@ -1402,7 +1433,7 @@ function renderRosterPagination(totalMatching, startIdx, endIdx, totalPages) {
     <button type="button" 
             onclick="changeRosterPage(${rosterCurrentPage + 1})"
             ${nextDisabled ? 'disabled' : ''}
-            class="px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
+            class="px-3 py-1.5 rounded-xl border text-xs font-semibold transition inline-flex items-center gap-1.5 ${nextDisabled ? 'border-slate-200/60 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-100 cursor-pointer shadow-2xs'}">
       <span>Next</span>
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </button>
@@ -1418,12 +1449,6 @@ function changeRosterPage(page) {
   if (tableEl) {
     tableEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-}
-
-function changeRosterPageSize(newSize) {
-  rosterPageSize = parseInt(newSize, 10);
-  rosterCurrentPage = 1;
-  applyFilters(false);
 }
 
 function resetFilters() {
@@ -1902,90 +1927,110 @@ function renderTableRowHtml(row, index) {
   
   let rateBadgeClass = 'bg-slate-50 text-slate-400 border-slate-200 font-semibold';
   if (rate !== null) {
-    if (rate >= 90) rateBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    else if (rate >= 75) rateBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
-    else rateBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+    if (rate >= 90) rateBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
+    else if (rate >= 75) rateBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200/80';
+    else rateBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200/80';
   }
-  const studentNum = row.user_student_number || row.roster_student_id || 'N/A';
-  const fInitial = row.first_name ? row.first_name[0] : 'S';
-  const lInitial = row.last_name ? row.last_name[0] : 'N';
+  const studentNum = String(row.user_student_number || row.roster_student_id || 'N/A');
+  const fInitial = row.first_name ? String(row.first_name)[0] : 'S';
+  const lInitial = row.last_name ? String(row.last_name)[0] : 'N';
   const initials = (fInitial + lInitial).toUpperCase();
-  const courseVal = (row.course && row.course.trim()) ? row.course.trim() : 'Unspecified Course';
-  const majorVal = (row.major && row.major.trim()) ? row.major.trim() : 'N/A';
-  const searchStr = (fullName + ' ' + studentNum + ' ' + (row.section || '') + ' ' + courseVal + ' ' + majorVal + ' ' + (row.course_code || '') + ' ' + (row.course_title || '') + ' ' + (row.user_email || '')).toLowerCase();
+  const courseName = (row.course && String(row.course).trim()) ? String(row.course).trim() : 'BSIT';
+  const majorName = (row.major && String(row.major).trim()) ? String(row.major).trim() : 'N/A';
+  const yearLvl = String(row.year_level || '3');
+  const courseCode = String(row.course_code || 'IT301');
+  const courseTitle = String(row.course_title || 'Web Systems');
+  const roomNum = String(row.room_number || '402');
+  const schedDay = String(row.schedule_day || 'Mon');
+  const schedTime = String(row.scheduled_time || '08:00');
+  const userEmail = String(row.user_email || '');
+  const searchStr = (fullName + ' ' + studentNum + ' ' + (row.section || '') + ' ' + courseName + ' ' + majorName + ' ' + courseCode + ' ' + courseTitle + ' ' + userEmail).toLowerCase();
 
   return `
-    <tr class="hover:bg-slate-50/70 transition roster-row" 
+    <tr class="hover:bg-slate-50/60 transition roster-row" 
         data-index="${index}"
         data-student-name="${escapeHtml(fullName.toLowerCase())}"
         data-student-id="${escapeHtml(studentNum.toLowerCase())}"
-        data-section="${escapeHtml(row.section || '')}"
-        data-course="${escapeHtml(courseVal.toLowerCase())}"
-        data-major="${escapeHtml(majorVal.toLowerCase())}"
+        data-section="${escapeHtml(String(row.section || ''))}"
+        data-course="${escapeHtml(courseName.toLowerCase())}"
+        data-major="${escapeHtml(majorName.toLowerCase())}"
         data-search="${escapeHtml(searchStr)}"
-        data-email="${escapeHtml((row.user_email || '').toLowerCase())}"
+        data-email="${escapeHtml(userEmail.toLowerCase())}"
         data-is-registered="${isInUsers ? 'registered' : 'unregistered'}"
         data-rate="${rate !== null ? rate : '-1'}">
       
       <!-- Student Info -->
       <td class="py-3 px-4">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full ${isInUsers ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'} font-black flex items-center justify-center text-xs shrink-0">
-            ${initials}
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-xl ${isInUsers ? 'bg-blue-50 text-blue-700 border border-blue-200/60' : 'bg-slate-100 text-slate-600 border border-slate-200'} font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
+            ${escapeHtml(initials)}
           </div>
-          <div>
-            <div class="font-bold text-slate-900">${escapeHtml(fullName)}</div>
-            <div class="text-[11px] text-slate-400 font-mono">ID: ${escapeHtml(studentNum)}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[170px] sm:max-w-[210px]" title="${escapeHtml(fullName)}">
+              ${escapeHtml(fullName)}
+            </div>
+            <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 truncate max-w-[170px] sm:max-w-[210px]" title="Student ID: ${escapeHtml(studentNum)}">
+              <span>ID: ${escapeHtml(studentNum)}</span>
+            </div>
           </div>
         </div>
       </td>
 
-      <!-- Section & Course -->
-      <td class="py-3 px-4">
-        <div class="font-bold text-blue-700">Sec ${escapeHtml(row.section || '')}</div>
-        <div class="text-[11px] text-slate-500 font-medium">
-          <span class="font-bold text-slate-700">${escapeHtml(row.course || 'BSIT')}</span>
-          ${row.major ? `&bull; Major: <span class="font-semibold text-slate-700">${escapeHtml(row.major)}</span>` : ''}
-          &bull; Yr ${escapeHtml(row.year_level || '3')}
+      <!-- Section & Academic Details -->
+      <td class="py-3 px-4 min-w-0">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+            Sec ${escapeHtml(String(row.section || ''))}
+          </span>
+        </div>
+        <div class="text-[11px] text-slate-500 font-medium truncate max-w-[160px] sm:max-w-[190px] mt-1" title="${escapeHtml(courseName + ' • Major: ' + majorName + ' • Yr ' + yearLvl)}">
+          <span class="font-bold text-slate-700">${escapeHtml(courseName)}</span>
+          ${row.major ? `&bull; <span class="text-slate-600">${escapeHtml(majorName)}</span>` : ''}
+          &bull; Yr ${escapeHtml(yearLvl)}
         </div>
       </td>
 
-      <!-- Schedule / Room -->
-      <td class="py-3 px-4">
-        <div class="font-semibold text-slate-800">${escapeHtml(row.course_code || 'IT301')} - ${escapeHtml(row.course_title || 'Web Systems')}</div>
-        <div class="text-[11px] text-slate-400">Rm ${escapeHtml(row.room_number || '402')} &bull; ${escapeHtml(row.schedule_day || 'Mon')} ${escapeHtml(row.scheduled_time || '08:00')}</div>
+      <!-- Schedule & Course -->
+      <td class="py-3 px-4 min-w-0">
+        <div class="font-semibold text-slate-800 text-xs truncate max-w-[180px] sm:max-w-[230px]" title="${escapeHtml(courseCode + ' - ' + courseTitle)}">
+          <span class="font-bold text-slate-900">${escapeHtml(courseCode)}</span>
+          <span class="text-slate-600">- ${escapeHtml(courseTitle)}</span>
+        </div>
+        <div class="text-[11px] text-slate-400 truncate max-w-[180px] sm:max-w-[230px] mt-0.5" title="Room ${escapeHtml(roomNum)} • ${escapeHtml(schedDay + ' ' + schedTime)}">
+          Rm ${escapeHtml(roomNum)} &bull; ${escapeHtml(schedDay)} ${escapeHtml(schedTime)}
+        </div>
       </td>
 
-      <!-- In Users Table? -->
-      <td class="py-3 px-4 text-center">
+      <!-- In Users Table? (Account Status) -->
+      <td class="py-3 px-4 text-center min-w-0">
         ${isInUsers 
-          ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-              Registered (#${escapeHtml(row.user_id)})
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+              <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Registered
             </span>
-            ${row.user_email ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[150px] mx-auto" title="${escapeHtml(row.user_email)}">${escapeHtml(row.user_email)}</div>` : ''}`
-          : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-              <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            ${userEmail ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px] mx-auto" title="${escapeHtml(userEmail)}">${escapeHtml(userEmail)}</div>` : ''}`
+          : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
               Roster Only
             </span>`
         }
       </td>
 
-      <!-- Attendance Counts -->
+      <!-- Attendance Counts (Sessions) -->
       <td class="py-3 px-4 text-center">
-        <div class="inline-flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 font-semibold">
+        <div class="inline-flex items-center gap-1.5 bg-slate-50/80 px-2.5 py-1 rounded-lg border border-slate-200/60 font-semibold text-xs">
           <span class="text-emerald-600 font-bold" title="Present">${row.present_count || 0}P</span>
           <span class="text-slate-300">/</span>
           <span class="text-amber-600 font-bold" title="Tardy">${row.tardy_count || 0}T</span>
           <span class="text-slate-300">/</span>
           <span class="text-rose-600 font-bold" title="Absent">${row.absent_count || 0}A</span>
-          <span class="text-slate-400 text-[10px] font-normal">(${row.total_attendance || 0} tot)</span>
+          <span class="text-slate-400 text-[10px] font-normal ml-0.5" title="Total Sessions">(${row.total_attendance || 0})</span>
         </div>
       </td>
 
       <!-- Attendance Rate -->
       <td class="py-3 px-4 text-right">
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${rateBadgeClass}">
+        <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${rateBadgeClass}">
           <span>${rate !== null ? rate.toFixed(1) + '%' : '—'}</span>
         </div>
       </td>

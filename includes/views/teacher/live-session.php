@@ -1776,9 +1776,18 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     }
 
     function setPresentFilter(filter) {
+      if (window.currentPresentFilter === filter) return;
       window.currentPresentFilter = filter;
       updateFilterTabsUI();
-      renderPresentModalList();
+      const listEl = document.getElementById('modal-present-list');
+      if (listEl) {
+        listEl.style.opacity = '0.35';
+        listEl.style.transition = 'opacity 0.08s ease';
+      }
+      setTimeout(() => {
+        renderPresentModalList();
+        if (listEl) listEl.style.opacity = '1';
+      }, 50);
     }
 
     function updateFilterTabsUI() {

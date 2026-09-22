@@ -21,5 +21,5 @@ echo "Contains 'chartAttendanceStatus': " . (strpos($output, 'chartAttendanceSta
 echo "Contains 'exportToExcel': " . (strpos($output, 'exportToExcel') !== false ? 'YES' : 'NO') . "\n";
 echo "Contains 'exportToWord': " . (strpos($output, 'exportToWord') !== false ? 'YES' : 'NO') . "\n";
 echo "Contains 'exportToPdf': " . (strpos($output, 'exportToPdf') !== false ? 'YES' : 'NO') . "\n";
-echo "Contains 'In Users Table?': " . (strpos($output, 'In Users Table?') !== false ? 'YES' : 'NO') . "\n";
+echo "Contains 'Account Status': " . (strpos($output, 'Account Status') !== false ? 'YES' : 'NO') . "\n";
 echo "Contains 'AMS_EXPORTS_CACHE': " . (strpos($output, 'AMS_EXPORTS_CACHE') !== false ? 'YES' : 'NO') . "\n";

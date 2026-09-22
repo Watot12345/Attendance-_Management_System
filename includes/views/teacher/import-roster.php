@@ -1138,6 +1138,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
   }
 
   function setStep2Filter(filterType) {
+    if (currentStep2Filter === filterType) return;
     currentStep2Filter = filterType;
     ['all', 'valid', 'duplicate', 'unregistered'].forEach(t => {
       const btn = document.getElementById(`filter-tab-${t}`);
@@ -1149,7 +1150,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
         }
       }
     });
-    renderFilteredStep2Table();
+
+    const tbody = document.getElementById('step-2-table-body');
+    if (tbody) {
+      tbody.style.opacity = '0.35';
+      tbody.style.transition = 'opacity 0.08s ease';
+    }
+
+    setTimeout(() => {
+      renderFilteredStep2Table();
+      if (tbody) {
+        tbody.style.opacity = '1';
+      }
+    }, 60);
   }
 
   function filterStep2Table() {

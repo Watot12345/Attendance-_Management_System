@@ -22,7 +22,10 @@ if (!function_exists('isActiveLink')) {
             if ($cleanCurrent === $cleanTarget) {
                 return true;
             }
-            if ($cleanTarget !== '' && str_starts_with($cleanCurrent, $cleanTarget . '/')) {
+            // Do not perform prefix matching for parent dashboard root paths
+            if (!in_array($cleanTarget, ['dashboard', 'admin/dashboard', 'teacher/dashboard', 'student/dashboard']) 
+                && $cleanTarget !== '' 
+                && str_starts_with($cleanCurrent, $cleanTarget . '/')) {
                 return true;
             }
         }

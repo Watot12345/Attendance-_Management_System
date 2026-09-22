@@ -63,6 +63,7 @@
   /* ── Persistent Global Elements Registry ───────────────────── */
   var GLOBAL_ELEMENT_IDS = [
     'spa-progress-bar',
+    'spa-page-blur',
     'sonner-toast-container',
     'global-confirm-modal',
     'confirmation-modal',
@@ -89,27 +90,50 @@
     return false;
   }
 
+  /* ── Blur Transition Helpers ───────────────────────────────── */
+  function showPageBlur() {
+    var main = getMainEl(document);
+    if (main) main.classList.add('spa-loading-blur');
+    var existing = document.getElementById('spa-page-blur');
+    if (existing) return;
+    var overlay = document.createElement('div');
+    overlay.id = 'spa-page-blur';
+    overlay.className = 'spa-page-blur-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  function hidePageBlur() {
+    var overlay = document.getElementById('spa-page-blur');
+    if (overlay) overlay.remove();
+    var main = getMainEl(document);
+    if (main) main.classList.remove('spa-loading-blur');
+  }
+
   /* ── Helpers ───────────────────────────────────────────────── */
-  function isSidebarLink(el) {
-    var anchor = el.closest ? el.closest('#sidebar a') : null;
-    if (!anchor) {
-      var node = el;
-      while (node && node !== document.body) {
-        if (node.tagName === 'A' && node.closest('#sidebar')) { anchor = node; break; }
-        node = node.parentElement;
-      }
-    }
+  function isNavigableLink(el) {
+    var anchor = el.closest ? el.closest('a') : null;
     if (!anchor) return null;
+
+    if (anchor.hasAttribute('download') || anchor.getAttribute('target') === '_blank') return null;
+    if (anchor.getAttribute('data-no-spa') === 'true') return null;
+
     var href = anchor.getAttribute('href') || '';
     if (!href || href === '#' || href.indexOf('javascript') === 0 ||
         href.indexOf('logout') !== -1 || href.indexOf('//') === 0 ||
-        href.indexOf('mailto') === 0) {
+        href.indexOf('mailto') === 0 || href.indexOf('tel:') === 0) {
       return null;
     }
+
+    var isInApp = anchor.closest('#sidebar') || anchor.closest('.navbar') || anchor.closest('header') || anchor.closest('.app-layout') || anchor.closest('main');
+    if (!isInApp) return null;
+
     try {
       var url = new URL(href, location.origin);
       if (url.origin !== location.origin) return null;
-    } catch (_) {}
+      if (url.pathname.endsWith('.csv') || url.pathname.endsWith('.xlsx') || url.pathname.endsWith('.pdf') || url.pathname.includes('/template')) return null;
+    } catch (_) {
+      return null;
+    }
     return anchor;
   }
 
@@ -297,6 +321,7 @@
     }
 
     barStart();
+    showPageBlur();
     updateActiveNav(href);
 
     // Close mobile sidebar
@@ -352,6 +377,7 @@
           // 4. Scroll to top & fade in
           scrollToTop();
           fadeIn(currentMain);
+          hidePageBlur();
           barFinish();
 
           // 5. Execute all page scripts sequentially, then trigger DOMContentLoaded
@@ -362,6 +388,7 @@
       })
       .catch(function (err) {
         _currentController = null;
+        hidePageBlur();
         if (err && err.name === 'AbortError') return;
         barError();
         window.location.href = href;
@@ -372,7 +399,7 @@
   document.addEventListener('click', function (e) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     if (e.defaultPrevented) return;
-    var anchor = isSidebarLink(e.target);
+    var anchor = isNavigableLink(e.target);
     if (!anchor) return;
     var href = anchor.getAttribute('href');
     if (!href) return;
@@ -394,6 +421,12 @@
   /* ── Back / Forward button ─────────────────────────────────── */
   window.addEventListener('popstate', function () {
     navigate(location.href, false);
+  });
+
+  /* ── Universal Page Transition Fallback ─────────────────────── */
+  window.addEventListener('beforeunload', function () {
+    barStart();
+    showPageBlur();
   });
 
   /* ── Mark initial state ────────────────────────────────────── */

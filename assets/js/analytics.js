@@ -54,8 +54,9 @@ async function loadAllAnalytics(showSkeletons = true) {
     windowPill.textContent = `${range}-Day Window`;
   }
 
-  // Only show skeletons if no cached data exists or explicitly requested
-  if (showSkeletons && !analyticsMemoryCache) {
+  // Show skeletons if requested or if no memory cache is present
+  if (showSkeletons || !analyticsMemoryCache) {
+    renderOverviewChartsSkeleton();
     renderFeatureImportancesSkeleton();
     renderPatternsSkeleton();
     renderClustersSkeleton();
@@ -129,7 +130,7 @@ function switchAnalyticsTab(tabName) {
     
     if (btn && panel) {
       if (t === tabName) {
-        btn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-xs';
+        btn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#1e3b8a] text-white shadow-xs';
         panel.classList.remove('hidden');
       } else {
         btn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50';
@@ -142,6 +143,35 @@ function switchAnalyticsTab(tabName) {
   if (tabName === 'at-risk' && (!currentAtRiskStudents || currentAtRiskStudents.length === 0)) {
     loadAnalyticsAtRisk();
   }
+}
+
+/**
+ * Skeleton State: Overview Charts (Trend, Day of Week, Year Level, Status Composition)
+ */
+function renderOverviewChartsSkeleton() {
+  const trendSk = document.getElementById('trend-chart-skeleton');
+  const daySk = document.getElementById('day-chart-skeleton');
+  const gradeSk = document.getElementById('grade-chart-skeleton');
+  const statusSk = document.getElementById('status-doughnut-skeleton');
+
+  if (trendSk) trendSk.classList.remove('hidden');
+  if (daySk) daySk.classList.remove('hidden');
+  if (gradeSk) gradeSk.classList.remove('hidden');
+  if (statusSk) statusSk.classList.remove('hidden');
+
+  // Hide empty states while skeletons are pulsing
+  ['trend-empty-state', 'day-empty-state', 'grade-empty-state', 'status-empty-state'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+/**
+ * Helper to hide specific chart skeleton
+ */
+function hideOverviewChartSkeleton(skeletonId) {
+  const elem = document.getElementById(skeletonId);
+  if (elem) elem.classList.add('hidden');
 }
 
 /**
@@ -410,6 +440,7 @@ async function loadAnalyticsOverview() {
     windowPill.textContent = `${range}-Day Window`;
   }
 
+  renderOverviewChartsSkeleton();
   renderFeatureImportancesSkeleton();
 
   try {
@@ -423,7 +454,7 @@ async function loadAnalyticsOverview() {
       // 2. Render Feature Importances List
       renderFeatureImportances(data.feature_importances);
 
-      // 3. Render Chart.js Visualizations
+      // 3. Render Chart.js Visualizations directly from database
       const ov = data.overview || {};
       renderTrendChart(ov.trend);
       renderDayChart(ov.day_breakdown);
@@ -450,9 +481,9 @@ function updateModelSpecsUI(specs) {
 
   if (headerAcc) headerAcc.textContent = `${specs.accuracy || 100}% Acc`;
   if (headerRoc) headerRoc.textContent = `${specs.roc_auc || 1.0} ROC-AUC`;
-  if (specAlgo) specAlgo.textContent = specs.algorithm ? 'RandomForest' : 'RandomForestClassifier';
+  if (specAlgo) specAlgo.textContent = specs.algorithm || 'RandomForestClassifier';
   if (specRoc) specRoc.textContent = specs.roc_auc || '1.0';
-  if (specSamples) specSamples.textContent = specs.training_samples ? `${specs.training_samples.toLocaleString()} rows` : '2,520 rows';
+  if (specSamples) specSamples.textContent = specs.training_samples !== undefined ? `${Number(specs.training_samples).toLocaleString()} rows` : '0 rows';
   if (specRetrained) specRetrained.textContent = specs.last_retrained || 'Recent';
 }
 
@@ -461,13 +492,27 @@ function updateModelSpecsUI(specs) {
  */
 function renderFeatureImportances(importances) {
   const container = document.getElementById('feature-importance-list');
-  if (!container || !importances) return;
+  if (!container) return;
 
   const formatKey = (k) => {
     return k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const items = Object.entries(importances).slice(0, 4);
+  const entries = Object.entries(importances || {});
+  const hasValues = entries.some(([_, weight]) => Number(weight) > 0);
+
+  if (!importances || entries.length === 0 || !hasValues) {
+    container.innerHTML = `
+      <div class="col-span-full py-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5">
+        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="font-semibold text-slate-600">No feature weight attributions yet</span>
+        <span class="text-[10px] text-slate-400">Scikit-Learn models will calculate feature importances once student attendance logs exist.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const items = entries.slice(0, 4);
   let html = '';
 
   items.forEach(([key, weight]) => {
@@ -491,6 +536,7 @@ function renderFeatureImportances(importances) {
  * Chart 1: Dual-Line Time Series Trend vs ML Benchmark
  */
 function renderTrendChart(trendData) {
+  hideOverviewChartSkeleton('trend-chart-skeleton');
   const canvas = document.getElementById('analytics-trend-chart');
   if (!canvas) return;
 
@@ -498,9 +544,17 @@ function renderTrendChart(trendData) {
     chartInstances['analytics-trend-chart'].destroy();
   }
 
-  const labels = trendData?.labels || ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 06', 'Jul 13', 'Jul 20', 'Jul 27', 'Aug 03', 'Aug 10', 'Aug 17', 'Aug 24', 'Aug 31', 'Sep 07'];
-  const actuals = trendData?.actual || [92.5, 91.8, 93.4, 94.1, 90.5, 93.8, 95.2, 94.6, 91.2, 93.9, 94.8, 92.1, 89.2];
-  const benchmarks = trendData?.benchmark || [92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0];
+  const labels = Array.isArray(trendData?.labels) ? trendData.labels : [];
+  const actuals = Array.isArray(trendData?.actual) ? trendData.actual.map(v => Number(v) || 0) : [];
+  const benchmarks = Array.isArray(trendData?.benchmark) ? trendData.benchmark.map(v => Number(v) || 0) : [];
+
+  const trendEmpty = document.getElementById('trend-empty-state');
+  if (labels.length === 0 || actuals.length === 0) {
+    if (trendEmpty) trendEmpty.classList.remove('hidden');
+    return;
+  } else {
+    if (trendEmpty) trendEmpty.classList.add('hidden');
+  }
 
   const ctx = canvas.getContext('2d');
   let gradient = null;
@@ -509,6 +563,10 @@ function renderTrendChart(trendData) {
     gradient.addColorStop(0, 'rgba(13, 148, 136, 0.22)');
     gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
   }
+
+  // Dynamic Y-axis scale based on live actual database points
+  const minVal = actuals.length > 0 ? Math.min(...actuals) : 0;
+  const yMin = actuals.length > 0 ? Math.max(0, Math.floor(minVal / 10) * 10 - 10) : 0;
 
   chartInstances['analytics-trend-chart'] = new Chart(canvas, {
     type: 'line',
@@ -559,7 +617,7 @@ function renderTrendChart(trendData) {
           padding: 10,
           cornerRadius: 8,
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) : '0'}%`
           }
         }
       },
@@ -569,7 +627,7 @@ function renderTrendChart(trendData) {
           ticks: { font: { size: 11 }, color: '#64748b' }
         },
         y: {
-          min: 80,
+          min: yMin,
           max: 100,
           grid: { color: 'rgba(226, 232, 240, 0.7)', borderDash: [4, 4] },
           ticks: {
@@ -588,6 +646,7 @@ function renderTrendChart(trendData) {
  * Chart 2: Categorical Absences by Day of Week
  */
 function renderDayChart(dayData) {
+  hideOverviewChartSkeleton('day-chart-skeleton');
   const canvas = document.getElementById('day-chart');
   if (!canvas) return;
 
@@ -595,8 +654,20 @@ function renderDayChart(dayData) {
     chartInstances['day-chart'].destroy();
   }
 
-  const labels = dayData?.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-  const absences = dayData?.absences || [38, 11, 12, 9, 14];
+  const labels = Array.isArray(dayData?.labels) && dayData.labels.length > 0 ? dayData.labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const absences = Array.isArray(dayData?.absences) ? dayData.absences.map(v => Number(v) || 0) : [0, 0, 0, 0, 0];
+
+  const dayEmpty = document.getElementById('day-empty-state');
+  if (absences.length === 0 || absences.every(v => v === 0)) {
+    if (dayEmpty) dayEmpty.classList.remove('hidden');
+    return;
+  } else {
+    if (dayEmpty) dayEmpty.classList.add('hidden');
+  }
+
+  // Highlight highest peak day dynamically from database counts
+  const maxAbs = Math.max(0, ...absences);
+  const colors = absences.map(val => (val > 0 && val === maxAbs) ? '#ef4444' : '#0d9488');
 
   chartInstances['day-chart'] = new Chart(canvas, {
     type: 'bar',
@@ -606,7 +677,7 @@ function renderDayChart(dayData) {
         {
           label: 'Total Absences',
           data: absences,
-          backgroundColor: ['#ef4444', '#0d9488', '#0d9488', '#0d9488', '#0d9488'],
+          backgroundColor: colors,
           borderRadius: 6,
           barPercentage: 0.65
         }
@@ -622,7 +693,7 @@ function renderDayChart(dayData) {
           padding: 10,
           cornerRadius: 8,
           callbacks: {
-            label: (ctx) => `${ctx.parsed.y} absences recorded ${ctx.label === 'Mon' ? '(3× weekday mean!)' : ''}`
+            label: (ctx) => `${ctx.parsed.y} absences recorded${ctx.parsed.y > 0 && ctx.parsed.y === maxAbs ? ' (Peak day)' : ''}`
           }
         }
       },
@@ -631,7 +702,7 @@ function renderDayChart(dayData) {
         y: {
           beginAtZero: true,
           grid: { color: 'rgba(226, 232, 240, 0.7)', borderDash: [4, 4] },
-          ticks: { font: { size: 11 }, color: '#64748b' }
+          ticks: { font: { size: 11 }, color: '#64748b', stepSize: 1 }
         }
       }
     }
@@ -642,6 +713,7 @@ function renderDayChart(dayData) {
  * Chart 3: Grouped Bar Chart Comparing Grade Levels
  */
 function renderGradeChart(gradeData) {
+  hideOverviewChartSkeleton('grade-chart-skeleton');
   const canvas = document.getElementById('grade-chart');
   if (!canvas) return;
 
@@ -649,9 +721,17 @@ function renderGradeChart(gradeData) {
     chartInstances['grade-chart'].destroy();
   }
 
-  const labels = gradeData?.labels || ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-  const absRates = gradeData?.absence_rates || [8.4, 4.2, 3.8, 3.1];
-  const tardyRates = gradeData?.tardy_rates || [11.2, 6.5, 5.8, 4.9];
+  const labels = Array.isArray(gradeData?.labels) && gradeData.labels.length > 0 ? gradeData.labels : ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+  const absRates = Array.isArray(gradeData?.absence_rates) ? gradeData.absence_rates.map(v => Number(v) || 0) : [0, 0, 0, 0];
+  const tardyRates = Array.isArray(gradeData?.tardy_rates) ? gradeData.tardy_rates.map(v => Number(v) || 0) : [0, 0, 0, 0];
+
+  const gradeEmpty = document.getElementById('grade-empty-state');
+  if (labels.length === 0 || (absRates.every(v => v === 0) && tardyRates.every(v => v === 0))) {
+    if (gradeEmpty) gradeEmpty.classList.remove('hidden');
+    return;
+  } else {
+    if (gradeEmpty) gradeEmpty.classList.add('hidden');
+  }
 
   chartInstances['grade-chart'] = new Chart(canvas, {
     type: 'bar',
@@ -701,6 +781,7 @@ function renderGradeChart(gradeData) {
  * Chart 4: Doughnut Status Composition
  */
 function renderStatusDoughnutChart(statusData) {
+  hideOverviewChartSkeleton('status-doughnut-skeleton');
   const canvas = document.getElementById('status-doughnut-chart');
   if (!canvas) return;
 
@@ -708,10 +789,23 @@ function renderStatusDoughnutChart(statusData) {
     chartInstances['status-doughnut-chart'].destroy();
   }
 
-  const present = statusData?.present || 88.6;
-  const tardy = statusData?.tardy || 6.8;
-  const excused = statusData?.excused || 2.9;
-  const absent = statusData?.unexcused_absent || 1.7;
+  const present = Number(statusData?.present ?? 0);
+  const tardy = Number(statusData?.tardy ?? 0);
+  const excused = Number(statusData?.excused ?? 0);
+  const absent = Number(statusData?.unexcused_absent ?? 0);
+
+  const total = present + tardy + excused + absent;
+
+  const statusEmpty = document.getElementById('status-empty-state');
+  if (total === 0) {
+    if (statusEmpty) statusEmpty.classList.remove('hidden');
+    return;
+  } else {
+    if (statusEmpty) statusEmpty.classList.add('hidden');
+  }
+
+  const dataValues = [present, tardy, excused, absent];
+  const bgColors = ['#0d9488', '#f59e0b', '#3b82f6', '#ef4444'];
 
   chartInstances['status-doughnut-chart'] = new Chart(canvas, {
     type: 'doughnut',
@@ -719,8 +813,8 @@ function renderStatusDoughnutChart(statusData) {
       labels: ['Present', 'Tardy', 'Excused Slip', 'Unexcused Absent'],
       datasets: [
         {
-          data: [present, tardy, excused, absent],
-          backgroundColor: ['#0d9488', '#f59e0b', '#3b82f6', '#ef4444'],
+          data: dataValues,
+          backgroundColor: bgColors,
           borderWidth: 2,
           borderColor: '#ffffff'
         }
@@ -758,69 +852,93 @@ function renderPatternsUI(patterns, clusters) {
   if (badgeCount) badgeCount.textContent = patterns ? patterns.length : 0;
 
   // Render Patterns
-  if (container && Array.isArray(patterns)) {
-    let html = '';
-    patterns.forEach((pat, idx) => {
-      const badgeClass = pat.severity === 'critical' ? 'bg-rose-100 text-rose-800' : (pat.severity === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800');
-      html += `
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
-              Pattern #${idx + 1} · ${pat.type.replace(/_/g, ' ').toUpperCase()}
-            </span>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
-              ${pat.severity.toUpperCase()} IMPACT
-            </span>
+  if (container) {
+    if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
+      container.innerHTML = `
+        <div class="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-xs text-center space-y-2">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
-          <h4 class="text-base font-black text-slate-900">${pat.title}</h4>
-          <p class="text-xs text-slate-600 leading-relaxed">${pat.description}</p>
-          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs">
-            <span class="text-slate-500 font-medium">Affected: <strong class="text-slate-900">${pat.affected_cohort}</strong></span>
-            <span class="text-teal-700 font-bold">Confidence: ${pat.confidence}</span>
-          </div>
-          <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs font-medium text-indigo-900 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-            <span><strong>AI Intervention Recommendation:</strong> ${pat.recommendation}</span>
-            <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              <span>Apply Action</span>
-            </button>
-          </div>
+          <h4 class="text-sm font-bold text-slate-800">No Anomaly Patterns Detected</h4>
+          <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">The anomaly detection engine has not isolated any weekday absence spikes or consecutive dropout risks in the current attendance dataset.</p>
         </div>
       `;
-    });
-    container.innerHTML = html;
+    } else {
+      let html = '';
+      patterns.forEach((pat, idx) => {
+        const badgeClass = pat.severity === 'critical' ? 'bg-rose-100 text-rose-800' : (pat.severity === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800');
+        html += `
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
+                Pattern #${idx + 1} · ${pat.type.replace(/_/g, ' ').toUpperCase()}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
+                ${pat.severity.toUpperCase()} IMPACT
+              </span>
+            </div>
+            <h4 class="text-base font-black text-slate-900">${pat.title}</h4>
+            <p class="text-xs text-slate-600 leading-relaxed">${pat.description}</p>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">Affected: <strong class="text-slate-900">${pat.affected_cohort}</strong></span>
+              <span class="text-teal-700 font-bold">Confidence: ${pat.confidence}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs font-medium text-indigo-900 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+              <span><strong>AI Intervention Recommendation:</strong> ${pat.recommendation}</span>
+              <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Apply Action</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
   }
 
   // Render Clusters
-  if (clustersContainer && Array.isArray(clusters)) {
-    const totalClusterStudents = clusters.reduce((acc, c) => acc + (c.count || 0), 0) || 1;
-    let clusterHtml = '';
-    clusters.forEach(c => {
-      const pct = Math.round((c.count / totalClusterStudents) * 100);
-      clusterHtml += `
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="px-2.5 py-1 rounded-lg text-xs font-black" style="background: ${c.bg}; color: ${c.color}">
-              ${c.badge}
-            </span>
-            <span class="text-xs font-bold text-slate-500">${c.count} Students (${pct}%)</span>
+  if (clustersContainer) {
+    if (!clusters || !Array.isArray(clusters) || clusters.length === 0 || clusters.every(c => (c.count || 0) === 0)) {
+      clustersContainer.innerHTML = `
+        <div class="col-span-full bg-white p-8 rounded-2xl border border-slate-200/80 shadow-xs text-center text-slate-500 text-xs">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
           </div>
-          <h4 class="text-sm font-black text-slate-900">${c.name}</h4>
-          <p class="text-xs text-slate-500 leading-relaxed">${c.description}</p>
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
-            <div class="p-2 rounded-lg bg-slate-50">
-              <div class="text-[10px] font-bold text-slate-400 uppercase">Avg Attendance</div>
-              <div class="text-sm font-black text-emerald-600">${c.avg_attendance}%</div>
-            </div>
-            <div class="p-2 rounded-lg bg-slate-50">
-              <div class="text-[10px] font-bold text-slate-400 uppercase">Avg Tardy</div>
-              <div class="text-sm font-black text-amber-600">${c.avg_tardy}%</div>
-            </div>
-          </div>
+          <h4 class="text-sm font-bold text-slate-800">No Behavioral Clusters Formed</h4>
+          <p class="text-xs text-slate-400 max-w-md mx-auto mt-1">Unsupervised K-Means clustering will segment student cohorts once attendance sessions are recorded.</p>
         </div>
       `;
-    });
-    clustersContainer.innerHTML = clusterHtml;
+    } else {
+      const totalClusterStudents = clusters.reduce((acc, c) => acc + (c.count || 0), 0) || 1;
+      let clusterHtml = '';
+      clusters.forEach(c => {
+        const pct = Math.round((c.count / totalClusterStudents) * 100);
+        clusterHtml += `
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-1 rounded-lg text-xs font-black" style="background: ${c.bg}; color: ${c.color}">
+                ${c.badge}
+              </span>
+              <span class="text-xs font-bold text-slate-500">${c.count} Students (${pct}%)</span>
+            </div>
+            <h4 class="text-sm font-black text-slate-900">${c.name}</h4>
+            <p class="text-xs text-slate-500 leading-relaxed">${c.description}</p>
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+              <div class="p-2 rounded-lg bg-slate-50">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Avg Attendance</div>
+                <div class="text-sm font-black text-emerald-600">${c.avg_attendance}%</div>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-50">
+                <div class="text-[10px] font-bold text-slate-400 uppercase">Avg Tardy</div>
+                <div class="text-sm font-black text-amber-600">${c.avg_tardy}%</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      clustersContainer.innerHTML = clusterHtml;
+    }
   }
 }
 
@@ -1316,6 +1434,7 @@ async function triggerModelRetrain() {
   if (statusText) statusText.textContent = 'Retraining Scikit-Learn Model...';
 
   // Render skeletons across all tab containers during model recalculation
+  renderOverviewChartsSkeleton();
   renderFeatureImportancesSkeleton();
   renderPatternsSkeleton();
   renderClustersSkeleton();
@@ -1577,7 +1696,7 @@ function exportAtRiskCSV() {
  * Filter Form Triggers
  */
 function applyAnalyticsFilters() {
-  loadAllAnalytics(false);
+  loadAllAnalytics(true);
   showToastNotification('Analytics filters applied successfully.', 'info');
 }
 

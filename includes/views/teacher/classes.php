@@ -505,28 +505,37 @@ const classPageSize = 5;
 let matchingClassCards = [];
 
 function filterClasses() {
-  const program = document.getElementById('filter-program').value;
-  const year = document.getElementById('filter-year').value;
-  const section = document.getElementById('filter-section').value;
-  const query = document.getElementById('search-class').value.toLowerCase().trim();
+  const container = document.getElementById('classes-container');
+  if (container) {
+    container.style.opacity = '0.4';
+    container.style.transition = 'opacity 0.08s ease';
+  }
 
-  const cards = Array.from(document.querySelectorAll('.class-card'));
-  matchingClassCards = cards.filter(card => {
-    const cardProg = card.getAttribute('data-program');
-    const cardYear = card.getAttribute('data-year');
-    const cardSec = card.getAttribute('data-section');
-    const cardTitle = card.getAttribute('data-title').toLowerCase();
+  setTimeout(() => {
+    const program = document.getElementById('filter-program').value;
+    const year = document.getElementById('filter-year').value;
+    const section = document.getElementById('filter-section').value;
+    const query = document.getElementById('search-class').value.toLowerCase().trim();
 
-    const matchProg = (program === 'all' || cardProg === program);
-    const matchYear = (year === 'all' || cardYear === year);
-    const matchSec = (section === 'all' || cardSec === section);
-    const matchQuery = (!query || cardTitle.includes(query));
+    const cards = Array.from(document.querySelectorAll('.class-card'));
+    matchingClassCards = cards.filter(card => {
+      const cardProg = card.getAttribute('data-program');
+      const cardYear = card.getAttribute('data-year');
+      const cardSec = card.getAttribute('data-section');
+      const cardTitle = card.getAttribute('data-title').toLowerCase();
 
-    return matchProg && matchYear && matchSec && matchQuery;
-  });
+      const matchProg = (program === 'all' || cardProg === program);
+      const matchYear = (year === 'all' || cardYear === year);
+      const matchSec = (section === 'all' || cardSec === section);
+      const matchQuery = (!query || cardTitle.includes(query));
 
-  currentClassPage = 1;
-  renderClassPagination();
+      return matchProg && matchYear && matchSec && matchQuery;
+    });
+
+    currentClassPage = 1;
+    renderClassPagination();
+    if (container) container.style.opacity = '1';
+  }, 40);
 }
 
 function setClassPage(page) {

@@ -89,7 +89,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">Admin Portal</span>
             <span class="text-xs text-slate-400 font-medium">•</span>
             <span class="text-xs text-slate-500 font-semibold">Guardian Communications</span>
           </div>
@@ -103,13 +103,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <!-- Tab Switcher Navigation -->
       <div class="bg-white rounded-2xl p-1.5 shadow-xs border border-slate-200/80 mb-6 inline-flex flex-wrap gap-1.5">
         <button id="tab-btn-history" type="button"
-                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-[#1e3b8a] text-white shadow-xs"
                 onclick="switchAlertTab('history')">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span>Alert History &amp; Dispatch Log</span>
         </button>
         <button id="tab-btn-settings" type="button"
-                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 onclick="switchAlertTab('settings')">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span>Automated Trigger Settings</span>
@@ -278,11 +278,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
                       <!-- Trigger Type -->
                       <td class="py-3.5 px-4">
                         <?php if ($item['trigger_type'] === 'tardy'): ?>
-                          <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
                             ⏱ Tardy
                           </span>
                         <?php else: ?>
-                          <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
                             ● Absent
                           </span>
                         <?php endif; ?>
@@ -291,16 +291,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
                       <!-- Delivery Status -->
                       <td class="py-3.5 px-4">
                         <?php if ($isSent): ?>
-                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            ✓ Sent
+                          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Sent
                           </span>
                         <?php elseif ($isPending): ?>
-                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            ⏱ Queued
+                          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Queued
                           </span>
                         <?php else: ?>
-                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            ✕ Missing Contact
+                          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60 inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Missing Contact
                           </span>
                         <?php endif; ?>
                       </td>
@@ -412,7 +415,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <button type="button" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer" onclick="switchAlertTab('history')">
                   Cancel
                 </button>
-                <button type="submit" id="btn-save-alert-settings" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition cursor-pointer">
+                <button type="submit" id="btn-save-alert-settings" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#162c69] text-white text-xs font-bold shadow-md shadow-[#1e3b8a]/20 transition cursor-pointer">
                   Save Alert Configuration
                 </button>
               </div>
@@ -510,14 +513,14 @@ function switchAlertTab(tab) {
     historyPanel.classList.add('hidden');
     settingsPanel.classList.remove('hidden');
 
-    settingsBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-blue-600 text-white shadow-sm shadow-blue-600/30';
-    historyBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+    settingsBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-[#1e3b8a] text-white shadow-xs';
+    historyBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-50';
   } else {
     settingsPanel.classList.add('hidden');
     historyPanel.classList.remove('hidden');
 
-    historyBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-blue-600 text-white shadow-sm shadow-blue-600/30';
-    settingsBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+    historyBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer bg-[#1e3b8a] text-white shadow-xs';
+    settingsBtn.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-50';
   }
 }
 

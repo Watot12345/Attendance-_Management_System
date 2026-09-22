@@ -35,25 +35,29 @@ class AnalyticsController {
 
         self::initCachePath();
 
-        $baseDir = dirname(__DIR__, 2);
-        $pyVenv = $baseDir . '/.venv/Scripts/python.exe';
-        if (!file_exists($pyVenv)) {
-            $pyVenv = $baseDir . '/.venv/bin/python';
-            if (!file_exists($pyVenv)) {
-                $pyVenv = 'python';
+        $db = Database::getConnection();
+        $liveRows = (int)$db->query("SELECT COUNT(*) FROM attendance")->fetchColumn();
+
+        // 1. If database has 0 records, immediately purge stale cache file and return live empty DB payload
+        if ($liveRows === 0) {
+            if (file_exists(self::$cacheFile)) {
+                @unlink(self::$cacheFile);
             }
+            self::$memoryCache = null;
+            return self::extractDirectDatabasePayload();
         }
 
-        $engineScript = $baseDir . '/ml/analytics_engine.py';
-
-        // 1. If cache file exists and valid, serve immediately unless forcing retrain
+        // 2. If cache file exists, verify that cached training sample count matches live DB rows
         if (!$forceRetrain && file_exists(self::$cacheFile)) {
             $cachedContent = @file_get_contents(self::$cacheFile);
             if (!empty($cachedContent)) {
                 $decoded = json_decode($cachedContent, true);
                 if (is_array($decoded) && ($decoded['status'] ?? '') === 'success') {
-                    self::$memoryCache = $decoded;
-                    return $decoded;
+                    $cachedSamples = (int)($decoded['model_specs']['training_samples'] ?? -1);
+                    if ($cachedSamples === $liveRows) {
+                        self::$memoryCache = $decoded;
+                        return $decoded;
+                    }
                 }
             }
         }
@@ -676,11 +680,11 @@ class AnalyticsController {
         $totStatus = array_sum(array_column($statusRows, 'cnt'));
         $statusMap = array_column($statusRows, 'cnt', 'status');
 
-        $presentPct = round((($statusMap['present'] ?? 0) / max(1, $totStatus)) * 100, 1);
-        $tardyPct = round((($statusMap['tardy'] ?? 0) / max(1, $totStatus)) * 100, 1);
+        $presentPct = $totStatus > 0 ? round((($statusMap['present'] ?? 0) / $totStatus) * 100, 1) : 0;
+        $tardyPct = $totStatus > 0 ? round((($statusMap['tardy'] ?? 0) / $totStatus) * 100, 1) : 0;
         $excusedCnt = (int)$db->query("SELECT COUNT(*) FROM excuse_slips WHERE `status` = 'approved'")->fetchColumn();
-        $excusedPct = round(($excusedCnt / max(1, $totStatus)) * 100, 1);
-        $absentPct = max(0.5, round(((($statusMap['absent'] ?? 0) - $excusedCnt) / max(1, $totStatus)) * 100, 1));
+        $excusedPct = $totStatus > 0 ? round(($excusedCnt / $totStatus) * 100, 1) : 0;
+        $absentPct = $totStatus > 0 ? max(0, round(((($statusMap['absent'] ?? 0) - $excusedCnt) / $totStatus) * 100, 1)) : 0;
 
         // 5. Daily Trend
         $dailyRows = $db->query("

@@ -57,27 +57,26 @@ try {
 
     <main class="page-body">
       <!-- Breadcrumb & Page Title -->
-      <!-- Breadcrumb & Page Title -->
       <div class="mb-6">
         <div class="flex items-center gap-2 mb-1.5">
-          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1e3b8a]/10 text-[#1e3b8a] border border-[#1e3b8a]/20">Admin Portal</span>
           <span class="text-xs text-slate-400 font-medium">•</span>
           <span class="text-xs text-slate-500 font-semibold">Faculty Master Accounts</span>
         </div>
         <h1 class="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Teacher &amp; Faculty Master Directory</h1>
         <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-          Manage teacher faculty accounts, search instructor credentials, or bulk import and export faculty records with complete audit logging.
+          Manage teacher faculty accounts, search instructor credentials, or bulk import and export faculty records.
         </p>
       </div>
 
       <!-- Quick Metrics Grid -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-[#1e3b8a]/10 border border-[#1e3b8a]/15 flex items-center justify-center text-[#1e3b8a] shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
           </div>
           <div>
-            <div id="stat-total-faculty" class="text-xl font-black text-slate-900"><?= number_format($metrics['total']) ?></div>
+            <div id="stat-total-faculty" class="text-xl font-bold text-slate-900"><?= number_format($metrics['total']) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Total Teachers</div>
           </div>
         </div>
@@ -87,7 +86,7 @@ try {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <div id="stat-active-faculty" class="text-xl font-black text-emerald-600"><?= number_format($metrics['active']) ?></div>
+            <div id="stat-active-faculty" class="text-xl font-bold text-emerald-600"><?= number_format($metrics['active']) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Active Faculty</div>
           </div>
         </div>
@@ -97,17 +96,17 @@ try {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
           </div>
           <div>
-            <div id="stat-inactive-faculty" class="text-xl font-black text-rose-600"><?= number_format($metrics['inactive']) ?></div>
-            <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Inactive (Soft Deleted)</div>
+            <div id="stat-inactive-faculty" class="text-xl font-bold text-rose-600"><?= number_format($metrics['inactive']) ?></div>
+            <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Inactive Accounts</div>
           </div>
         </div>
 
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
           </div>
           <div>
-            <div id="stat-depts-faculty" class="text-xl font-black text-blue-600"><?= number_format($metrics['depts']) ?></div>
+            <div id="stat-depts-faculty" class="text-xl font-bold text-sky-700"><?= number_format($metrics['depts']) ?></div>
             <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Academic Depts</div>
           </div>
         </div>
@@ -120,12 +119,12 @@ try {
           <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
             <!-- Search box -->
             <div class="relative flex-1 sm:flex-initial sm:w-64 md:w-72 min-w-[180px]">
-              <input type="text" id="search-teacher" placeholder="Search by name, ID, department..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition shadow-2xs" oninput="debounceTeacherSearch()">
+              <input type="text" id="search-teacher" placeholder="Search by name, ID, department..." class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition shadow-2xs" oninput="debounceTeacherSearch()">
               <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
 
             <!-- Department filter -->
-            <select id="filter-dept" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500 min-w-[130px]" onchange="fetchTeachers(1)">
+            <select id="filter-dept" class="px-3 py-2 text-xs bg-slate-50/60 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-[#1e3b8a] min-w-[130px] cursor-pointer" onchange="fetchTeachers(1)">
               <option value="all">All Departments</option>
               <option value="College of Computer Studies">College of Computer Studies</option>
               <option value="College of Business Administration">College of Business Administration</option>
@@ -135,18 +134,18 @@ try {
             </select>
 
             <!-- Status filter -->
-            <select id="filter-status" class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-blue-500 min-w-[100px]" onchange="fetchTeachers(1)">
+            <select id="filter-status" class="px-3 py-2 text-xs bg-slate-50/60 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-[#1e3b8a] min-w-[100px] cursor-pointer" onchange="fetchTeachers(1)">
               <option value="all">All Status</option>
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
             </select>
           </div>
 
-          <!-- Right: Consolidated Action Controls (Never cut, wraps cleanly) -->
+          <!-- Right: Consolidated Action Controls -->
           <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <!-- Combined Export Dropdown (Choose CSV or Excel) -->
+            <!-- Combined Export Dropdown -->
             <div class="relative inline-block text-left" id="export-dropdown-wrapper">
-              <button type="button" onclick="toggleExportDropdown(event)" class="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition flex items-center gap-2 cursor-pointer" title="Export faculty roster">
+              <button type="button" onclick="toggleExportDropdown(event)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer" title="Export faculty roster">
                 <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 <span>Export Roster</span>
                 <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -155,15 +154,15 @@ try {
               <!-- Dropdown Menu -->
               <div id="export-dropdown-menu" class="hidden absolute right-0 mt-1.5 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in duration-100">
                 <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Choose Export Format</div>
-                <button type="button" onclick="exportTeacherRoster('csv')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition cursor-pointer">
+                <button type="button" onclick="exportTeacherRoster('csv')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#1e3b8a] flex items-center gap-2.5 transition cursor-pointer">
                   <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-[10px] border border-emerald-100">CSV</span>
                   <div>
                     <div class="font-bold">Export as CSV (.csv)</div>
                     <div class="text-[10px] text-slate-400">Standard comma-separated file</div>
                   </div>
                 </button>
-                <button type="button" onclick="exportTeacherRoster('excel')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition cursor-pointer">
-                  <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-[10px] border border-blue-100">XLS</span>
+                <button type="button" onclick="exportTeacherRoster('excel')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#1e3b8a] flex items-center gap-2.5 transition cursor-pointer">
+                  <span class="w-6 h-6 rounded-lg bg-blue-50 text-[#1e3b8a] flex items-center justify-center font-bold text-[10px] border border-blue-100">XLS</span>
                   <div>
                     <div class="font-bold">Export as Excel (.xlsx)</div>
                     <div class="text-[10px] text-slate-400">Styled workbook for Microsoft Excel</div>
@@ -178,7 +177,7 @@ try {
             </div>
 
             <!-- Modal Button 1: Bulk Import CSV/Excel -->
-            <button type="button" onclick="openTeacherExcelModal()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs whitespace-nowrap" title="Bulk Import Faculty">
+            <button type="button" onclick="openTeacherExcelModal()" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap" title="Bulk Import Faculty">
               <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
               </svg>
@@ -186,8 +185,8 @@ try {
             </button>
 
             <!-- Modal Button 2: + Add Teacher Account -->
-            <button type="button" onclick="openManualTeacherModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-600/20 hover:shadow transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap" title="Add Teacher Account">
-              <svg class="w-4 h-4 text-blue-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onclick="openManualTeacherModal()" class="px-4 py-2 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap" title="Add Teacher Account">
+              <svg class="w-4 h-4 text-sky-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
               </svg>
               <span>+ Add Teacher</span>
@@ -201,7 +200,7 @@ try {
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr class="bg-slate-50/80 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 <th class="py-3.5 px-4">Employee ID</th>
                 <th class="py-3.5 px-4">Faculty Name &amp; Email</th>
                 <th class="py-3.5 px-4">Department &amp; Position</th>
@@ -227,8 +226,8 @@ try {
                   $isActive = ($t['status'] === 'active');
                   $initials = strtoupper(substr($t['full_name'], 0, 2));
                 ?>
-                <tr class="teacher-row hover:bg-slate-50/80 transition" data-id="<?= $t['id'] ?>">
-                  <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
+                <tr class="teacher-row hover:bg-slate-50/60 transition-colors" data-id="<?= $t['id'] ?>">
+                  <td class="py-3.5 px-4 font-mono font-semibold text-[#1e3b8a]">
                     <div class="flex items-center gap-1.5">
                       <span class="w-1.5 h-1.5 rounded-full <?= $isActive ? 'bg-emerald-500' : 'bg-slate-300' ?>"></span>
                       <span><?= htmlspecialchars($t['employee_id']) ?></span>
@@ -236,7 +235,7 @@ try {
                   </td>
                   <td class="py-3.5 px-4">
                     <div class="flex items-center gap-2.5">
-                      <div class="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      <div class="w-8 h-8 rounded-xl bg-[#1e3b8a] text-white font-bold text-xs flex items-center justify-center shrink-0">
                         <?= htmlspecialchars($initials) ?>
                       </div>
                       <div>
@@ -257,21 +256,21 @@ try {
                   </td>
                   <td class="py-3.5 px-4">
                     <?php if ($isActive): ?>
-                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active</span>
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Active</span>
                     <?php else: ?>
-                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">Inactive</span>
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">Inactive</span>
                     <?php endif; ?>
                   </td>
                   <td class="py-3.5 px-4 text-right">
                     <div class="flex items-center justify-end gap-1.5">
-                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition" onclick='openEditTeacherModal(<?= json_encode($t) ?>)' title="Edit Account">
+                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(<?= json_encode($t) ?>)' title="Edit Account">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                       </button>
-                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition" onclick="resetPassword(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Reset Password">
+                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="resetPassword(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Reset Password">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                       </button>
                       <?php if ($isActive): ?>
-                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition" onclick="deactivateTeacher(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Deactivate (Soft Delete)">
+                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="deactivateTeacher(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Deactivate">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                         </button>
                       <?php endif; ?>
@@ -285,7 +284,7 @@ try {
         </div>
 
         <!-- Table Pagination Footer -->
-        <div class="px-5 py-3.5 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div class="px-5 py-3.5 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <!-- Left: Showing X to Y of Z faculty records -->
           <div class="text-slate-500 font-medium" id="table-results-counter">
             Showing <span id="pagination-start" class="font-bold text-slate-800"><?= $initialStart ?></span> to <span id="pagination-end" class="font-bold text-slate-800"><?= $initialEnd ?></span> of <span id="pagination-total" class="font-bold text-slate-800"><?= $initialTotal ?></span> faculty record(s)
@@ -295,7 +294,7 @@ try {
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1.5 text-slate-500">
               <span class="text-[11px] font-medium text-slate-400">Rows per page:</span>
-              <select id="teacher-page-limit" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer" onchange="changeTeacherPageLimit()">
+              <select id="teacher-page-limit" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#1e3b8a] shadow-2xs cursor-pointer" onchange="changeTeacherPageLimit()">
                 <option value="10" selected>10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -304,14 +303,14 @@ try {
             </div>
 
             <div class="flex items-center gap-1.5" id="pagination-controls">
-              <button type="button" id="btn-prev-page" onclick="changeTeacherPage(-1)" disabled class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
+              <button type="button" id="btn-prev-page" onclick="changeTeacherPage(-1)" disabled class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 <span>Previous</span>
               </button>
               <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 shadow-2xs whitespace-nowrap">
-                Page <span id="current-page-display" class="font-bold text-blue-600">1</span> of <span id="total-pages-display" class="font-bold"><?= $initialTotalPages ?></span>
+                Page <span id="current-page-display" class="font-bold text-[#1e3b8a]">1</span> of <span id="total-pages-display" class="font-bold"><?= $initialTotalPages ?></span>
               </span>
-              <button type="button" id="btn-next-page" onclick="changeTeacherPage(1)" <?= ($initialTotalPages <= 1) ? 'disabled' : '' ?> class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
+              <button type="button" id="btn-next-page" onclick="changeTeacherPage(1)" <?= ($initialTotalPages <= 1) ? 'disabled' : '' ?> class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-slate-700 shadow-2xs transition flex items-center gap-1 cursor-pointer">
                 <span>Next</span>
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
               </button>
@@ -327,13 +326,13 @@ try {
 <!-- MODAL 1: CREATE TEACHER MANUALLY -->
 <!-- ========================================================================= -->
 <div id="manualTeacherModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-    <div class="px-6 py-5 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex items-center justify-between">
+  <div class="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
       <div>
         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Manual Provisioning</span>
-        <h3 class="text-lg font-black tracking-tight mt-1">Create Teacher Faculty Account</h3>
+        <h3 class="text-lg font-bold tracking-tight mt-0.5">Create Teacher Faculty Account</h3>
       </div>
-      <button type="button" onclick="closeManualTeacherModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+      <button type="button" onclick="closeManualTeacherModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
@@ -344,13 +343,13 @@ try {
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Employee ID <span class="text-rose-500">*</span>
           </label>
-          <input type="text" name="employee_id" required placeholder="e.g. EMP-2026-0101" class="form-input text-xs font-mono">
+          <input type="text" name="employee_id" required placeholder="e.g. EMP-2026-0101" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Full Name <span class="text-rose-500">*</span>
           </label>
-          <input type="text" name="full_name" required placeholder="e.g. Maria C. Santos" class="form-input text-xs">
+          <input type="text" name="full_name" required placeholder="e.g. Maria C. Santos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
       </div>
 
@@ -359,13 +358,13 @@ try {
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Email Address <span class="text-rose-500">*</span>
           </label>
-          <input type="email" name="email" required placeholder="m.santos@bestlink.edu.ph" class="form-input text-xs">
+          <input type="email" name="email" required placeholder="m.santos@bestlink.edu.ph" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Academic Department
           </label>
-          <select name="department" class="form-input form-select text-xs">
+          <select name="department" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
             <option value="College of Computer Studies">College of Computer Studies</option>
             <option value="College of Business Administration">College of Business Administration</option>
             <option value="College of Criminology">College of Criminology</option>
@@ -378,15 +377,15 @@ try {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Position</label>
-          <input type="text" name="position" value="Instructor" class="form-input text-xs">
+          <input type="text" name="position" value="Instructor" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Contact Number</label>
-          <input type="text" name="contact_number" placeholder="0917-123-4567" class="form-input text-xs">
+          <input type="text" name="contact_number" placeholder="0917-123-4567" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Date Hired</label>
-          <input type="date" name="date_hired" value="<?= date('Y-m-d') ?>" class="form-input text-xs">
+          <input type="date" name="date_hired" value="<?= date('Y-m-d') ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
       </div>
 
@@ -395,12 +394,12 @@ try {
           <div class="font-bold text-slate-800">Default Password</div>
           <div class="text-[11px] text-slate-500">Instructor can change after initial login.</div>
         </div>
-        <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-blue-700 text-xs">Teacher@123</span>
+        <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-[#1e3b8a] text-xs">Teacher@123</span>
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-        <button type="button" onclick="closeManualTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition">Cancel</button>
-        <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
+        <button type="button" onclick="closeManualTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">Cancel</button>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           Save Teacher Account
         </button>
@@ -413,13 +412,13 @@ try {
 <!-- MODAL 2: EDIT TEACHER -->
 <!-- ========================================================================= -->
 <div id="editTeacherModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-    <div class="px-6 py-5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
+  <div class="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
       <div>
         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Faculty Master</span>
-        <h3 class="text-lg font-black tracking-tight mt-1">Edit Teacher Account</h3>
+        <h3 class="text-lg font-bold tracking-tight mt-0.5">Edit Teacher Account</h3>
       </div>
-      <button type="button" onclick="closeEditTeacherModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+      <button type="button" onclick="closeEditTeacherModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
@@ -430,37 +429,37 @@ try {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Employee ID</label>
-          <input type="text" id="edit-employee-id" disabled class="form-input text-xs font-mono bg-slate-100 cursor-not-allowed">
+          <input type="text" id="edit-employee-id" disabled class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono bg-slate-100 cursor-not-allowed">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name <span class="text-rose-500">*</span></label>
-          <input type="text" id="edit-full-name" name="full_name" required class="form-input text-xs">
+          <input type="text" id="edit-full-name" name="full_name" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address <span class="text-rose-500">*</span></label>
-          <input type="email" id="edit-email" name="email" required class="form-input text-xs">
+          <input type="email" id="edit-email" name="email" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Department</label>
-          <input type="text" id="edit-department" name="department" class="form-input text-xs">
+          <input type="text" id="edit-department" name="department" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Position</label>
-          <input type="text" id="edit-position" name="position" class="form-input text-xs">
+          <input type="text" id="edit-position" name="position" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Contact Number</label>
-          <input type="text" id="edit-contact" name="contact_number" class="form-input text-xs">
+          <input type="text" id="edit-contact" name="contact_number" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Status</label>
-          <select id="edit-status" name="status" class="form-input form-select text-xs">
+          <select id="edit-status" name="status" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -468,8 +467,8 @@ try {
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-        <button type="button" onclick="closeEditTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition">Cancel</button>
-        <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
+        <button type="button" onclick="closeEditTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">Cancel</button>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           Update Account
         </button>
@@ -482,37 +481,37 @@ try {
 <!-- MODAL 3: BULK IMPORT CSV / EXCEL FILE -->
 <!-- ========================================================================= -->
 <div id="teacherExcelModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-    <div class="px-6 py-5 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white flex items-center justify-between">
+  <div class="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
       <div>
         <div class="flex items-center gap-2">
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Faculty Batch Importer</span>
-          <span class="text-xs text-emerald-200 font-medium">CSV / Excel Ingestion</span>
+          <span class="text-xs text-sky-200 font-medium">CSV / Excel Ingestion</span>
         </div>
-        <h3 class="text-lg font-black tracking-tight mt-1">Import Faculty Master Records</h3>
+        <h3 class="text-lg font-bold tracking-tight mt-0.5">Import Faculty Master Records</h3>
       </div>
-      <button type="button" onclick="closeTeacherExcelModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+      <button type="button" onclick="closeTeacherExcelModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
 
     <div class="p-6 space-y-5">
-      <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-3.5">
-        <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+      <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+        <div class="w-8 h-8 rounded-xl bg-[#1e3b8a]/10 text-[#1e3b8a] flex items-center justify-center shrink-0">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <div class="text-xs text-emerald-950">
+        <div class="text-xs text-slate-800">
           <div class="font-bold mb-0.5">Expected Column Headers in First Row:</div>
-          <p class="text-emerald-800 font-mono text-[11px] leading-relaxed">
+          <p class="text-slate-600 font-mono text-[11px] leading-relaxed">
             employee_id, full_name, email, department, position, contact_number, date_hired
           </p>
         </div>
       </div>
 
       <!-- File Dropzone -->
-      <div id="teacher-excel-dropzone" class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-7 text-center transition cursor-pointer bg-slate-50/70 hover:bg-emerald-50/30 flex flex-col items-center justify-center gap-2 group" onclick="triggerTeacherFileInput()">
+      <div id="teacher-excel-dropzone" class="border-2 border-dashed border-slate-300 hover:border-[#1e3b8a] rounded-2xl p-7 text-center transition cursor-pointer bg-slate-50/70 hover:bg-slate-50 flex flex-col items-center justify-center gap-2 group" onclick="triggerTeacherFileInput()">
         <input type="file" id="teacher-excel-file-input" accept=".csv,.xlsx,.txt" class="hidden" onchange="handleTeacherFileSelected(event)">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition shadow-xs">
+        <div class="w-12 h-12 rounded-2xl bg-[#1e3b8a]/10 text-[#1e3b8a] flex items-center justify-center group-hover:scale-105 transition shadow-xs">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
         </div>
         <div class="text-xs font-bold text-slate-800">
@@ -527,17 +526,17 @@ try {
           <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           <span id="teacher-selected-file-name" class="text-xs font-bold text-emerald-900"></span>
         </div>
-        <button type="button" onclick="clearTeacherFileInput()" class="text-xs text-rose-600 hover:underline font-semibold">Remove</button>
+        <button type="button" onclick="clearTeacherFileInput()" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Remove</button>
       </div>
 
       <!-- Import Summary / Results Area -->
       <div id="import-summary-container" class="hidden space-y-3">
-        <div class="p-4 rounded-xl border" id="import-summary-alert">
-          <h4 class="text-xs font-bold" id="import-summary-title">Import Finished</h4>
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50" id="import-summary-alert">
+          <h4 class="text-xs font-bold text-slate-800" id="import-summary-title">Import Finished</h4>
           <div class="grid grid-cols-3 gap-2 mt-2 text-center text-xs">
-            <div class="p-2 rounded-lg bg-slate-100">Total: <strong id="summary-total">0</strong></div>
-            <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800">Inserted: <strong id="summary-inserted">0</strong></div>
-            <div class="p-2 rounded-lg bg-amber-100 text-amber-800">Skipped: <strong id="summary-skipped">0</strong></div>
+            <div class="p-2 rounded-lg bg-white border border-slate-200">Total: <strong id="summary-total">0</strong></div>
+            <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800">Inserted: <strong id="summary-inserted">0</strong></div>
+            <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">Skipped: <strong id="summary-skipped">0</strong></div>
           </div>
         </div>
 
@@ -548,18 +547,21 @@ try {
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-        <button type="button" onclick="downloadTeacherCsvTemplate()" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1.5">
+        <button type="button" onclick="downloadTeacherCsvTemplate()" class="text-xs font-semibold text-[#1e3b8a] hover:underline flex items-center gap-1.5 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-          Download Blank CSV Template
+          <span>Download Blank CSV Template</span>
         </button>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="closeTeacherExcelModal()" class="btn btn-secondary text-xs">Close</button>
-          <button type="button" id="btn-process-import" onclick="processTeacherExcelImport()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+          <button type="button" onclick="closeTeacherExcelModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">Close</button>
+          <button type="button" id="btn-process-import" onclick="processTeacherExcelImport()" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
             <span>Start File Ingestion</span>
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
@@ -661,8 +663,8 @@ function renderTeachersTable(teachers) {
     const isActive = (t.status === 'active');
     const initials = (t.full_name || 'FC').substring(0, 2).toUpperCase();
     html += `
-      <tr class="teacher-row hover:bg-slate-50/80 transition" data-id="${t.id}">
-        <td class="py-3.5 px-4 font-mono font-bold text-blue-700">
+      <tr class="teacher-row hover:bg-slate-50/60 transition-colors" data-id="${t.id}">
+        <td class="py-3.5 px-4 font-mono font-semibold text-[#1e3b8a]">
           <div class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-300'}"></span>
             <span>${escapeHtml(t.employee_id)}</span>
@@ -670,7 +672,7 @@ function renderTeachersTable(teachers) {
         </td>
         <td class="py-3.5 px-4">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            <div class="w-8 h-8 rounded-xl bg-[#1e3b8a] text-white font-bold text-xs flex items-center justify-center shrink-0">
               ${escapeHtml(initials)}
             </div>
             <div>
@@ -687,20 +689,20 @@ function renderTeachersTable(teachers) {
         <td class="py-3.5 px-4 text-slate-500">${escapeHtml(t.date_hired || '—')}</td>
         <td class="py-3.5 px-4">
           ${isActive 
-            ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Active</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">Inactive</span>'
+            ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Active</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">Inactive</span>'
           }
         </td>
         <td class="py-3.5 px-4 text-right">
           <div class="flex items-center justify-end gap-1.5">
-            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition" onclick='openEditTeacherModal(${JSON.stringify(t)})' title="Edit Account">
+            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(${JSON.stringify(t)})' title="Edit Account">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
-            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition" onclick="resetPassword(${t.id}, '${escapeHtml(t.full_name)}')" title="Reset Password">
+            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="resetPassword(${t.id}, '${escapeHtml(t.full_name)}')" title="Reset Password">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
             </button>
             ${isActive ? `
-              <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition" onclick="deactivateTeacher(${t.id}, '${escapeHtml(t.full_name)}')" title="Deactivate (Soft Delete)">
+              <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="deactivateTeacher(${t.id}, '${escapeHtml(t.full_name)}')" title="Deactivate">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
               </button>
             ` : ''}

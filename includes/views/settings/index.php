@@ -18,7 +18,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Admin Portal</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">Admin Portal</span>
             <span class="text-xs text-slate-400 font-medium">•</span>
             <span class="text-xs text-slate-500 font-semibold">General Preferences &amp; Settings</span>
           </div>
@@ -30,12 +30,12 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <!-- Action Buttons -->
         <div class="flex items-center gap-2.5 shrink-0">
-          <a href="<?php echo url('personal-settings'); ?>" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-2">
+          <a href="<?php echo url('personal-settings'); ?>" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-2">
             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             <span>My Personal Settings</span>
           </a>
-          <button type="button" onclick="saveSettings()" id="save-btn-top" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 group cursor-pointer">
-            <svg class="w-4 h-4 text-blue-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button type="button" onclick="saveSettings()" id="save-btn-top" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#162c69] text-white text-xs font-bold shadow-md shadow-[#1e3b8a]/20 hover:shadow-lg transition flex items-center gap-2 group cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
             <span>Save System Changes</span>
@@ -235,8 +235,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <!-- Bottom Save Actions -->
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" onclick="saveSettings()" id="save-btn-bottom" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
-            <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <button type="button" onclick="saveSettings()" id="save-btn-bottom" class="px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#162c69] text-white text-xs font-bold shadow-md shadow-[#1e3b8a]/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <span>Save Changes</span>
           </button>
         </div>

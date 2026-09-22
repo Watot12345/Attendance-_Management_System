@@ -22,7 +22,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Personal Workspace</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">Personal Workspace</span>
             <span class="text-xs text-slate-400 font-medium">•</span>
             <span class="text-xs text-slate-500 font-semibold"><?php echo htmlspecialchars($user['full_name']); ?></span>
           </div>
@@ -33,8 +33,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <div class="flex items-center gap-2.5">
-          <button type="button" onclick="savePersonalPrefs()" id="btn-save-prefs-top" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
-            <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <button type="button" onclick="savePersonalPrefs()" id="btn-save-prefs-top" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#162c69] text-white text-xs font-bold shadow-md shadow-[#1e3b8a]/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <span>Save Preferences</span>
           </button>
         </div>
@@ -44,7 +44,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <!-- Admin Notice: Separation between Personal and System Settings -->
       <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+          <div class="w-9 h-9 rounded-xl bg-[#1e3b8a] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
             ⚙
           </div>
           <div>
@@ -173,8 +173,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
         <!-- Submit Button -->
         <div class="flex justify-end gap-3 pt-2">
-          <button type="submit" id="btn-save-prefs-bottom" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
-            <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <button type="submit" id="btn-save-prefs-bottom" class="px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#162c69] text-white text-xs font-bold shadow-md shadow-[#1e3b8a]/20 hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <span>Save Preferences</span>
           </button>
         </div>
