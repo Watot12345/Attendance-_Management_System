@@ -492,7 +492,19 @@ class Router {
             }
         }
 
-        return $_SESSION['user']['role'] ?? ($_SESSION['role'] ?? 'guest');
+        $role = $_SESSION['user']['role'] ?? ($_SESSION['role'] ?? '');
+        if (!empty($role) && in_array($role, ['admin', 'teacher', 'student'], true)) {
+            return $role;
+        }
+
+        $path = trim(self::getCurrentPath(), '/');
+        if (str_starts_with($path, 'teacher')) {
+            return 'teacher';
+        }
+        if (str_starts_with($path, 'student')) {
+            return 'student';
+        }
+        return 'admin';
     }
 
     /**

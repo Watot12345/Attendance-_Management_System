@@ -75,7 +75,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In — Attendance Management System</title>
-  <meta name="description" content="AI-Supported Attendance Management Portal — Bestlink College of the Philippines">
+  <meta name="description" content="Attendance Management Portal">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -96,8 +96,13 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       padding: 0;
     }
     html, body {
-      min-height: 100vh;
-      background-color: #FFFFFF;
+      height: 100vh;
+      max-height: 100vh;
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #F8FAFC;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #0F172A;
       -webkit-font-smoothing: antialiased;
@@ -108,226 +113,37 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       display: none !important;
     }
 
-    /* ── Split Screen Canvas ─────────────────────────────── */
+    /* ── Login Canvas & Centered Card ───────────────────────── */
     .app-canvas {
       display: flex;
-      min-height: 100vh;
-      width: 100%;
-      background: #FFFFFF;
-    }
-
-    /* ── Left Hero Side ──────────────────────────────────── */
-    .hero-side {
-      flex: 1.15;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 56px 68px;
-      position: relative;
-      background: #f2f6fa;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      max-height: 100vh;
+      width: 100vw;
+      background: #F8FAFC;
+      padding: 16px;
       overflow: hidden;
-      border-right: 1px solid #E2E8F0;
+      box-sizing: border-box;
     }
 
-    .hero-inner {
-      position: relative;
-      z-index: 2;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .brand-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand-logo-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-icon-box {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .brand-text-col {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .brand-title-main {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 800;
-      font-size: 17px;
-      letter-spacing: -0.01em;
-      color: #0F172A;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .brand-subtitle-sub {
-      font-size: 11px;
-      color: #64748B;
-      font-weight: 500;
-    }
-
-    .term-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-    }
-
-    .hero-center {
-      margin: 48px 0;
-      max-width: 580px;
-    }
-
-    .pill-tagline {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      color: #0284c7;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .hero-h1 {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      font-size: 52px;
-      font-weight: 900;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      color: #0F172A;
-      margin-bottom: 20px;
-    }
-
-    .hero-h1 span.highlight {
-      background: linear-gradient(135deg, #1e3b8a 0%, #0284c7 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero-paragraph {
-      font-size: 15px;
-      line-height: 1.65;
-      color: #64748B;
-      margin-bottom: 32px;
-      max-width: 480px;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      max-width: 520px;
-    }
-
-    .feature-card {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .feature-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #1E293B;
-    }
-
-    .feature-desc {
-      font-size: 10.5px;
-      color: #64748B;
-      line-height: 1.35;
-    }
-
-    .hero-footer-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding-top: 24px;
-      border-top: 1px solid #F1F5F9;
-    }
-
-    .footer-security-text {
-      font-size: 12px;
-      color: #94A3B8;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .live-status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 14px;
-      border-radius: 9999px;
-      background: #e0f2fe;
-      border: 1px solid #bae6fd;
-      font-size: 10.5px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: #0284c7;
-      text-transform: uppercase;
-    }
-
-    .pulsing-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #0284c7;
-      box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
-      animation: pulseSky 1.8s infinite;
-    }
-
-    @keyframes pulseSky {
-      0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.6); }
-      70% { box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
-    }
-
-    /* ── Right Auth Panel ────────────────────────────────── */
     .auth-side {
-      width: 500px;
-      flex-shrink: 0;
+      width: 100%;
+      max-width: 440px;
       background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+      padding: 36px 32px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 48px 44px;
+      justify-content: center;
       position: relative;
-      min-height: 100vh;
     }
 
     .auth-card-inner {
       width: 100%;
-      max-width: 400px;
       display: flex;
       flex-direction: column;
     }
@@ -338,12 +154,12 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       letter-spacing: 0.18em;
       color: #0284c7;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .auth-heading {
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #0F172A;
@@ -351,14 +167,14 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     .auth-subtext {
-      font-size: 13.5px;
+      font-size: 13px;
       color: #64748B;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
     /* Form Fields Styling */
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       position: relative;
     }
 
@@ -405,7 +221,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       width: 100%;
       border: none;
       outline: none;
-      padding: 12px 0;
+      padding: 11px 0;
       font-size: 13.5px;
       color: #0F172A;
       background: transparent;
@@ -439,7 +255,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       align-items: center;
       justify-content: space-between;
       margin-top: 4px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .remember-label {
@@ -456,17 +272,15 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       width: 16px;
       height: 16px;
       border-radius: 4px;
-      border: 1.5px solid #CBD5E1;
+      accent-color: #1e3b8a;
       cursor: pointer;
-      accent-color: #0F172A;
     }
 
     .forgot-link-btn {
       background: none;
       border: none;
-      font-size: 12px;
-      color: #64748B;
-      cursor: pointer;
+      color: #0284c7;
+      font-size: 12.5px;
       font-weight: 500;
       padding: 0;
     }
@@ -483,7 +297,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       color: #FFFFFF;
       border: none;
       border-radius: 10px;
-      padding: 13px 18px;
+      padding: 12px 18px;
       font-size: 14px;
       font-weight: 600;
       letter-spacing: 0.01em;
@@ -547,11 +361,11 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 8px;
-      margin: 24px 0;
+      margin: 20px 0;
     }
 
     .otp-digit-box {
-      height: 52px;
+      height: 50px;
       width: 100%;
       text-align: center;
       font-family: 'Plus Jakarta Sans', monospace, sans-serif;
@@ -568,50 +382,55 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     .otp-digit-box:focus {
       border-color: #0F172A;
       box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
-      background: #F8FAFC;
     }
 
     .otp-digit-box.filled {
-      border-color: #0F172A;
-      background: #F8FAFC;
+      border-color: #1e3b8a;
+      background: #F0FDF4;
     }
 
     .otp-footer-controls {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 12.5px;
       color: #64748B;
-      margin-top: 18px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .resend-btn {
       background: none;
       border: none;
-      color: var(--primary-pink);
-      font-weight: 700;
+      color: #0284c7;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 12px;
       padding: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .resend-btn:hover {
+      text-decoration: underline;
     }
 
     .resend-btn:disabled {
       color: #94A3B8;
       cursor: not-allowed;
+      text-decoration: none;
     }
 
     .back-btn {
       background: none;
       border: none;
       color: #64748B;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       margin-top: 14px;
-      font-weight: 500;
     }
 
     .back-btn:hover {
@@ -643,7 +462,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       text-decoration: underline;
     }
 
-    /* Alert States */
+    /* Notification Banner */
     .auth-alert {
       padding: 10px 14px;
       border-radius: 8px;
@@ -652,7 +471,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .auth-alert.error {
@@ -752,22 +571,21 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     /* Responsive */
-    @media (max-width: 1080px) {
-      .app-canvas { flex-direction: column; }
-      .hero-side { padding: 44px 32px; border-right: none; border-bottom: 1px solid #E2E8F0; }
-      .hero-h1 { font-size: 42px; }
-      .feature-grid { grid-template-columns: 1fr; max-width: 100%; }
-      .auth-side { width: 100%; min-height: auto; padding: 44px 32px; }
-      .auth-card-inner { max-width: 100%; }
-    }
-
-    @media (max-width: 640px) {
-      .hero-side { padding: 32px 20px; }
-      .hero-h1 { font-size: 34px; }
-      .hero-footer-bar { flex-direction: column; align-items: flex-start; }
-      .auth-side { padding: 32px 20px; }
-      .otp-inputs-grid { gap: 6px; }
-      .otp-digit-box { height: 46px; font-size: 18px; }
+    @media (max-width: 480px) {
+      .auth-side {
+        padding: 28px 20px;
+        border-radius: 14px;
+      }
+      .auth-heading {
+        font-size: 24px;
+      }
+      .otp-inputs-grid {
+        gap: 6px;
+      }
+      .otp-digit-box {
+        height: 46px;
+        font-size: 18px;
+      }
     }
   </style>
 </head>
@@ -775,94 +593,19 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
   <div class="app-canvas">
     
-    <!-- ══════════════════════════════════════════════════════════
-         LEFT HERO SIDE
-         ══════════════════════════════════════════════════════════ -->
-    <div class="hero-side">
-      <div class="hero-inner">
-        
-        <!-- Top Brand Bar -->
-        <div class="brand-header">
-          <div class="brand-logo-wrap">
-            <div class="brand-icon-box">
-              <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <div class="brand-text-col">
-              <span class="brand-title-main">
-                BCP ATTENDANCE
-              </span>
-              <span class="brand-subtitle-sub">Bestlink College of the Philippines</span>
-            </div>
-          </div>
-
-          <div class="term-pill">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981;"></span>
-            <span>AY 2025–2026</span>
-          </div>
-        </div>
-
-        <!-- Center Main Title -->
-        <div class="hero-center">
-          <div class="pill-tagline">
-            <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/>
-            </svg>
-            <span>SECURE ACCESS PORTAL</span>
-          </div>
-          
-          <h1 class="hero-h1">
-            Student & Faculty<br>
-            <span class="highlight">Attendance</span><br>
-            Management
-          </h1>
-
-          <p class="hero-paragraph">
-            Institutional portal for live Qr code attendance tracking, digital excuse slip processing, biometric sync, and analytics.
-          </p>
-
-          <!-- 3 Highlight Features -->
-          <div class="feature-grid">
-            <div class="feature-card">
-              <span class="feature-title">⚡ Instant Tap-In</span>
-              <span class="feature-desc">Fast RFID & QR code scanning</span>
-            </div>
-            <div class="feature-card">
-              <span class="feature-title">📋 Excuse Slips</span>
-              <span class="feature-desc">Digital submission & faculty review</span>
-            </div>
-            <div class="feature-card">
-              <span class="feature-title">📊 Live Reports</span>
-              <span class="feature-desc">Automated DTR & anomaly detection</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom Security / Status Footer -->
-        <div class="hero-footer-bar">
-          <div class="footer-security-text">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #94A3B8;"></span>
-            <span>Institutional Security Protocol · Bestlink College</span>
-          </div>
-
-          <div class="live-status-pill">
-            <span class="pulsing-dot"></span>
-            <span>PORTAL ONLINE</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════════════════════
-         RIGHT AUTHENTICATION FORM SIDE
-         ══════════════════════════════════════════════════════════ -->
+    <!-- Centered Authentication Card -->
     <div class="auth-side">
       <div class="auth-card-inner">
         
+        <!-- Institution Logo -->
+        <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+          <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" style="width: 54px; height: 54px; object-fit: contain;">
+        </div>
+
         <!-- Header Section -->
-        <div class="auth-top-eyebrow" id="auth-flow-eyebrow">SECURE SIGN IN</div>
-        <h2 class="auth-heading" id="auth-flow-title">Sign In to Portal</h2>
-        <p class="auth-subtext" id="auth-flow-subtitle">Use your institutional credentials to authenticate.</p>
+        <div class="auth-top-eyebrow" id="auth-flow-eyebrow" style="text-align: center;">SECURE SIGN IN</div>
+        <h2 class="auth-heading" id="auth-flow-title" style="text-align: center;">Sign In to Portal</h2>
+        <p class="auth-subtext" id="auth-flow-subtitle" style="text-align: center;">Use your institutional credentials to authenticate.</p>     
 
         <!-- Notification Banner -->
         <div id="alert-banner" class="auth-alert hidden">
@@ -2102,8 +1845,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       }
     }
   </script>
-  <?php require_once dirname(__DIR__) . '/partials/loading-screen.php'; ?>
-  <!-- Global App JS for Preloader and Utilities -->
+  <!-- Global App JS for Utilities -->
   <script src="<?php echo url('assets/js/app.js'); ?>"></script>
 </body>
 </html>

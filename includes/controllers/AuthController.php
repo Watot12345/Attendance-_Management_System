@@ -707,21 +707,23 @@ class AuthController {
 
             $checkStmt = $db->prepare("
                 SELECT * FROM login_requests 
-                WHERE request_id = :rid AND user_id = :uid AND status = 'pending'
+                WHERE request_id = :rid AND user_id = :uid
                 LIMIT 1
             ");
             $checkStmt->execute([':rid' => $requestId, ':uid' => $userId]);
             $request = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$request) {
-                $this->respondError('Login request not found or already processed.', 404);
+                $this->respondError('Login request not found.', 404);
                 return;
             }
 
             if ($isApproved) {
-                // Update request to approved
-                $upStmt = $db->prepare("UPDATE login_requests SET status = 'approved', responded_at = NOW() WHERE request_id = ?");
-                $upStmt->execute([$requestId]);
+                // Update request to approved (if still pending)
+                if ($request['status'] === 'pending') {
+                    $upStmt = $db->prepare("UPDATE login_requests SET status = 'approved', responded_at = NOW() WHERE request_id = ?");
+                    $upStmt->execute([$requestId]);
+                }
 
                 // Destroy current active session so this device is logged out immediately
                 $_SESSION = [];
@@ -774,9 +776,13 @@ class AuthController {
         $requestId = trim($_GET['request_id'] ?? '');
 
         if (empty($requestId)) {
+            session_write_close();
             $this->respondError('Missing request_id.', 400);
             return;
         }
+
+        // Release PHP session lock immediately so concurrent requests don't block
+        session_write_close();
 
         try {
             $db = Database::getConnection();
@@ -798,6 +804,10 @@ class AuthController {
             }
 
             if ($req['status'] === 'approved' || $req['status'] === 'completed') {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+
                 // Establish user session on this newly authorized device
                 $user = [
                     'user_id'     => (int)$req['user_id'],

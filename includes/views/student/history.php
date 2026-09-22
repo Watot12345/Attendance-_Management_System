@@ -166,6 +166,28 @@ $attParams[':default_sec'] = $studentSection;
 $recordsStmt->execute($attParams);
 $attendanceRecords = $recordsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 5.1 Pagination Configuration & Calculation
+$perPage = isset($_GET['per_page']) ? max(5, min(100, (int)$_GET['per_page'])) : 10;
+$totalRecords = count($attendanceRecords);
+$totalPages = max(1, (int)ceil($totalRecords / $perPage));
+$currentPage = isset($_GET['page']) ? max(1, min($totalPages, (int)$_GET['page'])) : 1;
+$offset = ($currentPage - 1) * $perPage;
+$pagedRecords = array_slice($attendanceRecords, $offset, $perPage);
+$fromRecord = $totalRecords > 0 ? $offset + 1 : 0;
+$toRecord = min($offset + $perPage, $totalRecords);
+
+if (!function_exists('getStudentHistoryUrl')) {
+    function getStudentHistoryUrl($page, $studentUserId, $filterSubject, $filterStatus, $perPage = 10) {
+        $params = [];
+        if (!empty($studentUserId)) $params['student_id'] = $studentUserId;
+        if (!empty($filterSubject) && $filterSubject !== 'all') $params['subject'] = $filterSubject;
+        if (!empty($filterStatus) && $filterStatus !== 'all') $params['status'] = $filterStatus;
+        if ($perPage !== 10) $params['per_page'] = $perPage;
+        $params['page'] = $page;
+        return url('student/history?' . http_build_query($params));
+    }
+}
+
 // 6. Map Approved Excuse Slips by Date for Badge Annotations
 $slipsStmt = $db->prepare("
     SELECT excuse_slip_id, date_of_absence, status, reason
@@ -330,23 +352,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
       </div>
 
       <!-- Filters & Search -->
-      <form method="GET" action="<?php echo url('student/history'); ?>" class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <input type="hidden" name="student_id" value="<?php echo $studentUserId; ?>">
-
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <!-- Subject Filter -->
           <div>
-            <select name="subject" class="px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="this.form.submit()">
+            <select id="attendance-filter-subject" onchange="applyAttendanceFilters()" class="px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
               <option value="all">All Enrolled Subjects</option>
               <?php if (!empty($enrolledSubjects)): ?>
                 <?php foreach ($enrolledSubjects as $sub): ?>
-                  <option value="<?php echo htmlspecialchars($sub['course_code']); ?>" <?php echo ($filterSubject === $sub['course_code']) ? 'selected' : ''; ?>>
+                  <option value="<?php echo htmlspecialchars(strtolower($sub['course_code'])); ?>" <?php echo (strtolower($filterSubject) === strtolower($sub['course_code'])) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($sub['course_code'] . ' — ' . $sub['course_title']); ?>
                   </option>
                 <?php endforeach; ?>
               <?php elseif (!empty($recordedSubjects)): ?>
                 <?php foreach ($recordedSubjects as $rSub): ?>
-                  <option value="<?php echo htmlspecialchars($rSub); ?>" <?php echo ($filterSubject === $rSub) ? 'selected' : ''; ?>>
+                  <option value="<?php echo htmlspecialchars(strtolower($rSub)); ?>" <?php echo (strtolower($filterSubject) === strtolower($rSub)) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($rSub); ?>
                   </option>
                 <?php endforeach; ?>
@@ -356,7 +376,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           <!-- Status Filter -->
           <div>
-            <select name="status" class="px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="this.form.submit()">
+            <select id="attendance-filter-status" onchange="applyAttendanceFilters()" class="px-3 py-2 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
               <option value="all" <?php echo ($filterStatus === 'all') ? 'selected' : ''; ?>>All Statuses</option>
               <option value="present" <?php echo ($filterStatus === 'present') ? 'selected' : ''; ?>>Present Only</option>
               <option value="tardy" <?php echo ($filterStatus === 'tardy' || $filterStatus === 'late') ? 'selected' : ''; ?>>Late / Tardy Only</option>
@@ -364,23 +384,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
             </select>
           </div>
 
-          <?php if ($filterSubject !== 'all' || $filterStatus !== 'all'): ?>
-            <a href="<?php echo url('student/history?student_id=' . $studentUserId); ?>" class="text-xs text-indigo-600 hover:underline font-semibold ml-2">
-              Clear Filters
-            </a>
-          <?php endif; ?>
+          <button type="button" id="btn-clear-filters" onclick="resetAttendanceFilters()" class="hidden text-xs text-indigo-600 hover:underline font-semibold ml-2 cursor-pointer">
+            Clear Filters
+          </button>
         </div>
 
         <div class="text-xs text-slate-400">
-          Showing <strong class="text-slate-700"><?php echo count($attendanceRecords); ?> verified record(s)</strong>
+          Showing <strong id="filter-summary-text" class="text-slate-700"><?php echo min(10, count($attendanceRecords)); ?> of <?php echo count($attendanceRecords); ?> verified record(s)</strong>
         </div>
-      </form>
+      </div>
 
       <!-- Attendance Records Table -->
       <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden mb-6">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 class="text-sm font-bold text-slate-800">Historical Attendance Log (<?php echo count($attendanceRecords); ?> Records)</h2>
-          <span class="text-xs text-slate-400">Chronological Record</span>
+          <h2 id="table-header-title" class="text-sm font-bold text-slate-800">Historical Attendance Log (<?php echo count($attendanceRecords); ?> Records)</h2>
+          <span id="table-page-subtitle" class="text-xs text-slate-400">Chronological Record &bull; Instant Pagination</span>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
@@ -394,26 +412,29 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 <th class="py-3 px-4">Status</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 text-slate-700">
-              <?php if (empty($attendanceRecords)): ?>
-                <tr>
-                  <td colspan="6" class="text-center py-12 text-slate-400">
-                    <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                    </svg>
-                    <p class="text-sm font-semibold text-slate-600">No attendance records found</p>
-                    <p class="text-xs text-slate-400 mt-1">You do not have any recorded sessions matching this filter.</p>
-                  </td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($attendanceRecords as $row): 
+            <tbody id="attendance-tbody" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Empty state row -->
+              <tr id="no-attendance-row" class="<?php echo empty($attendanceRecords) ? '' : 'hidden'; ?>">
+                <td colspan="6" class="text-center py-12 text-slate-400">
+                  <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  <p class="text-sm font-semibold text-slate-600">No attendance records found</p>
+                  <p class="text-xs text-slate-400 mt-1">You do not have any recorded sessions matching this filter.</p>
+                </td>
+              </tr>
+
+              <?php if (!empty($attendanceRecords)): ?>
+                <?php foreach ($attendanceRecords as $idx => $row): 
                   $status = strtolower($row['status'] ?? 'present');
+                  $normStatus = ($status === 'late') ? 'tardy' : $status;
                   $dateFormatted = date('M d, Y', strtotime($row['date']));
                   $timeFormatted = !empty($row['time']) ? date('h:i A', strtotime($row['time'])) : '—';
                   $courseDisplay = $row['course_title'] ? ($row['course_code'] . ' — ' . $row['course_title']) : ($row['subject'] ?: 'Web Systems');
                   $roomDisplay   = !empty($row['room_number']) ? 'Room ' . $row['room_number'] : 'Lab / Classroom';
                   $sectionDisplay = $row['section'] ?: '31001';
                   $instructor    = !empty(trim($row['instructor_name'] ?? '')) ? 'Prof. ' . trim($row['instructor_name']) : 'Faculty Instructor';
+                  $subjectSearchKey = strtolower(trim(($row['course_code'] ?? '') . ' ' . ($row['course_title'] ?? '') . ' ' . ($row['subject'] ?? '')));
 
                   // Verification method
                   if (!empty($row['qr_session_id'])) {
@@ -427,7 +448,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   // Status badge (with excuse detection)
                   $hasApprovedSlip = isset($approvedSlips[$row['date']]);
                 ?>
-                  <tr class="hover:bg-slate-50/80 transition">
+                  <tr class="attendance-row hover:bg-slate-50/80 transition" 
+                      data-subject="<?php echo htmlspecialchars($subjectSearchKey); ?>"
+                      data-course-code="<?php echo htmlspecialchars(strtolower($row['course_code'] ?? '')); ?>"
+                      data-status="<?php echo htmlspecialchars($normStatus); ?>">
                     <td class="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
                       <?php echo htmlspecialchars($dateFormatted); ?> &bull; <?php echo htmlspecialchars($timeFormatted); ?>
                     </td>
@@ -463,7 +487,215 @@ require_once dirname(__DIR__) . '/partials/header.php';
             </tbody>
           </table>
         </div>
+
+        <!-- Dynamic Client-Side Pagination Controls Footer -->
+        <div id="attendance-pagination-bar" class="px-5 py-3.5 bg-slate-50/90 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div id="attendance-showing-info" class="text-slate-500 font-medium">
+            Showing <span id="pag-from" class="font-bold text-slate-800">1</span> to <span id="pag-to" class="font-bold text-slate-800">10</span> of <span id="pag-total" class="font-bold text-slate-800"><?php echo count($attendanceRecords); ?></span> records
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <!-- Prev Button -->
+            <button type="button" id="btn-prev-page" onclick="changeAttendancePage(currentAttendancePage - 1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-100/60 disabled:text-slate-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              <span>Prev</span>
+            </button>
+
+            <!-- Numbered Buttons Container -->
+            <div id="pagination-numbers" class="flex items-center gap-1">
+              <!-- Dynamically populated without page refresh -->
+            </div>
+
+            <!-- Next Button -->
+            <button type="button" id="btn-next-page" onclick="changeAttendancePage(currentAttendancePage + 1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-100/60 disabled:text-slate-400">
+              <span>Next</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
+    </main>
+  </div>
+</div>
+
+<script>
+/**
+ * Instant Client-Side Pagination & Filtering (No Page Reload)
+ */
+let currentAttendancePage = 1;
+const attendancePerPage = 10;
+
+function getFilteredAttendanceRows() {
+  const subjectFilter = (document.getElementById('attendance-filter-subject')?.value || 'all').toLowerCase();
+  const statusFilter = (document.getElementById('attendance-filter-status')?.value || 'all').toLowerCase();
+  const allRows = Array.from(document.querySelectorAll('.attendance-row'));
+
+  return allRows.filter(row => {
+    const rowSubject = (row.getAttribute('data-subject') || '').toLowerCase();
+    const rowCourseCode = (row.getAttribute('data-course-code') || '').toLowerCase();
+    const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+
+    const matchesSubject = (subjectFilter === 'all') || rowCourseCode === subjectFilter || rowSubject.includes(subjectFilter);
+    const matchesStatus = (statusFilter === 'all') || (rowStatus === statusFilter);
+
+    return matchesSubject && matchesStatus;
+  });
+}
+
+function renderAttendanceTable() {
+  const filteredRows = getFilteredAttendanceRows();
+  const allRows = Array.from(document.querySelectorAll('.attendance-row'));
+  const total = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / attendancePerPage));
+
+  // Keep current page within valid bounds
+  if (currentAttendancePage > totalPages) currentAttendancePage = totalPages;
+  if (currentAttendancePage < 1) currentAttendancePage = 1;
+
+  const startIndex = (currentAttendancePage - 1) * attendancePerPage;
+  const endIndex = startIndex + attendancePerPage;
+
+  // Hide all rows first
+  allRows.forEach(row => { row.style.display = 'none'; });
+
+  // Show only rows belonging to the current page
+  filteredRows.forEach((row, idx) => {
+    if (idx >= startIndex && idx < endIndex) {
+      row.style.display = '';
+    }
+  });
+
+  // Empty state handling
+  const noRecordsRow = document.getElementById('no-attendance-row');
+  if (noRecordsRow) {
+    noRecordsRow.className = total === 0 ? '' : 'hidden';
+  }
+
+  // Update summary counts
+  const fromRecord = total > 0 ? startIndex + 1 : 0;
+  const toRecord = Math.min(endIndex, total);
+
+  const pagFrom = document.getElementById('pag-from');
+  const pagTo = document.getElementById('pag-to');
+  const pagTotal = document.getElementById('pag-total');
+  const filterSummary = document.getElementById('filter-summary-text');
+  const tableTitle = document.getElementById('table-header-title');
+  const tableSubtitle = document.getElementById('table-page-subtitle');
+  const clearBtn = document.getElementById('btn-clear-filters');
+
+  if (pagFrom) pagFrom.textContent = fromRecord;
+  if (pagTo) pagTo.textContent = toRecord;
+  if (pagTotal) pagTotal.textContent = total;
+  if (filterSummary) filterSummary.innerHTML = `<strong>${fromRecord}–${toRecord}</strong> of <strong>${total} verified record(s)</strong>`;
+  if (tableTitle) tableTitle.textContent = `Historical Attendance Log (${total} Records)`;
+  if (tableSubtitle) tableSubtitle.innerHTML = `Chronological Record &bull; Page ${currentAttendancePage} of ${totalPages}`;
+
+  const subjectVal = document.getElementById('attendance-filter-subject')?.value || 'all';
+  const statusVal = document.getElementById('attendance-filter-status')?.value || 'all';
+  if (clearBtn) {
+    clearBtn.classList.toggle('hidden', subjectVal === 'all' && statusVal === 'all');
+  }
+
+  // Render pagination buttons
+  renderAttendancePaginationControls(totalPages);
+
+  // Update URL silently without reloading
+  try {
+    const url = new URL(window.location.href);
+    if (currentAttendancePage > 1) {
+      url.searchParams.set('page', currentAttendancePage);
+    } else {
+      url.searchParams.delete('page');
+    }
+    if (subjectVal !== 'all') {
+      url.searchParams.set('subject', subjectVal);
+    } else {
+      url.searchParams.delete('subject');
+    }
+    if (statusVal !== 'all') {
+      url.searchParams.set('status', statusVal);
+    } else {
+      url.searchParams.delete('status');
+    }
+    window.history.replaceState({}, '', url.toString());
+  } catch (e) {}
+}
+
+function renderAttendancePaginationControls(totalPages) {
+  const paginationBar = document.getElementById('attendance-pagination-bar');
+  const numbersContainer = document.getElementById('pagination-numbers');
+  const btnPrev = document.getElementById('btn-prev-page');
+  const btnNext = document.getElementById('btn-next-page');
+
+  if (!paginationBar || !numbersContainer) return;
+
+  if (totalPages <= 1) {
+    paginationBar.classList.add('hidden');
+    return;
+  }
+  paginationBar.classList.remove('hidden');
+
+  if (btnPrev) btnPrev.disabled = (currentAttendancePage <= 1);
+  if (btnNext) btnNext.disabled = (currentAttendancePage >= totalPages);
+
+  let html = '';
+  const startP = Math.max(1, currentAttendancePage - 2);
+  const endP = Math.min(totalPages, currentAttendancePage + 2);
+
+  if (startP > 1) {
+    html += `<button type="button" onclick="changeAttendancePage(1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition flex items-center justify-center shadow-2xs cursor-pointer">1</button>`;
+    if (startP > 2) {
+      html += `<span class="px-1 text-slate-400 font-medium select-none">...</span>`;
+    }
+  }
+
+  for (let p = startP; p <= endP; p++) {
+    if (p === currentAttendancePage) {
+      html += `<button type="button" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center shadow-xs cursor-default">${p}</button>`;
+    } else {
+      html += `<button type="button" onclick="changeAttendancePage(${p})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition flex items-center justify-center shadow-2xs cursor-pointer">${p}</button>`;
+    }
+  }
+
+  if (endP < totalPages) {
+    if (endP < totalPages - 1) {
+      html += `<span class="px-1 text-slate-400 font-medium select-none">...</span>`;
+    }
+    html += `<button type="button" onclick="changeAttendancePage(${totalPages})" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition flex items-center justify-center shadow-2xs cursor-pointer">${totalPages}</button>`;
+  }
+
+  numbersContainer.innerHTML = html;
+}
+
+function changeAttendancePage(page) {
+  currentAttendancePage = page;
+  renderAttendanceTable();
+}
+
+function applyAttendanceFilters() {
+  currentAttendancePage = 1;
+  renderAttendanceTable();
+}
+
+function resetAttendanceFilters() {
+  const subj = document.getElementById('attendance-filter-subject');
+  const stat = document.getElementById('attendance-filter-status');
+  if (subj) subj.value = 'all';
+  if (stat) stat.value = 'all';
+  currentAttendancePage = 1;
+  renderAttendanceTable();
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const initialPage = parseInt(params.get('page'), 10);
+  if (!isNaN(initialPage) && initialPage > 1) {
+    currentAttendancePage = initialPage;
+  }
+  renderAttendanceTable();
+});
+</script>
     </main>
   </div>
 </div>

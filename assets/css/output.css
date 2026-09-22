@@ -118,22 +118,28 @@ h1, h2, h3, h4, h5, h6, .font-display {
   gap: 0.75rem;
   padding: 0.625rem 0.875rem;
   border-radius: 0.75rem;
-  color: #e0f2fe;
+  color: rgba(224, 242, 254, 0.85);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   text-decoration: none;
+  position: relative;
 }
 #sidebar .nav-item:hover {
-  background-color: #395299 !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
   color: #ffffff !important;
 }
 #sidebar .nav-item.active {
-  background-color: #395299 !important;
+  background: #0284c7 !important;
+  background-color: #0284c7 !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  box-shadow: none !important;
+  box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+#sidebar .nav-item.active svg {
+  color: #ffffff !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
 }
 #sidebar .nav-section {
   padding: 0.375rem 1rem;

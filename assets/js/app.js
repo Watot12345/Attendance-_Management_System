@@ -578,6 +578,42 @@ const APP = {
   },
 
   /* ── Highlight Active Nav ─────────────────────────────────── */
+  highlightCurrentNav() {
+    const currentPath = (window.location.pathname || '').replace(/\/$/, '') || '/';
+    let matched = false;
+
+    // First try exact match
+    document.querySelectorAll('#sidebar .nav-item').forEach(item => {
+      const href = item.getAttribute('href');
+      if (!href || href === '#' || href.startsWith('javascript:')) return;
+      try {
+        const linkUrl = new URL(href, window.location.origin);
+        const linkPath = (linkUrl.pathname || '').replace(/\/$/, '') || '/';
+        if (linkPath === currentPath) {
+          item.classList.add('active');
+          matched = true;
+        }
+      } catch (e) {}
+    });
+
+    // If no exact match and not on root, try prefix match
+    if (!matched && currentPath !== '/' && currentPath !== '') {
+      document.querySelectorAll('#sidebar .nav-item').forEach(item => {
+        if (matched) return;
+        const href = item.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('javascript:')) return;
+        try {
+          const linkUrl = new URL(href, window.location.origin);
+          const linkPath = (linkUrl.pathname || '').replace(/\/$/, '') || '/';
+          if (linkPath !== '/' && linkPath !== '' && currentPath.startsWith(linkPath)) {
+            item.classList.add('active');
+            matched = true;
+          }
+        } catch (e) {}
+      });
+    }
+  },
+
   highlightNav(pageId) {
     document.querySelectorAll('#sidebar .nav-item').forEach(item => {
       item.classList.remove('active');
@@ -780,13 +816,14 @@ const APP = {
 
   /* ── Cross-Device Concurrent Login Approval Manager ──────── */
   deviceApprovalManager: {
-    POLL_INTERVAL_MS: 1200,
+    isInitialized: false,
     pollTimer: null,
     countdownInterval: null,
-    remainingSeconds: 300,
     activeRequestId: null,
+    remainingSeconds: 300,
     isModalOpen: false,
-    isInitialized: false,
+    isProcessing: false,
+    POLL_INTERVAL_MS: 2500,
 
     formatTime(sec) {
       const s = Math.max(0, parseInt(sec, 10) || 0);
@@ -809,26 +846,30 @@ const APP = {
 
       // Listen for tab focus / visibility for instantaneous response
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === 'visible' && !this.isProcessing) {
           this.checkPending();
         }
       });
       window.addEventListener('focus', () => {
-        this.checkPending();
+        if (!this.isProcessing) {
+          this.checkPending();
+        }
       });
     },
 
     startPolling() {
       if (this.pollTimer) clearInterval(this.pollTimer);
+      if (this.isProcessing) return;
       this.checkPending();
       this.pollTimer = setInterval(() => {
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === 'visible' && !this.isProcessing) {
           this.checkPending();
         }
       }, this.POLL_INTERVAL_MS);
     },
 
     async checkPending() {
+      if (this.isProcessing) return;
       try {
         const basePath = this.getBasePath();
         const res = await fetch(basePath + '/api/auth/check-pending-approval', {
@@ -839,6 +880,7 @@ const APP = {
 
         if (data.status === 'session_replaced') {
           // Session was replaced by an approved login on another device
+          this.isProcessing = true;
           if (this.pollTimer) clearInterval(this.pollTimer);
           if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
             APP.showLoadingScreen({
@@ -848,19 +890,20 @@ const APP = {
           }
           setTimeout(() => {
             window.location.href = basePath + '/login?logged_out=1&msg=' + encodeURIComponent(data.message || 'Session replaced by new login.');
-          }, 600);
+          }, 400);
           return;
         }
 
-        if (data.status === 'has_pending_request' && data.request) {
+        if (data.status === 'has_pending_request' && data.request && !this.isProcessing) {
           this.showModal(data.request);
-        } else if (data.status === 'no_pending_request' && this.isModalOpen) {
+        } else if (data.status === 'no_pending_request' && this.isModalOpen && !this.isProcessing) {
           this.hideModal();
         }
       } catch (e) {}
     },
 
     showModal(req) {
+      if (this.isProcessing) return;
       if (this.isModalOpen && this.activeRequestId === req.request_id) return;
       this.activeRequestId = req.request_id;
       this.isModalOpen = true;
@@ -907,7 +950,6 @@ const APP = {
       this.isModalOpen = false;
       this.activeRequestId = null;
       if (this.countdownInterval) clearInterval(this.countdownInterval);
-      this.resetButtons();
 
       const modal = document.getElementById('device-approval-modal');
       const box = document.getElementById('device-approval-box');
@@ -919,7 +961,9 @@ const APP = {
         }
         setTimeout(() => {
           modal.classList.add('hidden');
-          this.resetButtons();
+          if (!this.isProcessing) {
+            this.resetButtons();
+          }
         }, 200);
       }
     },
@@ -952,9 +996,20 @@ const APP = {
     },
 
     async respond(action) {
+      if (this.isProcessing) return;
       const reqIdInput = document.getElementById('device-approval-request-id');
       const requestId = this.activeRequestId || (reqIdInput ? reqIdInput.value : '');
       if (!requestId) return;
+
+      this.isProcessing = true;
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+      if (this.countdownInterval) {
+        clearInterval(this.countdownInterval);
+        this.countdownInterval = null;
+      }
 
       const approveBtn = document.getElementById('device-approval-approve-btn');
       const denyBtn = document.getElementById('device-approval-deny-btn');
@@ -975,19 +1030,17 @@ const APP = {
         denyBtn.classList.add('opacity-60', 'pointer-events-none');
       }
 
+      let redirectTimeout = null;
       if (action === 'approve') {
         if (approveIcon) approveIcon.classList.add('hidden');
         if (approveSpinner) approveSpinner.classList.remove('hidden');
-        if (approveText) approveText.textContent = 'Logging Out...';
+        if (approveText) approveText.textContent = 'Signing Out...';
         
-        // Immediately show the fullscreen "Logging out..." screen for instant visual feedback
-        this.hideModal();
-        if (typeof APP !== 'undefined' && APP.showLoadingScreen) {
-          APP.showLoadingScreen({
-            title: 'Logging Out...',
-            subtitle: 'New device authorized. Signing out of this session...'
-          });
-        }
+        // Safety watchdog: Guarantee redirect happens in <= 2.5s even if network stalls
+        const basePath = this.getBasePath();
+        redirectTimeout = setTimeout(() => {
+          window.location.href = basePath + '/login?logged_out=1';
+        }, 2500);
       } else {
         if (denyIcon) denyIcon.classList.add('hidden');
         if (denySpinner) denySpinner.classList.remove('hidden');
@@ -1008,14 +1061,16 @@ const APP = {
           })
         });
 
+        if (redirectTimeout) clearTimeout(redirectTimeout);
         const data = await res.json();
 
         if (action === 'approve' || data.status === 'approved_and_logged_out') {
-          setTimeout(() => {
-            window.location.href = data.redirect_url || (basePath + '/login?logged_out=1');
-          }, 150);
+          // Modal stays visible until the browser navigates to the login page
+          window.location.href = data.redirect_url || (basePath + '/login?logged_out=1');
         } else {
           this.hideModal();
+          this.isProcessing = false;
+          this.startPolling();
           if (typeof APP !== 'undefined' && APP.toast && APP.toast.warning) {
             APP.toast.warning('Sign-in attempt blocked. Your current session remains secure.');
           } else if (typeof toast !== 'undefined' && toast.warning) {
@@ -1024,11 +1079,14 @@ const APP = {
         }
       } catch (e) {
         console.error('Error responding to login request:', e);
+        if (redirectTimeout) clearTimeout(redirectTimeout);
         if (action === 'approve') {
           const basePath = this.getBasePath();
           window.location.href = basePath + '/login?logged_out=1';
         } else {
           this.hideModal();
+          this.isProcessing = false;
+          this.startPolling();
         }
       } finally {
         if (action !== 'approve') {
@@ -1094,6 +1152,10 @@ if (typeof APP !== 'undefined' && APP.toast) {
 
 /* ── Auto-open manual entry modal and initialize Inactivity & Device Approval Managers ───── */
 document.addEventListener('DOMContentLoaded', function() {
+  if (typeof APP !== 'undefined' && APP.highlightCurrentNav) {
+    APP.highlightCurrentNav();
+  }
+
   if (typeof APP !== 'undefined' && APP.inactivityManager && typeof APP.inactivityManager.init === 'function') {
     APP.inactivityManager.init();
   }

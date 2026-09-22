@@ -25,9 +25,8 @@
 
     <!-- Branding Text -->
     <div class="space-y-1 mb-4">
-      <div class="text-[10px] uppercase font-bold tracking-widest text-teal-400">Bestlink College of the Philippines</div>
-      <h2 id="global-loader-title" class="text-base font-extrabold text-white tracking-tight">AI Attendance System</h2>
-      <p id="global-loader-subtitle" class="text-xs text-slate-400 font-medium">Initializing workspace & attendance services...</p>
+      <h2 id="global-loader-title" class="text-base font-extrabold text-white tracking-tight">Loading...</h2>
+      <p id="global-loader-subtitle" class="text-xs text-slate-400 font-medium">Please wait...</p>
     </div>
 
     <!-- Progress Indicator Bar -->

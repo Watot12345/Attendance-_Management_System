@@ -192,38 +192,39 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
       <!-- Minimalist Dual Column Layout -->
         <div class="flex flex-col md:flex-row gap-5 items-stretch">
           
-          <!-- Left: Compact Camera Viewfinder (50% width) -->
-          <div class="flex-1 min-w-0 bg-white rounded-xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-between">
-            <div class="w-full flex items-center justify-between mb-3.5 pb-2 border-b border-slate-100">
+          <!-- Left: Compact Camera Viewfinder (50% width) with Light Gray Neumorphic Theme -->
+          <div class="scanner-camera-card flex-1 min-w-0 rounded-xl p-5 shadow-xs flex flex-col items-center justify-between" style="background-color: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #e2e8f0 !important;">
+            <div class="w-full flex items-center justify-between mb-3.5 pb-2 border-b border-slate-200/80">
               <div class="flex items-center gap-2">
-                <span id="camera-status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span id="camera-status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
                 <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Live Camera Scanner</span>
               </div>
               <div class="flex items-center gap-2">
-                <button type="button" id="switch-camera-btn" class="hidden text-xs text-[#1e3b8a] hover:underline font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleCamera()">
+                <button type="button" id="switch-camera-btn" class="hidden text-xs text-[#0284c7] hover:underline font-semibold flex items-center gap-1 cursor-pointer" onclick="toggleCamera()">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                   <span>Switch</span>
                 </button>
-                <button type="button" id="header-camera-toggle-btn" class="text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs" onclick="toggleCameraPower()">
+                <button type="button" id="header-camera-toggle-btn" class="neuro-btn text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer text-[#1e3b8a] shadow-xs" onclick="toggleCameraPower()">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   <span id="header-camera-toggle-text">Open Camera</span>
                 </button>
               </div>
             </div>
 
-            <!-- Compact Square Viewfinder Box -->
-            <div id="camera-stream-box" class="relative w-56 h-56 sm:w-60 sm:h-60 rounded-xl bg-slate-950 border border-slate-700 flex flex-col items-center justify-center overflow-hidden shadow-inner my-auto">
-              <!-- Subtle backdrop -->
-              <div class="absolute inset-0 bg-slate-900/40"></div>
-
-              <!-- Camera Off / Placeholder UI -->
-              <div id="camera-placeholder" class="relative z-20 flex flex-col items-center justify-center p-4 text-center">
-                <div class="w-12 h-12 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 flex items-center justify-center mb-2.5 shadow-inner">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <!-- Full-Width Viewfinder Box (White Neumorphic Surface) -->
+            <div id="camera-stream-box" class="relative w-full h-72 sm:h-80 rounded-2xl flex flex-col items-center justify-center overflow-hidden my-auto">
+              <!-- Camera Off / Placeholder UI (White Neumorphic Style) -->
+              <div id="camera-placeholder" class="relative z-20 flex flex-col items-center justify-center p-6 text-center w-full">
+                <!-- Neumorphic Sunken/Raised Circular Icon -->
+                <div class="neuro-icon-circle w-16 h-16 rounded-full flex items-center justify-center mb-3.5">
+                  <svg class="w-8 h-8 text-[#1e3b8a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
-                <p class="text-xs font-semibold text-slate-200 mb-2.5">Camera is Closed</p>
-                <button type="button" onclick="startCamera()" class="px-4 py-2 rounded-lg bg-[#1e3b8a] hover:bg-[#172554] text-white text-xs font-bold shadow-md transition flex items-center gap-2 cursor-pointer border-2 border-blue-400 hover:border-blue-300 active:scale-95">
-                  <svg class="w-3.5 h-3.5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                
+                <p class="text-sm font-bold text-slate-700 mb-4 tracking-tight">Camera is Closed</p>
+                
+                <!-- Neumorphic Raised Action Button -->
+                <button type="button" onclick="startCamera()" class="neuro-btn px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2.5 cursor-pointer">
+                  <svg class="w-4 h-4 text-[#0284c7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   <span>Open Camera</span>
                 </button>
               </div>
@@ -231,26 +232,26 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
               <!-- Reticle Frame & Laser (shown when active) -->
               <div id="camera-overlay-frame" class="hidden absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10">
                 <!-- Scan Laser Line -->
-                <div class="absolute left-4 right-4 h-0.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-bounce pointer-events-none z-20"></div>
+                <div class="absolute left-6 right-6 h-0.5 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,1)] animate-bounce pointer-events-none z-20"></div>
 
-                <div class="w-36 h-36 relative flex flex-col justify-between pointer-events-none">
+                <div class="w-44 h-44 sm:w-48 sm:h-48 relative flex flex-col justify-between pointer-events-none">
                   <div class="flex justify-between">
-                    <div class="w-5 h-5 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
-                    <div class="w-5 h-5 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
+                    <div class="w-6 h-6 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
+                    <div class="w-6 h-6 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
                   </div>
                   <div class="text-center">
-                    <span class="px-2 py-0.5 rounded bg-black/60 text-[10px] font-medium text-slate-300">Align QR Code</span>
+                    <span class="px-2.5 py-1 rounded bg-black/75 text-[11px] font-semibold text-white">Align QR Code</span>
                   </div>
                   <div class="flex justify-between">
-                    <div class="w-5 h-5 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
-                    <div class="w-5 h-5 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
+                    <div class="w-6 h-6 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
+                    <div class="w-6 h-6 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Viewfinder Footer Info -->
-            <div class="w-full flex items-center justify-between mt-3 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
+            <div class="w-full flex items-center justify-between mt-3 pt-2.5 text-[11px] text-slate-500 border-t border-slate-200/80">
               <span>Status: <strong id="camera-status-text" class="text-slate-700 font-semibold">Inactive</strong></span>
               <span id="camera-hint-text" class="text-slate-400">Click Open Camera to scan</span>
             </div>
@@ -314,6 +315,58 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
   </div>
 </div>
 
+<style>
+  .scanner-camera-card {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  
+  /* Neumorphic Stream Box (White/Soft Grey Sunken Well) */
+  #camera-stream-box {
+    background: #eef2f7 !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 4px 4px 10px rgba(166, 180, 200, 0.45), inset -4px -4px 10px #ffffff !important;
+    width: 100% !important;
+    position: relative;
+  }
+  
+  /* Neumorphic Circular Icon */
+  .neuro-icon-circle {
+    background: #eef2f7 !important;
+    color: #1e3b8a !important;
+    box-shadow: 6px 6px 14px rgba(166, 180, 200, 0.5), -6px -6px 14px #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  }
+  
+  /* Neumorphic Action Button */
+  .neuro-btn {
+    background: #eef2f7 !important;
+    color: #1e3b8a !important;
+    box-shadow: 4px 4px 10px rgba(166, 180, 200, 0.45), -4px -4px 10px #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  .neuro-btn:hover {
+    box-shadow: 6px 6px 14px rgba(166, 180, 200, 0.55), -6px -6px 14px #ffffff !important;
+    transform: translateY(-1px);
+    color: #0284c7 !important;
+  }
+  .neuro-btn:active {
+    box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.55), inset -3px -3px 6px #ffffff !important;
+    transform: translateY(1px);
+  }
+
+  #camera-stream-box video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 1rem !important;
+  }
+  #camera-stream-box #qr-shaded-region {
+    display: none !important;
+  }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
 let html5QrScanner = null;
@@ -349,9 +402,15 @@ async function startCamera() {
     if (overlayFrame) overlayFrame.classList.remove('hidden');
 
     const config = { 
-      fps: 10, 
-      qrbox: { width: 220, height: 220 },
-      aspectRatio: 1.0
+      fps: 15, 
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdge * 0.75);
+        return {
+          width: Math.min(qrboxSize, 280),
+          height: Math.min(qrboxSize, 280)
+        };
+      }
     };
 
     await html5QrScanner.start(
@@ -363,7 +422,7 @@ async function startCamera() {
 
     isScanningActive = true;
     if (statusDot) {
-      statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+      statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
     }
     if (statusText) {
       statusText.textContent = `Active (${currentCameraFacingMode === 'environment' ? 'Back' : 'Front'})`;
@@ -375,18 +434,18 @@ async function startCamera() {
       switchBtn.classList.remove('hidden');
     }
     if (headerBtn && headerBtnText) {
-      headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300';
+      headerBtn.className = 'neuro-btn text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer text-slate-700 shadow-xs';
       headerBtnText.textContent = 'Close Camera';
     }
   } catch (err) {
     console.warn('Camera access unavailable or denied:', err);
     if (placeholder) placeholder.classList.remove('hidden');
     if (overlayFrame) overlayFrame.classList.add('hidden');
-    if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+    if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
     if (statusText) statusText.textContent = 'Access Denied / Not Found';
     if (hintText) hintText.textContent = 'Use manual 6-digit code';
     if (headerBtn && headerBtnText) {
-      headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs';
+      headerBtn.className = 'neuro-btn text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer text-[#1e3b8a] shadow-xs';
       headerBtnText.textContent = 'Retry Camera';
     }
   }
@@ -411,12 +470,12 @@ async function stopCamera() {
 
   if (placeholder) placeholder.classList.remove('hidden');
   if (overlayFrame) overlayFrame.classList.add('hidden');
-  if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+  if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
   if (statusText) statusText.textContent = 'Inactive';
   if (hintText) hintText.textContent = 'Click Open Camera to scan';
   if (switchBtn) switchBtn.classList.add('hidden');
   if (headerBtn && headerBtnText) {
-    headerBtn.className = 'text-xs px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 cursor-pointer bg-[#1e3b8a] hover:bg-[#172554] text-white border border-[#1e3b8a] shadow-xs';
+    headerBtn.className = 'neuro-btn text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer text-[#1e3b8a] shadow-xs';
     headerBtnText.textContent = 'Open Camera';
   }
 }

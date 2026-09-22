@@ -1294,33 +1294,33 @@ class StudentController {
                     $noClassDays++;
                     if ($ev['type'] === 'suspension') {
                         $status = 'suspension';
-                        $badgeText = 'Suspended';
-                        $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
-                        $bgClass = 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/50';
+                        $badgeText = 'Suspension';
+                        $badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                        $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                         $details = "School Suspension: {$ev['name']} ({$ev['desc']})";
                     } else {
                         $status = 'holiday';
                         $badgeText = 'Holiday';
-                        $badgeClass = 'bg-purple-100 text-purple-800 border-purple-200';
-                        $bgClass = 'bg-purple-50/70 border-purple-200 hover:bg-purple-100/50';
+                        $badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                        $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                         $details = "Official Holiday: {$ev['name']} ({$ev['desc']})";
                     }
                 }
                 // Check Precedence 2: Weekend
                 elseif ($isWeekend) {
                     $status = 'weekend';
-                    $badgeText = 'No Class';
-                    $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
-                    $bgClass = 'bg-slate-50/80 border-slate-200/60 text-slate-400';
+                    $badgeText = '';
+                    $badgeClass = '';
+                    $bgClass = 'bg-slate-50/60 border-slate-100 text-slate-400';
                     $details = 'Weekend — No scheduled classes';
                     $noClassDays++;
                 }
                 // Check Precedence 3: Approved Excuse Slip
                 elseif (isset($excuseMap[$dateStr])) {
                     $status = 'excused';
-                    $badgeText = 'Excused ✉';
-                    $badgeClass = 'bg-blue-100 text-blue-800 border-blue-200';
-                    $bgClass = 'bg-blue-50/80 border-blue-200 hover:scale-[1.02] shadow-xs';
+                    $badgeText = 'Excused';
+                    $badgeClass = 'bg-sky-50 text-sky-700 border-sky-200';
+                    $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                     $sl = $excuseMap[$dateStr];
                     $details = "Excused Slip Approved: {$sl['reason']}";
                     $excusedDays++;
@@ -1344,22 +1344,22 @@ class StudentController {
                     if ($hasPresent) {
                         $status = 'present';
                         $badgeText = 'Present';
-                        $badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
-                        $bgClass = 'bg-emerald-50/80 border-emerald-200 hover:scale-[1.02] shadow-xs';
+                        $badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                         $details = implode(' • ', $subjList);
                         $presentDays++;
                     } elseif ($hasTardy) {
                         $status = 'tardy';
                         $badgeText = 'Late';
-                        $badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
-                        $bgClass = 'bg-amber-50/80 border-amber-200 hover:scale-[1.02] shadow-xs';
+                        $badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+                        $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                         $details = implode(' • ', $subjList);
                         $tardyDays++;
                     } else {
                         $status = 'absent';
                         $badgeText = 'Absent';
-                        $badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
-                        $bgClass = 'bg-rose-50/80 border-rose-200 hover:scale-[1.02] shadow-xs';
+                        $badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                        $bgClass = 'bg-white border-slate-200 hover:border-slate-300';
                         $details = implode(' • ', $subjList);
                         $absentDays++;
                     }
@@ -1367,22 +1367,22 @@ class StudentController {
                 // Check Precedence 5: Future or Current Day
                 elseif ($isFuture) {
                     $status = 'upcoming';
-                    $badgeText = 'Upcoming';
-                    $badgeClass = 'bg-slate-100 text-slate-500 border-slate-200';
-                    $bgClass = 'bg-white border-slate-200/70 hover:bg-slate-50';
+                    $badgeText = '';
+                    $badgeClass = '';
+                    $bgClass = 'bg-white border-slate-100 hover:border-slate-200';
                     $details = 'Scheduled upcoming semester class day';
                 } elseif ($isToday) {
                     $status = 'today_pending';
                     $badgeText = 'Today';
-                    $badgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-200';
-                    $bgClass = 'bg-indigo-50/50 border-indigo-300 ring-2 ring-indigo-500';
+                    $badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                    $bgClass = 'bg-white border-blue-400 ring-1 ring-blue-400';
                     $details = 'Today: Attendance scan in progress or awaiting session';
                 } else {
                     // Past weekday with no attendance and no excuse
                     $status = 'unrecorded';
-                    $badgeText = 'No Record';
-                    $badgeClass = 'bg-slate-100 text-slate-400 border-slate-200';
-                    $bgClass = 'bg-slate-50/60 border-slate-200/60 text-slate-500';
+                    $badgeText = '';
+                    $badgeClass = '';
+                    $bgClass = 'bg-slate-50/40 border-slate-100 text-slate-400';
                     $details = 'No class session attendance recorded';
                 }
 
