@@ -96,13 +96,10 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       padding: 0;
     }
     html, body {
-      height: 100vh;
-      max-height: 100vh;
-      width: 100vw;
+      min-height: 100vh;
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      background-color: #F8FAFC;
+      background-color: #FFFFFF;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #0F172A;
       -webkit-font-smoothing: antialiased;
@@ -113,46 +110,230 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       display: none !important;
     }
 
-    /* ── Login Canvas & Centered Card ───────────────────────── */
+    /* ── Split Screen Canvas ─────────────────────────────── */
     .app-canvas {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      max-height: 100vh;
-      width: 100vw;
-      background: #F8FAFC;
-      padding: 16px;
-      overflow: hidden;
-      box-sizing: border-box;
+      min-height: 100vh;
+      width: 100%;
+      background: #FFFFFF;
     }
 
-    .auth-side {
-      width: 100%;
-      max-width: 440px;
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
-      padding: 36px 32px;
+    /* ── Left Hero Side (Desktop) ────────────────────────── */
+    .hero-side {
+      flex: 1.15;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      padding: 56px 68px;
       position: relative;
+      background: #FFFFFF;
+      overflow: hidden;
+      border-right: 1px solid #F1F5F9;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-text-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title-main {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.01em;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-subtitle-sub {
+      font-size: 11px;
+      color: #64748B;
+      font-weight: 500;
+    }
+
+    .term-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .hero-center {
+      margin: 48px 0;
+      max-width: 580px;
+    }
+
+    .pill-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: var(--primary-sky);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero-h1 {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      color: #0F172A;
+      margin-bottom: 20px;
+    }
+
+    .hero-h1 span.highlight {
+      background: linear-gradient(135deg, #1e3b8a 0%, #0284c7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-paragraph {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #64748B;
+      margin-bottom: 32px;
+      max-width: 480px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 520px;
+    }
+
+    .feature-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .feature-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+
+    .feature-desc {
+      font-size: 10.5px;
+      color: #64748B;
+      line-height: 1.35;
+    }
+
+    .hero-footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 24px;
+      border-top: 1px solid #F1F5F9;
+    }
+
+    .footer-security-text {
+      font-size: 12px;
+      color: #94A3B8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #15803D;
+      text-transform: uppercase;
+    }
+
+    .pulsing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #16A34A;
+      box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+      animation: pulseGreen 1.8s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6); }
+      70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    }
+
+    /* ── Right Auth Panel ────────────────────────────────── */
+    .auth-side {
+      width: 480px;
+      flex-shrink: 0;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px 40px;
+      position: relative;
+      min-height: 100vh;
     }
 
     .auth-card-inner {
       width: 100%;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
+    }
+
+    .auth-mobile-logo {
+      display: none;
     }
 
     .auth-top-eyebrow {
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
-      color: #0284c7;
+      color: var(--primary-sky);
       text-transform: uppercase;
       margin-bottom: 6px;
     }
@@ -491,17 +672,18 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       to { transform: rotate(360deg); }
     }
 
-    /* ── Forgot Password Modal Styling ───────────────────── */
+    /* Modal Styles */
     .modal-backdrop {
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 9999;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
       animation: fadeInModal 0.2s ease-out;
     }
 
@@ -511,14 +693,14 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
     .modal-dialog {
       background: #FFFFFF;
-      border-radius: 16px;
-      max-width: 440px;
+      border-radius: 20px;
+      max-width: 420px;
       width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3);
       border: 1px solid #E2E8F0;
-      padding: 32px;
+      padding: 28px 24px;
       position: relative;
-      animation: scaleUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: scaleUpModal 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes fadeInModal {
@@ -570,14 +752,52 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       justify-content: center;
     }
 
-    /* Responsive */
+    /* Responsive Breakpoints */
+    @media (max-width: 1023px) {
+      html, body {
+        background-color: #F8FAFC;
+        overflow-y: auto;
+      }
+      .hero-side {
+        display: none !important;
+      }
+      .app-canvas {
+        background: #F8FAFC;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        height: auto;
+        padding: 32px 16px;
+      }
+      .auth-side {
+        width: 100%;
+        max-width: 440px;
+        min-height: auto;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+        padding: 36px 32px;
+      }
+      .auth-mobile-logo {
+        display: flex !important;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+      .auth-top-eyebrow,
+      .auth-heading,
+      .auth-subtext {
+        text-align: center;
+      }
+    }
+
     @media (max-width: 480px) {
       .auth-side {
         padding: 28px 20px;
         border-radius: 14px;
       }
       .auth-heading {
-        font-size: 24px;
+        font-size: 23px;
       }
       .otp-inputs-grid {
         gap: 6px;
@@ -593,19 +813,97 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
   <div class="app-canvas">
     
-    <!-- Centered Authentication Card -->
+    <!-- ══════════════════════════════════════════════════════════
+         LEFT HERO SIDE (Desktop)
+         ══════════════════════════════════════════════════════════ -->
+    <div class="hero-side">
+      <div class="hero-inner">
+        
+        <!-- Top Brand Bar -->
+        <div class="brand-header">
+          <div class="brand-logo-wrap">
+            <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" style="width: 42px; height: 42px; object-fit: contain;">
+            <div class="brand-text-col">
+              <span class="brand-title-main">
+                BCP ATTENDANCE
+              </span>
+              <span class="brand-subtitle-sub">Bestlink College of the Philippines</span>
+            </div>
+          </div>
+
+          <div class="term-pill">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981;"></span>
+            <span>AY 2025–2026</span>
+          </div>
+        </div>
+
+        <!-- Center Main Title -->
+        <div class="hero-center">
+          <div class="pill-tagline">
+            <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/>
+            </svg>
+            <span>SECURE ACCESS PORTAL</span>
+          </div>
+          
+          <h1 class="hero-h1">
+            Student & Faculty<br>
+            <span class="highlight">Attendance</span><br>
+            Management
+          </h1>
+
+          <p class="hero-paragraph">
+            Institutional portal for live RFID attendance tracking, digital excuse slip processing, biometric sync, and analytics.
+          </p>
+
+          <!-- 3 Highlight Features -->
+          <div class="feature-grid">
+            <div class="feature-card">
+              <span class="feature-title">⚡ Instant Tap-In</span>
+              <span class="feature-desc">Fast RFID & QR code scanning</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-title">📋 Excuse Slips</span>
+              <span class="feature-desc">Digital submission & faculty review</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-title">📊 Live Reports</span>
+              <span class="feature-desc">Automated DTR & anomaly detection</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Security / Status Footer -->
+        <div class="hero-footer-bar">
+          <div class="footer-security-text">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #94A3B8;"></span>
+            <span>Institutional Security Protocol · Bestlink College</span>
+          </div>
+
+          <div class="live-status-pill">
+            <span class="pulsing-dot"></span>
+            <span>PORTAL ONLINE</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RIGHT AUTHENTICATION FORM SIDE
+         ══════════════════════════════════════════════════════════ -->
     <div class="auth-side">
       <div class="auth-card-inner">
         
-        <!-- Institution Logo -->
-        <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+        <!-- Institution Logo (Mobile View Only) -->
+        <div class="auth-mobile-logo">
           <img src="<?php echo url('assets/images/bcp-logo.png'); ?>" alt="BCP Logo" style="width: 54px; height: 54px; object-fit: contain;">
         </div>
 
         <!-- Header Section -->
-        <div class="auth-top-eyebrow" id="auth-flow-eyebrow" style="text-align: center;">SECURE SIGN IN</div>
-        <h2 class="auth-heading" id="auth-flow-title" style="text-align: center;">Sign In to Portal</h2>
-        <p class="auth-subtext" id="auth-flow-subtitle" style="text-align: center;">Use your institutional credentials to authenticate.</p>     
+        <div class="auth-top-eyebrow" id="auth-flow-eyebrow">SECURE SIGN IN</div>
+        <h2 class="auth-heading" id="auth-flow-title">Sign In to Portal</h2>
+        <p class="auth-subtext" id="auth-flow-subtitle">Use your institutional credentials to authenticate.</p>     
 
         <!-- Notification Banner -->
         <div id="alert-banner" class="auth-alert hidden">
@@ -768,61 +1066,58 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
         <div id="approval-step-container" style="display: none;">
           <!-- WAITING SUB-STATE -->
           <div id="approval-state-waiting">
-            <div style="text-align: center; padding: 24px 16px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; margin-bottom: 20px;">
-              <div style="position: relative; width: 64px; height: 64px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-                <div style="position: absolute; inset: 0; border-radius: 50%; background: #0284c7; opacity: 0.15; animation: pulseRing 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;"></div>
-                <div style="width: 52px; height: 52px; border-radius: 50%; background: #e0f2fe; border: 2px solid #bae6fd; display: flex; align-items: center; justify-content: center; color: #0284c7; position: relative; z-index: 2;">
-                  <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                  </svg>
-                </div>
+            <div class="text-center p-6 bg-slate-50 border border-slate-200/80 rounded-2xl mb-5">
+              <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto mb-3.5">
+                <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
               </div>
 
-              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
-                Check Your Other Device
+              <h4 class="text-base font-bold text-slate-900 mb-1">
+                Check Your Active Device
               </h4>
-              <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 16px; max-width: 320px; margin-left: auto; margin-right: auto;">
-                An active session was detected on another device. A security prompt has been sent to authorize this sign-in attempt.
+              <p class="text-xs text-slate-500 leading-relaxed mb-4 max-w-xs mx-auto">
+                An active session was detected. Please approve the prompt on your other device to continue.
               </p>
 
               <!-- Live Timer & Progress -->
-              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px;">
-                  <span style="display: flex; align-items: center; gap: 6px;">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block; animation: blink 1.2s ease-in-out infinite;"></span>
-                    Awaiting authorization...
+              <div class="bg-white border border-slate-200/80 rounded-xl p-3 text-left">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-600 mb-2">
+                  <span class="flex items-center gap-1.5 text-slate-600">
+                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                    Awaiting response...
                   </span>
-                  <span id="approval-timer-badge" style="font-family: monospace; font-weight: 700; color: #0284c7;">5:00</span>
+                  <span id="approval-timer-badge" class="font-mono font-bold text-blue-600">5:00</span>
                 </div>
-                <div style="height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
-                  <div id="approval-progress-fill" style="height: 100%; width: 100%; background: linear-gradient(90deg, #1e3b8a, #0284c7); transition: width 1s linear;"></div>
+                <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div id="approval-progress-fill" class="h-full w-full bg-blue-600 rounded-full transition-all duration-1000 ease-linear"></div>
                 </div>
               </div>
             </div>
 
             <!-- Cancel Button -->
-            <button type="button" class="btn-auth-submit" onclick="cancelApprovalWaiting()" style="background: #ffffff; color: #475569; border: 1.5px solid #cbd5e1; box-shadow: none;">
+            <button type="button" class="btn-auth-submit" onclick="cancelApprovalWaiting()" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; box-shadow: none;">
               <span>Cancel Sign In</span>
             </button>
           </div>
 
           <!-- DENIED SUB-STATE -->
           <div id="approval-state-denied" style="display: none;">
-            <div style="text-align: center; padding: 24px 16px; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 16px; margin-bottom: 20px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #fee2e2; border: 2px solid #fca5a5; display: flex; align-items: center; justify-content: center; color: #dc2626; margin: 0 auto 14px;">
-                <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="text-center p-6 bg-slate-50 border border-slate-200/80 rounded-2xl mb-5">
+              <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center mx-auto mb-3.5">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                 </svg>
               </div>
 
-              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #991b1b; margin-bottom: 6px;">
-                Your login is denied
+              <h4 class="text-base font-bold text-slate-900 mb-1">
+                Login Request Denied
               </h4>
-              <p style="font-size: 13px; color: #7f1d1d; line-height: 1.5; margin-bottom: 12px;">
-                The user currently signed into this account on another device rejected this login request.
+              <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                The user signed into this account on another device rejected this sign-in attempt.
               </p>
-              <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #991b1b; text-align: left;">
-                🔒 If you did not initiate this or believe your password was compromised, please reset your password immediately.
+              <div class="bg-white border border-slate-200/80 rounded-xl p-2.5 text-xs text-slate-600 text-left">
+                If you suspect unauthorized access, please reset your password immediately.
               </div>
             </div>
 
@@ -830,7 +1125,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
               <button type="button" class="btn-auth-submit" onclick="backToCredentialsStep()">
                 <span>Try Again</span>
               </button>
-              <button type="button" class="btn-auth-submit" onclick="openForgotPasswordModal()" style="background: #f8fafc; color: #0f172a; border: 1.5px solid #cbd5e1; box-shadow: none;">
+              <button type="button" class="btn-auth-submit" onclick="openForgotPasswordModal()" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; box-shadow: none;">
                 <span>Reset Password</span>
               </button>
             </div>
@@ -838,17 +1133,17 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
 
           <!-- EXPIRED SUB-STATE -->
           <div id="approval-state-expired" style="display: none;">
-            <div style="text-align: center; padding: 24px 16px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 16px; margin-bottom: 20px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #fef3c7; border: 2px solid #fcd34d; display: flex; align-items: center; justify-content: center; color: #d97706; margin: 0 auto 14px;">
-                <svg style="width: 26px; height: 26px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="text-center p-6 bg-slate-50 border border-slate-200/80 rounded-2xl mb-5">
+              <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center mx-auto mb-3.5">
+                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
 
-              <h4 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #92400e; margin-bottom: 6px;">
+              <h4 class="text-base font-bold text-slate-900 mb-1">
                 Request Expired
               </h4>
-              <p style="font-size: 13px; color: #78350f; line-height: 1.5; margin-bottom: 6px;">
+              <p class="text-xs text-slate-500 leading-relaxed">
                 The active device did not respond within the time limit.
               </p>
             </div>
@@ -873,7 +1168,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
-       FORGOT PASSWORD & RESET MODAL
+       FORGOT PASSWORD & RESET MODAL (Minimalist Layout)
        ══════════════════════════════════════════════════════════ -->
   <div id="forgot-password-modal" class="modal-backdrop">
     <div class="modal-dialog">
@@ -892,13 +1187,13 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       <!-- Modal Step 1: Request Email -->
       <div id="modal-step-email">
         <div style="margin-bottom: 20px;">
-          <span style="font-size: 10.5px; font-weight: 800; color: var(--primary-pink); letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 4px;">
             ACCOUNT RECOVERY
           </span>
-          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #0F172A;">
+          <h3 style="font-size: 18px; font-weight: 800; color: #0f172a;">
             Reset Your Password
           </h3>
-          <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 3px;">
             Enter your registered institutional email to receive a 6-digit security code.
           </p>
         </div>
@@ -927,14 +1222,14 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       <!-- Modal Step 2: Enter & Verify 6-Digit OTP -->
       <div id="modal-step-otp" style="display: none;">
         <div style="margin-bottom: 20px;">
-          <span style="font-size: 10.5px; font-weight: 800; color: var(--primary-pink); letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 4px;">
             SECURITY VERIFICATION
           </span>
-          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #0F172A;">
+          <h3 style="font-size: 18px; font-weight: 800; color: #0f172a;">
             Verify Security Code
           </h3>
-          <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
-            Enter the 6-digit code sent to <strong id="modal-masked-email" style="color: #0F172A;">your email</strong>.
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 3px;">
+            Enter the 6-digit code sent to <strong id="modal-masked-email" style="color: #0f172a;">your email</strong>.
           </p>
         </div>
 
@@ -958,27 +1253,27 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           </button>
 
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 4px 2px;">
-            <button type="button" onclick="backToResetEmailStep()" style="background: none; border: none; color: #64748B; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline;">
+            <button type="button" onclick="backToResetEmailStep()" style="background: none; border: none; color: #64748b; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline;">
               ← Change Email
             </button>
-            <button type="button" id="modal-resend-btn" onclick="handleResendResetOtp()" style="background: none; border: none; color: var(--primary-pink); font-weight: 700; cursor: pointer; padding: 0;">
+            <button type="button" id="modal-resend-btn" onclick="handleResendResetOtp()" style="background: none; border: none; color: #2563eb; font-weight: 700; cursor: pointer; padding: 0;">
               Resend Code <span id="modal-resend-timer"></span>
             </button>
           </div>
         </form>
       </div>
 
-      <!-- Modal Step 3: Enter New Password & Confirm New Password (shown ONLY after OTP is verified) -->
+      <!-- Modal Step 3: Enter New Password & Confirm New Password -->
       <div id="modal-step-new-pass" style="display: none;">
         <div style="margin-bottom: 20px;">
-          <span style="font-size: 10.5px; font-weight: 800; color: #10B981; letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 700; color: #059669; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 4px;">
             ✓ IDENTITY VERIFIED
           </span>
-          <h3 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #0F172A;">
+          <h3 style="font-size: 18px; font-weight: 800; color: #0f172a;">
             Set New Password
           </h3>
-          <p style="font-size: 13px; color: #64748B; margin-top: 4px;">
-            Create a secure new password for <strong id="modal-verified-email" style="color: #0F172A;">your account</strong>.
+          <p style="font-size: 12.5px; color: #64748b; margin-top: 3px;">
+            Create a secure new password for <strong id="modal-verified-email" style="color: #0f172a;">your account</strong>.
           </p>
         </div>
 
@@ -1001,7 +1296,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
           </div>
 
           <!-- Password Security Requirements Indicator -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;">
             <div class="password-rule-row" id="rule-length">
               <span class="rule-bullet">•</span>
               <span>At least 6 characters</span>
