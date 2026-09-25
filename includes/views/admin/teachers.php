@@ -567,10 +567,10 @@ try {
 </div>
 
 <script>
-let searchTimeout = null;
-let currentTeacherPage = 1;
-let teacherPageLimit = 10;
-let totalTeacherPages = <?= $initialTotalPages ?>;
+var searchTimeout = null;
+var currentTeacherPage = 1;
+var teacherPageLimit = 10;
+var totalTeacherPages = <?= $initialTotalPages ?>;
 
 function debounceTeacherSearch() {
   clearTimeout(searchTimeout);

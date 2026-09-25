@@ -700,18 +700,18 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
   <script src="<?= url('assets/js/qrcode-generator.js') ?>"></script>
 
   <script>
-    const availableSections = <?= json_encode($teacherSections) ?>;
-    let currentSection = <?= json_encode($selectedSectionKey) ?>;
+    var availableSections = <?= json_encode($teacherSections) ?>;
+    var currentSection = <?= json_encode($selectedSectionKey) ?>;
 
-    const ROTATION_INTERVAL_SECONDS = 1800; // 30 Minutes
-    let remainingSeconds = 0;
-    let activeQrCode = null;
-    let activeSessionId = null;
-    let qrGenerator = null;
-    let timerInterval = null;
-    let liveFeedPolling = null;
-    let activeSectionsList = <?= json_encode($activeSectionsFromDb) ?> || [];
-    let isSessionPaused = false;
+    var ROTATION_INTERVAL_SECONDS = 1800; // 30 Minutes
+    var remainingSeconds = 0;
+    var activeQrCode = null;
+    var activeSessionId = null;
+    var qrGenerator = null;
+    var timerInterval = null;
+    var liveFeedPolling = null;
+    var activeSectionsList = <?= json_encode($activeSectionsFromDb) ?> || [];
+    var isSessionPaused = false;
 
     // Real-Time Digital Clock
     function updateRealtimeClock() {

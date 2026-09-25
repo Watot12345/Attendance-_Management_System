@@ -522,8 +522,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 /**
  * Instant Client-Side Pagination & Filtering (No Page Reload)
  */
-let currentAttendancePage = 1;
-const attendancePerPage = 10;
+var currentAttendancePage = 1;
+var attendancePerPage = 10;
 
 function getFilteredAttendanceRows() {
   const subjectFilter = (document.getElementById('attendance-filter-subject')?.value || 'all').toLowerCase();

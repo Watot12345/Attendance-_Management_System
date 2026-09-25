@@ -512,9 +512,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
 </script>
 
 <script>
-  let uploadedRosterData = [];
-  let validatedStudentsData = [];
-  let currentStep2Filter = 'all';
+  var uploadedRosterData = [];
+  var validatedStudentsData = [];
+  var currentStep2Filter = 'all';
 
   function handleCourseChange() {
     const course = document.getElementById('target-course-program').value;
@@ -585,7 +585,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
     }
   }
 
-  let sectionCheckTimeout = null;
+  var sectionCheckTimeout = null;
   function handleSectionManualInput(val) {
     val = (val || '').trim();
     const hiddenEl = document.getElementById('target-section');

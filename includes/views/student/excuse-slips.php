@@ -654,7 +654,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <!-- ========================================================================= -->
 <script>
 // --- CLIENT CACHING MANAGER ---
-const SlipCache = {
+var SlipCache = {
   KEY: 'AMS_EXCUSE_SLIPS_CACHE_V2',
   TTL_MS: 30 * 1000,
   get() {
@@ -684,15 +684,15 @@ const SlipCache = {
   }
 };
 
-const ENROLLED_CLASSES = <?php echo json_encode($enrolledClasses); ?>;
-const ENROLLED_TEACHERS = <?php echo json_encode(array_values($enrolledTeachers)); ?>;
+var ENROLLED_CLASSES = <?php echo json_encode($enrolledClasses); ?>;
+var ENROLLED_TEACHERS = <?php echo json_encode(array_values($enrolledTeachers)); ?>;
 
-let allSlips = <?php echo json_encode($slips); ?>;
-let filteredSlips = [...allSlips];
-let currentPage = 1;
-const PAGE_SIZE = 4;
-let deletingSlipId = null;
-let selectedSlipIds = new Set();
+var allSlips = <?php echo json_encode($slips); ?>;
+var filteredSlips = [...allSlips];
+var currentPage = 1;
+var PAGE_SIZE = 4;
+var deletingSlipId = null;
+var selectedSlipIds = new Set();
 
 function updateBulkActionBar() {
   const bar = document.getElementById('bulk-action-bar');

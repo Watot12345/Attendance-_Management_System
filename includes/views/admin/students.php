@@ -494,10 +494,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
 <script>
 // Pagination configuration & state
-const PAGE_SIZE = 15;
-const WINDOW_SIZE = 30;
-let studentCurrentPage = 1;
-let filterDebounceTimer = null;
+var PAGE_SIZE = 15;
+var WINDOW_SIZE = 30;
+var studentCurrentPage = 1;
+var filterDebounceTimer = null;
 
 // Debounced filter handler (0.3 seconds / 300ms delay) with live search spinner
 function debouncedFilterStudents() {

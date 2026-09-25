@@ -500,9 +500,9 @@ require_once dirname(__DIR__) . '/partials/header.php';
 // ==========================================
 // MAIN CLASS LIST PAGINATION & FILTERING
 // ==========================================
-let currentClassPage = 1;
-const classPageSize = 5;
-let matchingClassCards = [];
+var currentClassPage = 1;
+var classPageSize = 5;
+var matchingClassCards = [];
 
 function filterClasses() {
   const container = document.getElementById('classes-container');
@@ -615,12 +615,12 @@ function renderClassPagination() {
 // ==========================================
 // STUDENT ROSTER MODAL
 // ==========================================
-const sectionRosters = <?= json_encode($rostersBySection, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-let currentSection = '';
-let currentSectionRoster = [];
-let filteredList = [];
-let currentPage = 1;
-const pageSize = 5;
+var sectionRosters = <?= json_encode($rostersBySection, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+var currentSection = '';
+var currentSectionRoster = [];
+var filteredList = [];
+var currentPage = 1;
+var pageSize = 5;
 
 function openRosterModal(section, course, year, schedule, room, enrolledCount, avgRate) {
   currentSection = section;

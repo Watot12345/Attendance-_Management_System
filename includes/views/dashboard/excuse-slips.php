@@ -519,8 +519,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 </div>
 
 <script>
-let realSlips = <?php echo json_encode($slips); ?>;
-let activeModalSlip = null;
+var realSlips = <?php echo json_encode($slips); ?>;
+var activeModalSlip = null;
 
 function filterSlips() {
   const status = document.getElementById('filter-status').value.toLowerCase();

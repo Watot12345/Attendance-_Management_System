@@ -261,8 +261,12 @@
           };
           document.head.appendChild(newScript);
         } else {
-          newScript.textContent = oldScript.textContent;
-          document.body.appendChild(newScript);
+          try {
+            newScript.textContent = oldScript.textContent;
+            document.body.appendChild(newScript);
+          } catch (err) {
+            console.error('SPA Script execution error:', err);
+          }
           resolve();
         }
       }).then(next);

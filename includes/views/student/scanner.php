@@ -369,9 +369,9 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script>
-let html5QrScanner = null;
-let currentCameraFacingMode = "environment";
-let isScanningActive = false;
+var html5QrScanner = null;
+var currentCameraFacingMode = "environment";
+var isScanningActive = false;
 
 function autofillToken(token) {
   const tokenInput = document.getElementById('manual-token');

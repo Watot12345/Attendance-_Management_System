@@ -278,8 +278,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
 
 <script>
-let currentCandidates = [];
-let currentMeta = {};
+var currentCandidates = [];
+var currentMeta = {};
 
 function updateThresholdBadge(val) {
   const badge = document.getElementById('criteria-badge');
