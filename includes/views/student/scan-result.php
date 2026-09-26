@@ -17,7 +17,7 @@ if (!in_array($status, ['success', 'wrong_section', 'expired', 'duplicate'], tru
 $customMsg = trim($_GET['msg'] ?? '');
 
 // Resolve current student session or default
-$studentUserId = (int)($_SESSION['active_student_test_id'] ?? $_SESSION['user']['user_id'] ?? $_SESSION['user_id'] ?? $_SESSION['student_id'] ?? 1);
+$studentUserId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['user_id'] ?? $_SESSION['student_id'] ?? 1);
 
 // Fetch student info
 $db = Database::getConnection();

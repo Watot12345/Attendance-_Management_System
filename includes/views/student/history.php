@@ -16,13 +16,11 @@ require_once dirname(__DIR__, 2) . '/controllers/StudentController.php';
 
 $db = Database::getConnection();
 
-// 1. Resolve Active Student (supports testing switcher and session fallback)
-$selectedStudentId = isset($_GET['student_id']) ? (int)$_GET['student_id'] : 0;
-if ($selectedStudentId > 0) {
-    $_SESSION['active_student_test_id'] = $selectedStudentId;
+// 1. Resolve Active Student
+if (isset($_SESSION['active_student_test_id'])) {
+    unset($_SESSION['active_student_test_id']);
 }
-
-$studentUserId = $_SESSION['active_student_test_id'] ?? StudentController::resolveCurrentStudentId();
+$studentUserId = StudentController::resolveCurrentStudentId();
 
 // Fetch student profile details
 $studStmt = $db->prepare("
@@ -53,14 +51,6 @@ if (!$currentStudent) {
 $studentName = $currentStudent ? trim(($currentStudent['first_name'] ?? 'Juan') . ' ' . ($currentStudent['last_name'] ?? 'Dela Cruz')) : 'Student';
 $studentNumber = !empty($currentStudent['student_id']) ? $currentStudent['student_id'] : ('23011' . str_pad((string)$studentUserId, 4, '0', STR_PAD_LEFT));
 $studentSection = $currentStudent['section'] ?? 'BSIT 3-A';
-
-// Fetch all students for test switcher
-$allStudents = $db->query("
-    SELECT user_id, student_id, first_name, last_name 
-    FROM users 
-    WHERE role = 'student' 
-    ORDER BY user_id ASC
-")->fetchAll(PDO::FETCH_ASSOC);
 
 // 2. Fetch Live Attendance Metrics & Streak for This Student
 $allAttStmt = $db->prepare("
@@ -232,19 +222,6 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-          <!-- Student Switcher for Testing -->
-          <?php if (!empty($allStudents)): ?>
-            <form method="GET" class="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-              <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Test Student:</span>
-              <select name="student_id" onchange="this.form.submit()" class="text-xs font-semibold px-2 py-1 border border-indigo-200 rounded-md bg-indigo-50 text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <?php foreach ($allStudents as $st): ?>
-                  <option value="<?php echo $st['user_id']; ?>" <?php echo ($st['user_id'] == $studentUserId) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($st['first_name'] . ' ' . $st['last_name'] . ' (' . ($st['student_id'] ?: '23011000' . $st['user_id']) . ')'); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </form>
-          <?php endif; ?>
 
           <a href="<?php echo url('student/scanner'); ?>" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
