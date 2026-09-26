@@ -589,12 +589,16 @@ class StudentController {
                     $firstName = 'Student';
                 }
 
-                // Resolve institutional email
+                // Resolve student email (strictly @gmail.com)
                 $email = $colEmail !== null ? strtolower(trim($row[$colEmail] ?? '')) : '';
                 if (empty($email)) {
                     $cleanF = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($firstName));
                     $cleanL = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($lastName));
-                    $email = "{$cleanF}.{$cleanL}@bcp.edu.ph";
+                    $email = "{$cleanF}.{$cleanL}@gmail.com";
+                } elseif (str_ends_with($email, '@student.bcp.edu.ph')) {
+                    $email = str_replace('@student.bcp.edu.ph', '@gmail.com', $email);
+                } elseif (str_ends_with($email, '@bcp.edu.ph')) {
+                    $email = str_replace('@bcp.edu.ph', '@gmail.com', $email);
                 }
 
                 // Check for duplicates
@@ -1563,6 +1567,13 @@ class StudentController {
             $section       = trim($input['section'] ?? '');
             $parentContact = trim($input['parent_contact'] ?? '');
             $status        = in_array($input['status'] ?? $existing['status'], ['active', 'inactive']) ? $input['status'] : $existing['status'];
+
+            // Auto-convert @student.bcp.edu.ph or @bcp.edu.ph to @gmail.com
+            if (str_ends_with($email, '@student.bcp.edu.ph')) {
+                $email = substr($email, 0, -strlen('@student.bcp.edu.ph')) . '@gmail.com';
+            } elseif (str_ends_with($email, '@bcp.edu.ph')) {
+                $email = substr($email, 0, -strlen('@bcp.edu.ph')) . '@gmail.com';
+            }
 
             // Validate email
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {

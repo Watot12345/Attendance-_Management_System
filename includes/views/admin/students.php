@@ -183,7 +183,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
               <tr>
                 <th class="py-3.5 px-4">Student ID / Number</th>
                 <th class="py-3.5 px-4">Student Full Name</th>
-                <th class="py-3.5 px-4">Institutional Email</th>
+                <th class="py-3.5 px-4">Student Gmail</th>
                 <th class="py-3.5 px-4">Course &amp; Year Level</th>
                 <th class="py-3.5 px-4">Assigned Section</th>
                 <th class="py-3.5 px-4">Account Status</th>
@@ -206,6 +206,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <?php 
                     $fullName = htmlspecialchars($st['first_name'] . ' ' . $st['last_name']);
                     $initials = strtoupper(substr($st['first_name'], 0, 1) . substr($st['last_name'], 0, 1));
+                    $studentGmail = str_ireplace(['@student.bcp.edu.ph', '@bcp.edu.ph'], '@gmail.com', $st['email'] ?? '');
+                    if (!empty($studentGmail) && !str_contains($studentGmail, '@')) {
+                        $studentGmail .= '@gmail.com';
+                    }
+                    $st['email'] = $studentGmail;
                   ?>
                   <tr class="student-row hover:bg-slate-50/60 transition-colors" 
                       data-program="<?= htmlspecialchars($st['course']) ?>" 
@@ -1549,7 +1554,21 @@ function openEditStudentModal(st) {
     secInput.value = sec;
   }
 
-  if (emailInput) emailInput.value = st.email || '';
+  // Resolve Student Gmail: automatically transform @student.bcp.edu.ph or @bcp.edu.ph to @gmail.com
+  let studentEmail = (st.email || '').trim();
+  if (studentEmail.toLowerCase().endsWith('@student.bcp.edu.ph')) {
+    studentEmail = studentEmail.replace(/@student\.bcp\.edu\.ph$/i, '@gmail.com');
+  } else if (studentEmail.toLowerCase().endsWith('@bcp.edu.ph')) {
+    studentEmail = studentEmail.replace(/@bcp\.edu\.ph$/i, '@gmail.com');
+  } else if (studentEmail && !studentEmail.includes('@')) {
+    studentEmail = studentEmail + '@gmail.com';
+  } else if (!studentEmail && (st.first_name || st.last_name)) {
+    const cleanFn = (st.first_name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanLn = (st.last_name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    studentEmail = `${cleanFn}.${cleanLn}@gmail.com`;
+  }
+  if (emailInput) emailInput.value = studentEmail;
+
   if (parentInput) parentInput.value = st.parent_contact || st.parent_number || st.parent_email || st.phone || '';
   if (statusInput) statusInput.value = (st.status === 'inactive') ? 'inactive' : 'active';
 
@@ -1583,7 +1602,14 @@ async function handleEditStudentSubmit(e) {
   const emailInput = document.getElementById('edit-student-email');
   let emailVal = emailInput ? emailInput.value.trim() : '';
 
-  if (!emailVal.includes('@')) {
+  // Auto-convert @student.bcp.edu.ph or @bcp.edu.ph to @gmail.com
+  if (emailVal.toLowerCase().endsWith('@student.bcp.edu.ph')) {
+    emailVal = emailVal.replace(/@student\.bcp\.edu\.ph$/i, '@gmail.com');
+    if (emailInput) emailInput.value = emailVal;
+  } else if (emailVal.toLowerCase().endsWith('@bcp.edu.ph')) {
+    emailVal = emailVal.replace(/@bcp\.edu\.ph$/i, '@gmail.com');
+    if (emailInput) emailInput.value = emailVal;
+  } else if (emailVal && !emailVal.includes('@')) {
     emailVal = emailVal + '@gmail.com';
     if (emailInput) emailInput.value = emailVal;
   }
