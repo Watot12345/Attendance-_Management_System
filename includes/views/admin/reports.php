@@ -310,8 +310,23 @@ select {
           </p>
         </div>
 
-        <!-- Header Action Export Button -->
-        <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+        <!-- Header Actions: Realtime Polling & Export Controls -->
+        <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
+          <!-- Realtime Sync Indicator & Controls -->
+          <div class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 shadow-xs">
+            <span class="relative flex h-2.5 w-2.5">
+              <span id="realtime-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span id="realtime-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span class="font-bold text-slate-800">Realtime</span>
+            <span id="realtime-status-label" class="text-[11px] text-slate-500 font-semibold">(5s)</span>
+            <span id="realtime-last-synced" class="text-[11px] text-slate-500 font-mono hidden sm:inline">• Live</span>
+            <button type="button" id="btn-realtime-toggle" onclick="toggleRealtimeSync()" class="text-[11px] font-bold text-[#1e3b8a] hover:text-[#162c69] ml-0.5 hover:underline cursor-pointer">Pause</button>
+            <button type="button" onclick="syncRealtimeData(true)" title="Force Refresh Live Data Now" class="p-1 rounded-lg hover:bg-slate-200 text-slate-600 hover:text-blue-700 transition cursor-pointer ml-0.5">
+              <svg id="sync-spinner-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+
           <!-- Advanced Export Options Modal Trigger -->
           <button type="button" onclick="openExportModal()" title="Open Export Configuration Dialog" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1e3b8a] hover:bg-[#162c69] shadow-md shadow-[#1e3b8a]/20 transition cursor-pointer">
             <svg class="w-4 h-4 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -1058,6 +1073,9 @@ function initExportCharts() {
   } catch (err) {
     console.error('Error rendering chartMajorDistribution:', err);
   }
+
+  // Update charts with initial filtered dataset
+  applyFilters(false);
 }
 
 // 2. Dynamic Course-to-Major Cascading Helper
@@ -2045,7 +2063,8 @@ async function syncRealtimeData(isManual = false) {
   if (spinner) spinner.classList.add('animate-spin');
 
   try {
-    const res = await fetch('/exports?ajax=1&refresh=1', { cache: 'no-store' });
+    const endpoint = window.url ? window.url('exports?ajax=1&refresh=1') : '/exports?ajax=1&refresh=1';
+    const res = await fetch(endpoint, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     
@@ -2055,10 +2074,7 @@ async function syncRealtimeData(isManual = false) {
         window.AMS_EXPORTS_CACHE.summary = Object.assign(window.AMS_EXPORTS_CACHE.summary || {}, json.summary);
       }
 
-      // Check if attendance session counts or roster size changed
       const newTotalCheckins = (json.summary?.totalPresent || 0) + (json.summary?.totalTardy || 0) + (json.summary?.totalAbsent || 0);
-      const currentRowsCount = document.querySelectorAll('#roster-table-body tr.roster-row').length;
-      const hasChanges = newTotalCheckins !== lastCheckinCount || json.data.length !== currentRowsCount;
       
       // Update table body DOM
       const tbody = document.getElementById('roster-table-body');
@@ -2074,7 +2090,7 @@ async function syncRealtimeData(isManual = false) {
       // Re-apply filters which dynamically updates Charts & KPI summary cards
       const courseEl = document.getElementById('filter-course');
       updateMajorDropdown(courseEl ? courseEl.value : '');
-      applyFilters();
+      applyFilters(false);
 
       // Update last sync timer
       const timeEl = document.getElementById('realtime-last-synced');
@@ -2125,8 +2141,7 @@ function startRealtimePolling() {
   }, realtimeIntervalMs);
 }
 
-// Bind DOM Events on Load
-document.addEventListener('DOMContentLoaded', () => {
+function initReportsPage() {
   initExportCharts();
   applyFilters(true);
   startRealtimePolling();
@@ -2135,7 +2150,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeExportModal();
   });
-});
+}
+
+// Bind DOM Events on Load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initReportsPage);
+} else {
+  initReportsPage();
+}
 </script>
 
 <?php require_once dirname(__DIR__) . '/partials/footer.php'; ?>
