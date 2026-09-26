@@ -127,19 +127,25 @@ require_once dirname(__DIR__) . '/partials/header.php';
               </div>
               <div>
                 <h3 class="text-sm sm:text-base font-bold text-slate-900">Personal Information</h3>
-                <p class="text-xs text-slate-500">Update your official name and contact phone number.</p>
+                <p class="text-xs text-slate-500">Update your contact phone number. Official name is verified and read-only.</p>
               </div>
             </div>
 
             <form id="profile-info-form" onsubmit="event.preventDefault(); saveProfileInfo();" class="space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1.5">First Name</label>
-                  <input type="text" name="first_name" id="field-first-name" required value="<?php echo htmlspecialchars($user['first_name']); ?>" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700">First Name</label>
+                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">Read-only</span>
+                  </div>
+                  <input type="text" name="first_name" id="field-first-name" readonly value="<?php echo htmlspecialchars($user['first_name']); ?>" class="w-full px-3.5 py-2.5 text-xs bg-slate-100/80 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed select-none">
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Last Name</label>
-                  <input type="text" name="last_name" id="field-last-name" required value="<?php echo htmlspecialchars($user['last_name']); ?>" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-blue-500 text-slate-800 transition">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700">Last Name</label>
+                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">Read-only</span>
+                  </div>
+                  <input type="text" name="last_name" id="field-last-name" readonly value="<?php echo htmlspecialchars($user['last_name']); ?>" class="w-full px-3.5 py-2.5 text-xs bg-slate-100/80 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed select-none">
                 </div>
               </div>
 

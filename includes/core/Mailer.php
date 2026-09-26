@@ -512,4 +512,118 @@ class Mailer {
 
         return self::send($toEmail, $subject, $html);
     }
+
+    /**
+     * Send Welcome & Account Credentials Notification to newly registered/imported Faculty
+     */
+    public static function sendTeacherWelcomeEmail(string $toEmail, string $teacherName, string $employeeId, string $surname): array {
+        $subject = "Welcome to BCP Attendance System — Your Faculty Account Details";
+        $appUrl = self::getEnv('APP_URL', 'http://localhost/login');
+        
+        $cleanSur = preg_replace('/[^a-zA-Z]/', '', trim($surname));
+        if (empty($cleanSur)) {
+            $cleanSur = 'Faculty';
+        }
+        $firstChar = strtoupper(substr($cleanSur, 0, 1));
+        $secondChar = strlen($cleanSur) > 1 ? strtolower(substr($cleanSur, 1, 1)) : strtolower($firstChar);
+        $examplePass = '#' . $firstChar . $secondChar . '8080';
+
+        $html = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset='UTF-8'>
+          <title>{$subject}</title>
+        </head>
+        <body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A;'>
+          <table width='100%' border='0' cellspacing='0' cellpadding='0' style='background-color: #F8FAFC; padding: 40px 16px;'>
+            <tr>
+              <td align='center'>
+                <table width='100%' max-width='560' border='0' cellspacing='0' cellpadding='0' style='max-width: 560px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;'>
+                  <tr>
+                    <td style='background-color: #1E3B8A; padding: 24px 32px; text-align: left;'>
+                      <table border='0' cellspacing='0' cellpadding='0'>
+                        <tr>
+                          <td style='font-size: 18px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;'>
+                            BESTLINK COLLEGE OF THE PHILIPPINES
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style='font-size: 12px; color: #BAE6FD;'>
+                            Attendance Management &amp; Faculty Portal
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style='padding: 32px;'>
+                      <div style='display: inline-block; padding: 4px 12px; border-radius: 9999px; background-color: #EFF6FF; border: 1px solid #BFDBFE; font-size: 12px; font-weight: 800; color: #1E3B8A; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;'>
+                        Faculty Account Created
+                      </div>
+                      <h2 style='font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 14px 0;'>
+                        Welcome to the Attendance Management System
+                      </h2>
+                      <p style='font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 18px 0;'>
+                        Dear <strong>" . htmlspecialchars($teacherName) . "</strong>,<br>
+                        Your faculty account has been successfully created and provisioned in the BCP Attendance Management System. You can now log in to manage your classes, launch live QR attendance sessions, track student attendance, and generate reports.
+                      </p>
+
+                      <div style='background-color: #F8FAFC; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; margin-bottom: 24px;'>
+                        <h4 style='font-size: 13px; font-weight: 800; color: #1E3B8A; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 12px 0;'>
+                          Your Account Credentials
+                        </h4>
+                        <table width='100%' border='0' cellspacing='0' cellpadding='0' style='font-size: 13px; color: #334155;'>
+                          <tr>
+                            <td style='padding: 6px 0; color: #64748B; width: 150px; font-weight: 600;'>Institutional Email:</td>
+                            <td style='padding: 6px 0; font-weight: 700; color: #0F172A;'>" . htmlspecialchars($toEmail) . "</td>
+                          </tr>
+                          <tr>
+                            <td style='padding: 6px 0; color: #64748B; font-weight: 600;'>Employee ID / Username:</td>
+                            <td style='padding: 6px 0; font-weight: 700; font-family: monospace; color: #0F172A;'>" . htmlspecialchars($employeeId) . "</td>
+                          </tr>
+                          <tr>
+                            <td style='padding: 6px 0; color: #64748B; font-weight: 600; vertical-align: top;'>Default Password:</td>
+                            <td style='padding: 6px 0;'>
+                              <div style='background-color: #FEF3C7; border: 1px solid #FDE68A; padding: 10px 12px; border-radius: 8px; color: #92400E; font-size: 12px; line-height: 1.5;'>
+                                <strong>Default Password Instruction:</strong><br>
+                                Your default password is formatted as:<br>
+                                <span style='display: inline-block; font-family: monospace; background-color: #FDE68A; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #78350F; margin: 4px 0;'>
+                                  #(First letter of your surname capitalized and second letter in lowercase)8080
+                                </span><br>
+                                <span style='display: inline-block; margin-top: 4px; color: #78350F;'>
+                                  <em>(For your surname <strong>" . htmlspecialchars($surname) . "</strong>, your default password is <strong>" . htmlspecialchars($examplePass) . "</strong>)</em>
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+
+                      <div style='text-align: center; margin-bottom: 24px;'>
+                        <a href='{$appUrl}' style='display: inline-block; background-color: #1E3B8A; color: #FFFFFF; font-weight: 700; font-size: 13px; text-decoration: none; padding: 12px 28px; border-radius: 10px; box-shadow: 0 4px 10px rgba(30, 59, 138, 0.2);'>
+                          Sign In to Faculty Portal &rarr;
+                        </a>
+                      </div>
+
+                      <p style='font-size: 12px; line-height: 1.5; color: #64748B; margin: 0 0 8px 0;'>
+                        <strong>Security Recommendation:</strong> For your security, we recommend changing your default password after your first successful login under Account Settings.
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style='background-color: #F8FAFC; padding: 16px 32px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #94A3B8;'>
+                      Bestlink College of the Philippines · Faculty &amp; Academic Affairs Office<br>
+                      Sent automatically via BCP Attendance Management Portal
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>";
+
+        return self::send($toEmail, $subject, $html);
+    }
 }

@@ -7,6 +7,7 @@
  */
 
 require_once dirname(__DIR__) . '/core/Database.php';
+require_once dirname(__DIR__) . '/core/Mailer.php';
 
 class TeacherController {
 
@@ -22,6 +23,37 @@ class TeacherController {
         'contact_number',
         'date_hired'
     ];
+
+    /**
+     * Parse full name into first name and last name
+     */
+    public static function parseNameParts(string $fullName): array {
+        $clean = trim(preg_replace('/^(Dr\.|Prof\.|Engr\.|Mr\.|Ms\.|Mrs\.|Atty\.)\s+/i', '', trim($fullName)));
+        $parts = preg_split('/\s+/', $clean);
+        if (count($parts) === 1) {
+            return ['first_name' => $parts[0], 'last_name' => $parts[0]];
+        }
+        $lastName = array_pop($parts);
+        if (in_array(strtolower($lastName), ['jr.', 'jr', 'sr.', 'sr', 'ii', 'iii', 'iv'], true) && count($parts) > 0) {
+            $lastName = array_pop($parts);
+        }
+        $firstName = implode(' ', $parts);
+        return ['first_name' => $firstName ?: $lastName, 'last_name' => $lastName];
+    }
+
+    /**
+     * Generate default password: #(first letter of surname uppercase)(second letter lowercase)8080
+     * Example: Mendez -> #Me8080
+     */
+    public static function generateDefaultTeacherPassword(string $lastName): string {
+        $cleanSur = preg_replace('/[^a-zA-Z]/', '', trim($lastName));
+        if (empty($cleanSur)) {
+            $cleanSur = 'Faculty';
+        }
+        $first = strtoupper(substr($cleanSur, 0, 1));
+        $second = strlen($cleanSur) > 1 ? strtolower(substr($cleanSur, 1, 1)) : strtolower($first);
+        return '#' . $first . $second . '8080';
+    }
 
     /**
      * Entry handler for RESTful /api/teachers and /api/teachers/{id}
@@ -302,7 +334,6 @@ class TeacherController {
             $contact    = trim($input['contact_number'] ?? '');
             $dateHired  = trim($input['date_hired'] ?? date('Y-m-d'));
             $status     = in_array($input['status'] ?? 'active', ['active', 'inactive']) ? $input['status'] : 'active';
-            $password   = $input['password'] ?? 'Teacher@123';
 
             // Validations
             if ($employeeId === '' || $fullName === '' || $email === '') {
@@ -337,6 +368,9 @@ class TeacherController {
                 exit;
             }
 
+            $nameParts = self::parseNameParts($fullName);
+            $defaultPassword = self::generateDefaultTeacherPassword($nameParts['last_name']);
+            $password = !empty($input['password']) ? trim($input['password']) : $defaultPassword;
             $passHash = password_hash($password, PASSWORD_BCRYPT);
 
             $stmt = $db->prepare("
@@ -347,9 +381,37 @@ class TeacherController {
             $stmt->execute([$employeeId, $fullName, $email, $passHash, $department, $position, $contact, $dateHired, $status]);
             $newId = (int)$db->lastInsertId();
 
+            // Synchronize with users table for seamless portal login
+            try {
+                $uStmt = $db->prepare("
+                    INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `created_at`)
+                    VALUES (?, 'teacher', ?, ?, ?, ?, ?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE 
+                        `employee_id` = VALUES(`employee_id`),
+                        `role` = 'teacher',
+                        `password_hash` = VALUES(`password_hash`),
+                        `first_name` = VALUES(`first_name`),
+                        `last_name` = VALUES(`last_name`),
+                        `phone` = VALUES(`phone`),
+                        `status` = VALUES(`status`)
+                ");
+                $uStmt->execute([$employeeId, $email, $passHash, $nameParts['first_name'], $nameParts['last_name'], $contact, $status]);
+            } catch (Throwable $uErr) {
+                error_log("[Teacher User Sync Error] " . $uErr->getMessage());
+            }
+
+            // Dispatch welcome credentials notification email to the teacher
+            $emailSent = false;
+            try {
+                $mailRes = Mailer::sendTeacherWelcomeEmail($email, $fullName, $employeeId, $nameParts['last_name']);
+                $emailSent = !empty($mailRes['success']);
+            } catch (Throwable $mErr) {
+                error_log("[Teacher Welcome Email Error] " . $mErr->getMessage());
+            }
+
             echo json_encode([
                 'status'  => 'success',
-                'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully.",
+                'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully." . ($emailSent ? " Welcome email with credentials dispatched to {$email}." : ""),
                 'data'    => [
                     'id'          => $newId,
                     'employee_id' => $employeeId,
@@ -357,7 +419,8 @@ class TeacherController {
                     'email'       => $email,
                     'department'  => $department,
                     'position'    => $position,
-                    'status'      => $status
+                    'status'      => $status,
+                    'email_sent'  => $emailSent
                 ]
             ]);
         } catch (Exception $e) {
@@ -693,18 +756,47 @@ class TeacherController {
 
                 // Format date if needed
                 $parsedDate = date('Y-m-d', strtotime($hired) ?: time());
+                $nameParts = self::parseNameParts($name);
+                $rowPassword = self::generateDefaultTeacherPassword($nameParts['last_name']);
+                $rowHash = password_hash($rowPassword, PASSWORD_BCRYPT);
 
                 try {
                     $insertStmt->execute([
                         $empId,
                         $name,
                         $email,
-                        $defaultHash,
+                        $rowHash,
                         $dept ?: 'General Academics',
                         $pos ?: 'Faculty',
                         $contact,
                         $parsedDate
                     ]);
+
+                    // Sync into users table for portal access
+                    try {
+                        $uStmt = $db->prepare("
+                            INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `created_at`)
+                            VALUES (?, 'teacher', ?, ?, ?, ?, ?, 'active', NOW())
+                            ON DUPLICATE KEY UPDATE 
+                                `employee_id` = VALUES(`employee_id`),
+                                `role` = 'teacher',
+                                `password_hash` = VALUES(`password_hash`),
+                                `first_name` = VALUES(`first_name`),
+                                `last_name` = VALUES(`last_name`),
+                                `phone` = VALUES(`phone`),
+                                `status` = 'active'
+                        ");
+                        $uStmt->execute([$empId, $email, $rowHash, $nameParts['first_name'], $nameParts['last_name'], $contact]);
+                    } catch (Throwable $uErr) {
+                        error_log("[Teacher Import User Sync Error] " . $uErr->getMessage());
+                    }
+
+                    // Dispatch welcome credentials notification email
+                    try {
+                        Mailer::sendTeacherWelcomeEmail($email, $name, $empId, $nameParts['last_name']);
+                    } catch (Throwable $mErr) {
+                        error_log("[Teacher Import Welcome Email Error] " . $mErr->getMessage());
+                    }
 
                     $inserted++;
                     $seenInBatch[$empId] = true;

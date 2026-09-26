@@ -343,7 +343,7 @@ try {
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Employee ID <span class="text-rose-500">*</span>
           </label>
-          <input type="text" name="employee_id" required placeholder="e.g. EMP-2026-0101" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
+          <input type="text" name="employee_id" required placeholder="e.g. t22012033" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -391,10 +391,10 @@ try {
 
       <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
         <div>
-          <div class="font-bold text-slate-800">Default Password</div>
-          <div class="text-[11px] text-slate-500">Instructor can change after initial login.</div>
+          <div class="font-bold text-slate-800">Default Password Rule</div>
+          <div class="text-[11px] text-slate-500">Auto-generated: #(first letter of surname + second letter lowercase)8080</div>
         </div>
-        <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-[#1e3b8a] text-xs">Teacher@123</span>
+        <span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 font-mono font-bold text-amber-900 text-xs">#Surname8080 (e.g. #Me8080)</span>
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -934,7 +934,7 @@ async function processTeacherExcelImport() {
 // Download Blank Template
 function downloadTeacherCsvTemplate() {
   const headers = 'employee_id,full_name,email,department,position,contact_number,date_hired\n';
-  const sample = 'EMP-2026-0001,Dr. Elena D. Bautista,e.bautista@bestlink.edu.ph,College of Computer Studies,Department Head,0917-555-0101,2024-06-15\nEMP-2026-0002,Prof. Nelson K. Cruz,n.cruz@bestlink.edu.ph,College of Business Administration,Assistant Professor,0918-555-0102,2025-01-10\n';
+  const sample = 't22012033,Dr. Elena D. Bautista,e.bautista@bestlink.edu.ph,College of Computer Studies,Department Head,0917-555-0101,2024-06-15\nt22012034,Prof. Nelson K. Cruz,n.cruz@bestlink.edu.ph,College of Business Administration,Assistant Professor,0918-555-0102,2025-01-10\n';
   const blob = new Blob([headers + sample], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
