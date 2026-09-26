@@ -266,7 +266,7 @@ try {
                       <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(<?= json_encode($t) ?>)' title="Edit Account">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                       </button>
-                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="resetPassword(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Reset Password">
+                      <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="openResetPasswordModal(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>', '<?= htmlspecialchars(addslashes($t['employee_id'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($t['email'] ?? '')) ?>')" title="Reset Password">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                       </button>
                       <?php if ($isActive): ?>
@@ -581,6 +581,107 @@ try {
     </div>
   </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 4: RESET FACULTY PASSWORD -->
+<!-- ========================================================================= -->
+<div id="resetPasswordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold tracking-tight">Reset Faculty Password</h3>
+          <p class="text-xs text-amber-100">Provision a new temporary credential</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeResetPasswordModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 1: Confirmation State -->
+    <div id="reset-modal-confirm-step" class="p-6 space-y-4">
+      <input type="hidden" id="reset-teacher-id">
+
+      <!-- Target Teacher Card -->
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Faculty Member:</span>
+          <span id="reset-teacher-name" class="font-bold text-slate-800 text-sm"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Employee ID:</span>
+          <span id="reset-teacher-emp-id" class="font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Email Address:</span>
+          <span id="reset-teacher-email" class="font-mono text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- Warning Notice -->
+      <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+          <strong>Are you sure?</strong> Generating a temporary password will overwrite the current password for this instructor and will be logged to system notifications.
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeResetPasswordModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-reset-pass" onclick="executePasswordReset()" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          <span>Generate Temp Password</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Result State (Generated Temp Password) -->
+    <div id="reset-modal-result-step" class="p-6 space-y-4 hidden">
+      <!-- Success Banner -->
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h4 class="text-base font-bold text-slate-900">Password Reset Successful!</h4>
+        <p class="text-xs text-slate-500">A new temporary credential has been generated for <strong id="reset-result-name" class="text-slate-800"></strong>.</p>
+      </div>
+
+      <!-- Password Card with Copy Action -->
+      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Temporary Password</div>
+        <div class="flex items-center justify-center gap-2">
+          <span id="reset-result-password" class="text-xl font-mono font-black text-amber-700 bg-amber-50 border border-amber-200 px-4 py-1.5 rounded-xl select-all tracking-wider"></span>
+          <button type="button" onclick="copyTempPassword()" id="btn-copy-temp-pass" class="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Copy to clipboard">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span id="copy-btn-text">Copy</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500 pt-1">Please copy or forward this temporary password to the faculty member.</p>
+      </div>
+
+      <!-- Security / Login Note -->
+      <div class="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-950 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>The instructor will be required to configure a new personal password on their next sign in.</span>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end">
+        <button type="button" onclick="closeResetPasswordModal()" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition cursor-pointer">
+          Done &amp; Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
@@ -717,7 +818,7 @@ function renderTeachersTable(teachers) {
             <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(${JSON.stringify(t)})' title="Edit Account">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
-            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="resetPassword(${t.id}, '${escapeHtml(t.full_name)}')" title="Reset Password">
+            <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="openResetPasswordModal(${t.id}, '${escapeHtml(t.full_name)}', '${escapeHtml(t.employee_id || '')}', '${escapeHtml(t.email || '')}')" title="Reset Password">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
             </button>
             ${isActive ? `
@@ -813,26 +914,136 @@ async function handleEditTeacherSubmit(e) {
   }
 }
 
-// Reset Password
-async function resetPassword(id, name) {
-  if (!confirm(`Generate temporary password for ${name}? This will be logged to notifications.`)) return;
+// Reset Password Modal Workflow
+let currentResetTeacher = null;
+
+function openResetPasswordModal(id, name, employeeId = '', email = '') {
+  currentResetTeacher = { id, name, employeeId, email };
+
+  const idInput = document.getElementById('reset-teacher-id');
+  const nameEl = document.getElementById('reset-teacher-name');
+  const empEl = document.getElementById('reset-teacher-emp-id');
+  const emailEl = document.getElementById('reset-teacher-email');
+
+  if (idInput) idInput.value = id;
+  if (nameEl) nameEl.textContent = name || 'Faculty Member';
+  if (empEl) empEl.textContent = employeeId || 'N/A';
+  if (emailEl) emailEl.textContent = email || 'N/A';
+
+  // Show Step 1, hide Step 2
+  const confirmStep = document.getElementById('reset-modal-confirm-step');
+  const resultStep = document.getElementById('reset-modal-result-step');
+  if (confirmStep) confirmStep.classList.remove('hidden');
+  if (resultStep) resultStep.classList.add('hidden');
+
+  const btn = document.getElementById('btn-confirm-reset-pass');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+      <span>Generate Temp Password</span>
+    `;
+  }
+
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeResetPasswordModal() {
+  const modal = document.getElementById('resetPasswordModal');
+  if (modal) modal.classList.add('hidden');
+  currentResetTeacher = null;
+}
+
+async function executePasswordReset() {
+  if (!currentResetTeacher || !currentResetTeacher.id) return;
+
+  const btn = document.getElementById('btn-confirm-reset-pass');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Generating...</span>
+    `;
+  }
 
   try {
     const res = await fetch(window.url('api/teachers/reset-password'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+      body: JSON.stringify({ id: currentResetTeacher.id })
     });
     const result = await res.json();
+
     if (result.status === 'success') {
-      alert(`Temporary password for ${name}:\n\n${result.temp_password}\n\nPlease share this credential with the instructor.`);
-      APP.toast(`Temp password generated: ${result.temp_password}`, 'success');
+      // Transition to Step 2 (result view)
+      const confirmStep = document.getElementById('reset-modal-confirm-step');
+      const resultStep = document.getElementById('reset-modal-result-step');
+      if (confirmStep) confirmStep.classList.add('hidden');
+      if (resultStep) resultStep.classList.remove('hidden');
+
+      const resNameEl = document.getElementById('reset-result-name');
+      const resPassEl = document.getElementById('reset-result-password');
+      if (resNameEl) resNameEl.textContent = currentResetTeacher.name;
+      if (resPassEl) resPassEl.textContent = result.temp_password;
+
+      // Reset copy button state
+      const copyBtnText = document.getElementById('copy-btn-text');
+      if (copyBtnText) copyBtnText.textContent = 'Copy';
+
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(`Temporary password generated for ${currentResetTeacher.name}`, 'success');
+      }
     } else {
-      APP.toast(result.message, 'error');
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Failed to reset password.', 'error');
+      } else {
+        alert(result.message || 'Failed to reset password.');
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          <span>Generate Temp Password</span>
+        `;
+      }
     }
   } catch (err) {
-    APP.toast('Failed to reset password.', 'error');
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Failed to reset password: ' + err.message, 'error');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        <span>Generate Temp Password</span>
+      `;
+    }
   }
+}
+
+function copyTempPassword() {
+  const passEl = document.getElementById('reset-result-password');
+  const copyBtnText = document.getElementById('copy-btn-text');
+  if (!passEl) return;
+
+  const textToCopy = passEl.textContent.trim();
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    if (copyBtnText) copyBtnText.textContent = 'Copied!';
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Temporary password copied to clipboard!', 'success');
+    }
+    setTimeout(() => {
+      if (copyBtnText) copyBtnText.textContent = 'Copy';
+    }, 2500);
+  }).catch(() => {
+    if (copyBtnText) copyBtnText.textContent = 'Copied!';
+  });
+}
+
+// Backward-compatible resetPassword alias
+function resetPassword(id, name, employeeId = '', email = '') {
+  openResetPasswordModal(id, name, employeeId, email);
 }
 
 // Soft Delete (Deactivate)
