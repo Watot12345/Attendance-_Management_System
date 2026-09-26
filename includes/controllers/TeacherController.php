@@ -662,13 +662,17 @@ class TeacherController {
             $db = Database::getConnection();
 
             // Cache existing employee_ids and emails to ensure fast bulk check
-            $existingEmpIds = $db->query("SELECT `employee_id` FROM `teachers`")->fetchAll(PDO::FETCH_COLUMN);
-            $existingEmpIds = array_flip($existingEmpIds);
+            $existingEmpIds = $db->query("SELECT LOWER(TRIM(`employee_id`)) FROM `teachers` WHERE `employee_id` IS NOT NULL AND `employee_id` != ''")->fetchAll(PDO::FETCH_COLUMN);
+            $existingEmpIds = array_flip(array_map('strtolower', array_map('trim', $existingEmpIds)));
 
-            $existingEmails = $db->query("SELECT `email` FROM `teachers`")->fetchAll(PDO::FETCH_COLUMN);
-            $existingEmails = array_flip($existingEmails);
+            $existingEmails = $db->query("SELECT LOWER(TRIM(`email`)) FROM `teachers` WHERE `email` IS NOT NULL AND `email` != ''")->fetchAll(PDO::FETCH_COLUMN);
+            $existingEmails = array_flip(array_map('strtolower', array_map('trim', $existingEmails)));
 
-            $seenInBatch = [];
+            $existingUserEmails = $db->query("SELECT LOWER(TRIM(`email`)) FROM `users` WHERE `email` IS NOT NULL AND `email` != ''")->fetchAll(PDO::FETCH_COLUMN);
+            $existingUserEmails = array_flip(array_map('strtolower', array_map('trim', $existingUserEmails)));
+
+            $seenEmpIdsInBatch = [];
+            $seenEmailsInBatch = [];
             $inserted = 0;
             $skipped = 0;
             $errors = [];
@@ -679,8 +683,6 @@ class TeacherController {
                 (`employee_id`, `full_name`, `email`, `password_hash`, `department`, `position`, `contact_number`, `date_hired`, `status`, `created_at`)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
             ");
-
-            $defaultHash = password_hash('Teacher@123', PASSWORD_BCRYPT);
 
             foreach ($parsedRows as $lineNum => $row) {
                 $displayLine = $lineNum + 2; // +1 for 0-index, +1 for header line
@@ -699,12 +701,18 @@ class TeacherController {
                     continue;
                 }
 
+                $empIdLower = strtolower($empId);
+                $emailLower = strtolower($email);
+
                 // Row-level validation: Required fields
                 if ($empId === '' || $name === '' || $email === '') {
                     $skipped++;
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId ?: 'N/A',
+                        'name'   => $name ?: 'N/A',
+                        'email'  => $email ?: 'N/A',
+                        'field'  => 'required_fields',
                         'reason' => 'Missing required fields (employee_id, full_name, or email)'
                     ];
                     continue;
@@ -716,40 +724,66 @@ class TeacherController {
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId,
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'email_format',
                         'reason' => "Invalid email format: '{$email}'"
                     ];
                     continue;
                 }
 
                 // Row-level validation: Duplicate employee_id within batch
-                if (isset($seenInBatch[$empId])) {
+                if (isset($seenEmpIdsInBatch[$empIdLower])) {
                     $skipped++;
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId,
-                        'reason' => "Duplicate employee_id '{$empId}' within the uploaded file"
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'duplicate_id',
+                        'reason' => "Duplicate employee ID '{$empId}' appears multiple times in uploaded file"
+                    ];
+                    continue;
+                }
+
+                // Row-level validation: Duplicate email within batch
+                if (isset($seenEmailsInBatch[$emailLower])) {
+                    $skipped++;
+                    $errors[] = [
+                        'line'   => $displayLine,
+                        'id'     => $empId,
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'duplicate_email',
+                        'reason' => "Duplicate email '{$email}' appears multiple times in uploaded file"
                     ];
                     continue;
                 }
 
                 // Row-level validation: Duplicate employee_id in DB
-                if (isset($existingEmpIds[$empId])) {
+                if (isset($existingEmpIds[$empIdLower])) {
                     $skipped++;
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId,
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'duplicate_id',
                         'reason' => "Employee ID '{$empId}' already exists in database"
                     ];
                     continue;
                 }
 
-                // Row-level validation: Duplicate email in DB
-                if (isset($existingEmails[$email])) {
+                // Row-level validation: Duplicate email in DB (teachers or users table)
+                if (isset($existingEmails[$emailLower]) || isset($existingUserEmails[$emailLower])) {
                     $skipped++;
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId,
-                        'reason' => "Email '{$email}' already exists in database"
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'duplicate_email',
+                        'reason' => "Email '{$email}' is already registered in the system"
                     ];
                     continue;
                 }
@@ -799,15 +833,20 @@ class TeacherController {
                     }
 
                     $inserted++;
-                    $seenInBatch[$empId] = true;
-                    $existingEmpIds[$empId] = true;
-                    $existingEmails[$email] = true;
+                    $seenEmpIdsInBatch[$empIdLower] = true;
+                    $seenEmailsInBatch[$emailLower] = true;
+                    $existingEmpIds[$empIdLower] = true;
+                    $existingEmails[$emailLower] = true;
+                    $existingUserEmails[$emailLower] = true;
                 } catch (Exception $ex) {
                     $skipped++;
                     $errors[] = [
                         'line'   => $displayLine,
                         'id'     => $empId,
-                        'reason' => 'Database error: ' . $ex->getMessage()
+                        'name'   => $name,
+                        'email'  => $email,
+                        'field'  => 'database_error',
+                        'reason' => 'Database insertion error: ' . $ex->getMessage()
                     ];
                 }
             }

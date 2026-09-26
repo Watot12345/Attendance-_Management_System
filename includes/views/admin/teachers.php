@@ -540,9 +540,28 @@ try {
           </div>
         </div>
 
-        <div id="import-errors-box" class="hidden max-h-48 overflow-y-auto border border-rose-200 rounded-xl p-3 bg-rose-50 text-xs">
-          <div class="font-bold text-rose-800 mb-1">Skipped Rows / Validation Errors:</div>
-          <ul id="import-errors-list" class="list-disc pl-4 space-y-1 text-rose-700 text-[11px]"></ul>
+        <div id="import-errors-box" class="hidden border border-amber-200 rounded-xl overflow-hidden bg-white shadow-xs">
+          <div class="px-4 py-2.5 bg-amber-50/80 border-b border-amber-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span class="font-bold text-amber-900 text-xs">Skipped Duplicates &amp; Row Issues</span>
+            </div>
+            <span id="skipped-badge-count" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">0 Skipped</span>
+          </div>
+          <div class="max-h-56 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 sticky top-0">
+                <tr>
+                  <th class="py-2 px-3">Row</th>
+                  <th class="py-2 px-3">Employee ID</th>
+                  <th class="py-2 px-3">Email Address</th>
+                  <th class="py-2 px-3">Reason / Details</th>
+                </tr>
+              </thead>
+              <tbody id="import-errors-table-body" class="divide-y divide-slate-100 font-medium text-slate-700">
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -901,13 +920,38 @@ async function processTeacherExcelImport() {
       }
 
       const errorsBox = document.getElementById('import-errors-box');
-      const errorsList = document.getElementById('import-errors-list');
-      errorsList.innerHTML = '';
+      const tableBody = document.getElementById('import-errors-table-body');
+      const badgeCount = document.getElementById('skipped-badge-count');
+      if (tableBody) tableBody.innerHTML = '';
+      if (badgeCount) badgeCount.textContent = `${summary.skipped} Skipped`;
+
       if (summary.errors && summary.errors.length > 0) {
         summary.errors.forEach(err => {
-          const li = document.createElement('li');
-          li.textContent = `Row ${err.line} [${err.id}]: ${err.reason}`;
-          errorsList.appendChild(li);
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+          let reasonBadge = '';
+          const field = err.field || '';
+          if (field === 'duplicate_email') {
+            reasonBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Duplicate Email</span>`;
+          } else if (field === 'duplicate_id') {
+            reasonBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-900 border border-orange-300">Duplicate ID</span>`;
+          } else {
+            reasonBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">Validation Error</span>`;
+          }
+
+          tr.innerHTML = `
+            <td class="py-2.5 px-3 font-mono text-[11px] font-bold text-slate-700">Row ${err.line}</td>
+            <td class="py-2.5 px-3 font-mono text-[11px] font-bold text-slate-900">${err.id || 'N/A'}</td>
+            <td class="py-2.5 px-3 text-[11px] font-mono text-slate-600">${err.email || 'N/A'}</td>
+            <td class="py-2.5 px-3 text-[11px]">
+              <div class="flex items-center gap-2 flex-wrap">
+                ${reasonBadge}
+                <span class="text-slate-600">${err.reason}</span>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(tr);
         });
         errorsBox.classList.remove('hidden');
       } else {
