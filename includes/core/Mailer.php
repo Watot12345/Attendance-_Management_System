@@ -626,4 +626,149 @@ class Mailer {
 
         return self::send($toEmail, $subject, $html);
     }
+
+    /**
+     * Send Student Account Creation Credentials & Welcome Notice
+     */
+    public static function sendStudentWelcome(
+        string $toEmail,
+        string $studentName,
+        string $studentId,
+        string $temporaryPassword,
+        string $course,
+        string $yearLevel,
+        string $section
+    ): array {
+        $subject = "Your BCP Student Account Credentials (ID: {$studentId})";
+        $loginUrl = function_exists('url') ? url('login') : '/login';
+
+        $html = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset='UTF-8'>
+          <title>{$subject}</title>
+        </head>
+        <body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A;'>
+          <table width='100%' border='0' cellspacing='0' cellpadding='0' style='background-color: #F8FAFC; padding: 40px 16px;'>
+            <tr>
+              <td align='center'>
+                <table width='100%' border='0' cellspacing='0' cellpadding='0' style='max-width: 580px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;'>
+                  <!-- Header -->
+                  <tr>
+                    <td style='background: linear-gradient(135deg, #1E3B8A 0%, #172554 100%); padding: 28px 32px; text-align: left;'>
+                      <table border='0' cellspacing='0' cellpadding='0'>
+                        <tr>
+                          <td style='font-size: 19px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em;'>
+                            BESTLINK COLLEGE OF THE PHILIPPINES
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style='font-size: 12px; color: #93C5FD; padding-top: 4px;'>
+                            Student Attendance Management System · Official Master Account
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- Body -->
+                  <tr>
+                    <td style='padding: 32px;'>
+                      <div style='display: inline-block; padding: 4px 12px; border-radius: 9999px; background-color: #EFF6FF; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;'>
+                        Student Account Provisioned
+                      </div>
+                      <h2 style='font-size: 22px; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;'>
+                        Welcome, " . htmlspecialchars($studentName) . "!
+                      </h2>
+                      <p style='font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 24px 0;'>
+                        Your official student account has been created by the administrator. You can now sign in to your student portal to track daily attendance, generate QR passes, and submit excuse slips.
+                      </p>
+
+                      <!-- Credentials Card -->
+                      <table width='100%' border='0' cellspacing='0' cellpadding='0' style='background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;'>
+                        <tr>
+                          <td style='padding: 20px;'>
+                            <div style='font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;'>
+                              Your Login Credentials:
+                            </div>
+                            <table width='100%' border='0' cellspacing='0' cellpadding='6'>
+                              <tr>
+                                <td style='font-size: 13px; color: #64748B; width: 140px;'>Student ID:</td>
+                                <td style='font-size: 14px; font-weight: 700; color: #0F172A; font-family: monospace;'>" . htmlspecialchars($studentId) . "</td>
+                              </tr>
+                              <tr>
+                                <td style='font-size: 13px; color: #64748B;'>Registered Gmail:</td>
+                                <td style='font-size: 14px; font-weight: 700; color: #0F172A; font-family: monospace;'>" . htmlspecialchars($toEmail) . "</td>
+                              </tr>
+                              <tr>
+                                <td style='font-size: 13px; color: #64748B;'>Temporary Password:</td>
+                                <td>
+                                  <span style='display: inline-block; background-color: #FEF3C7; border: 1px solid #FDE68A; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-size: 14px; font-weight: 800; color: #92400E;'>
+                                    " . htmlspecialchars($temporaryPassword) . "
+                                  </span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Enrollment Details Card -->
+                      <table width='100%' border='0' cellspacing='0' cellpadding='0' style='background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; margin-bottom: 24px;'>
+                        <tr>
+                          <td style='padding: 16px 20px;'>
+                            <div style='font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;'>
+                              Enrolled Class Details:
+                            </div>
+                            <table width='100%' border='0' cellspacing='0' cellpadding='4'>
+                              <tr>
+                                <td style='font-size: 12px; color: #15803D; width: 140px;'>Course / Program:</td>
+                                <td style='font-size: 13px; font-weight: 700; color: #14532D;'>" . htmlspecialchars($course) . "</td>
+                              </tr>
+                              <tr>
+                                <td style='font-size: 12px; color: #15803D;'>Year Level:</td>
+                                <td style='font-size: 13px; font-weight: 700; color: #14532D;'>" . htmlspecialchars($yearLevel) . "</td>
+                              </tr>
+                              <tr>
+                                <td style='font-size: 12px; color: #15803D;'>Assigned Section:</td>
+                                <td style='font-size: 13px; font-weight: 700; color: #14532D; font-family: monospace;'>" . htmlspecialchars($section) . "</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Security Notice -->
+                      <p style='font-size: 12px; line-height: 1.5; color: #64748B; margin: 0 0 24px 0;'>
+                        ⚠️ <strong>First Login Notice:</strong> Please sign in using your Gmail or Student ID and the temporary password above. You will be prompted to choose a new private password upon your first sign in.
+                      </p>
+
+                      <!-- Action Button -->
+                      <table border='0' cellspacing='0' cellpadding='0'>
+                        <tr>
+                          <td align='center' style='border-radius: 10px; background-color: #1E3B8A;'>
+                            <a href='{$loginUrl}' target='_blank' style='display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px;'>
+                              Sign In to Student Portal &rarr;
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td style='background-color: #F8FAFC; padding: 18px 32px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #94A3B8; line-height: 1.5;'>
+                      Bestlink College of the Philippines · Student Affairs &amp; Attendance Office<br>
+                      This is an automated institutional notification.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>";
+
+        return self::send($toEmail, $subject, $html);
+    }
 }

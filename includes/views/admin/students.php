@@ -45,6 +45,46 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
 
+      <!-- Server Flash Notification Banner (Error / Success) -->
+      <?php if (!empty($_GET['error'])): ?>
+        <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between shadow-2xs">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+              <div class="font-bold text-rose-900 text-sm">Failed to Create Student Account</div>
+              <div class="text-rose-700 text-xs mt-0.5"><?= htmlspecialchars($_GET['error']) ?></div>
+            </div>
+          </div>
+          <button type="button" onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 text-lg font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+      <?php elseif (!empty($_GET['created'])): ?>
+        <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-2xs">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div>
+              <div class="font-bold text-emerald-900 text-sm">Student Account Created Successfully!</div>
+              <div class="text-emerald-700 text-xs mt-0.5">
+                Account for <strong><?= htmlspecialchars($_GET['created']) ?></strong> was created and registered into the roster.
+                <?php if (isset($_GET['email_sent']) && $_GET['email_sent'] === '1'): ?>
+                  <span class="inline-block mt-0.5 text-emerald-800 font-bold bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                    ✉️ Account details &amp; temporary credentials sent to <?= htmlspecialchars($_GET['target_email'] ?? 'their Gmail') ?>
+                  </span>
+                <?php elseif (isset($_GET['email_sent']) && $_GET['email_sent'] === '0'): ?>
+                  <span class="inline-block mt-0.5 text-amber-700 font-medium bg-amber-100/80 px-2 py-0.5 rounded-md">
+                    ⚠️ Account created, but email could not be delivered to <?= htmlspecialchars($_GET['target_email'] ?? 'Gmail') ?>. Please check SMTP settings.
+                  </span>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+          <button type="button" onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-emerald-600 text-lg font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+      <?php endif; ?>
+
       <!-- Quick Metrics Grid -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
@@ -288,6 +328,11 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
     <!-- Modal Form Body -->
     <form id="manual-student-form" action="<?php echo url('admin/students/store'); ?>" method="POST" class="p-6 space-y-4">
+      <!-- Inline Error Box -->
+      <div id="m-modal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span id="m-modal-error-text"></span>
+      </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Student Number / ID -->
         <div>
@@ -360,16 +405,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Student Email -->
         <div>
-          <label for="m-email-prefix" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-            Institutional Email <span class="text-rose-500">*</span>
+          <label for="m-email" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Student Gmail <span class="text-rose-500">*</span>
           </label>
-          <div class="flex rounded-xl border border-slate-300 overflow-hidden focus-within:ring-2 focus-within:ring-[#1e3b8a]/20 focus-within:border-[#1e3b8a] transition bg-white shadow-2xs">
-            <input type="text" id="m-email-prefix" name="email_prefix" required placeholder="student.name" class="w-full px-3.5 py-2.5 text-xs font-mono font-medium text-slate-800 outline-none bg-transparent" autocomplete="off">
-            <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-500 bg-slate-50 border-l border-slate-200 select-none shrink-0 font-mono">
-              @bcp.edu.ph
-            </span>
+          <div class="relative">
+            <input type="email" id="m-email" name="email" required placeholder="e.g. username@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition bg-white shadow-2xs" autocomplete="off">
           </div>
-          <input type="hidden" id="m-email" name="email" value="">
+          <div id="m-email-feedback" class="text-[11px] mt-1 hidden font-semibold"></div>
         </div>
 
         <!-- Parent Contact Number / Email -->
@@ -921,45 +963,46 @@ function updatePasswordPreview() {
   preview.textContent = '#' + c1 + c2 + '8080';
 }
 
-// Institutional Email handlers
-var emailPrefixManuallyEdited = false;
+// Student Gmail validation handler (manual entry with @gmail.com requirement)
+function validateGmailRequirement() {
+  const emailInput = document.getElementById('m-email');
+  const feedback = document.getElementById('m-email-feedback');
+  if (!emailInput) return true;
 
-function syncInstitutionalEmail() {
-  const prefixInput = document.getElementById('m-email-prefix');
-  const hiddenEmail = document.getElementById('m-email');
-  if (!prefixInput || !hiddenEmail) return;
-
-  let val = prefixInput.value.trim();
-  // Automatically strip @... if admin pasted full email address
-  if (val.includes('@')) {
-    val = val.split('@')[0].trim();
-    prefixInput.value = val;
-  }
-  hiddenEmail.value = val ? val.toLowerCase() + '@bcp.edu.ph' : '';
-}
-
-function autoSuggestEmailPrefix() {
-  if (emailPrefixManuallyEdited) return;
-  const nameInput = document.getElementById('m-student-name');
-  const prefixInput = document.getElementById('m-email-prefix');
-  if (!nameInput || !prefixInput) return;
-
-  const val = nameInput.value.trim();
+  let val = emailInput.value.trim();
   if (!val) {
-    prefixInput.value = '';
-    syncInstitutionalEmail();
-    return;
+    if (feedback) {
+      feedback.classList.add('hidden');
+      feedback.textContent = '';
+    }
+    emailInput.classList.remove('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    return false;
   }
 
-  const parts = val.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    const first = parts[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const last = parts[parts.length - 1].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    prefixInput.value = `${first}.${last}`;
-  } else {
-    prefixInput.value = parts[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  // If user typed username only without @, automatically append @gmail.com
+  if (!val.includes('@')) {
+    val = val + '@gmail.com';
+    emailInput.value = val;
   }
-  syncInstitutionalEmail();
+
+  const isValidGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(val);
+
+  if (!isValidGmail) {
+    if (feedback) {
+      feedback.classList.remove('hidden');
+      feedback.classList.add('text-rose-600');
+      feedback.innerHTML = '⚠️ Email must be a valid <strong>@gmail.com</strong> address (e.g. username@gmail.com).';
+    }
+    emailInput.classList.add('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    return false;
+  } else {
+    if (feedback) {
+      feedback.classList.add('hidden');
+      feedback.textContent = '';
+    }
+    emailInput.classList.remove('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+    return true;
+  }
 }
 
 // Section Enrollment Counts passed from database
@@ -1012,8 +1055,26 @@ function openManualStudentModal() {
   if (modal) modal.classList.remove('hidden');
   validateStudentIdUniqueness();
   updatePasswordPreview();
-  syncInstitutionalEmail();
   updateAssignedSection();
+  const feedback = document.getElementById('m-email-feedback');
+  if (feedback) {
+    feedback.classList.add('hidden');
+    feedback.textContent = '';
+  }
+  const errorBox = document.getElementById('m-modal-error-box');
+  if (errorBox) errorBox.classList.add('hidden');
+  const emailInput = document.getElementById('m-email');
+  if (emailInput) {
+    emailInput.classList.remove('border-rose-500', 'text-rose-600', 'focus:ring-rose-500');
+  }
+  const submitBtn = document.getElementById('btn-manual-submit');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <span>Save &amp; Create Student Account</span>
+    `;
+  }
 }
 
 function closeManualStudentModal() {
@@ -1140,21 +1201,25 @@ document.addEventListener('DOMContentLoaded', function() {
     mStudentId.addEventListener('input', validateStudentIdUniqueness);
   }
 
-  // Live password preview & email auto-suggestion based on entered name
+  // Live password preview based on entered name (NO auto-fill of student email)
   const mStudentName = document.getElementById('m-student-name');
   if (mStudentName) {
     mStudentName.addEventListener('input', function() {
       updatePasswordPreview();
-      autoSuggestEmailPrefix();
     });
   }
 
-  // Institutional email input listener
-  const mEmailPrefix = document.getElementById('m-email-prefix');
-  if (mEmailPrefix) {
-    mEmailPrefix.addEventListener('input', function() {
-      emailPrefixManuallyEdited = this.value.trim().length > 0;
-      syncInstitutionalEmail();
+  // Student Gmail input listener (manual entry validation)
+  const mEmail = document.getElementById('m-email');
+  if (mEmail) {
+    mEmail.addEventListener('blur', function() {
+      validateGmailRequirement();
+    });
+    mEmail.addEventListener('input', function() {
+      const feedback = document.getElementById('m-email-feedback');
+      if (feedback && !feedback.classList.contains('hidden')) {
+        validateGmailRequirement();
+      }
     });
   }
 
@@ -1169,16 +1234,50 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   updateAssignedSection();
 
-  // Prevent form submission if student ID is duplicated
+  // Prevent form submission if email or student ID fails validation
   const manualForm = document.getElementById('manual-student-form');
   if (manualForm) {
     manualForm.addEventListener('submit', function(e) {
-      syncInstitutionalEmail();
+      const errorBox = document.getElementById('m-modal-error-box');
+      const errorText = document.getElementById('m-modal-error-text');
+      if (errorBox) errorBox.classList.add('hidden');
+
+      if (!validateGmailRequirement()) {
+        e.preventDefault();
+        const emailInput = document.getElementById('m-email');
+        if (emailInput) emailInput.focus();
+        if (errorBox && errorText) {
+          errorText.textContent = 'Please enter a valid @gmail.com address (e.g. username@gmail.com).';
+          errorBox.classList.remove('hidden');
+        }
+        if (typeof APP !== 'undefined' && APP.toast) {
+          APP.toast.error('Student email must be a valid @gmail.com address.');
+        }
+        return;
+      }
+
       if (!validateStudentIdUniqueness()) {
         e.preventDefault();
+        const idInput = document.getElementById('m-student-id');
+        if (idInput) idInput.focus();
+        if (errorBox && errorText) {
+          errorText.textContent = 'Student ID number is already assigned. Please choose another ID.';
+          errorBox.classList.remove('hidden');
+        }
         if (typeof APP !== 'undefined' && APP.toast) {
           APP.toast.error('Please resolve conflicting student number before proceeding.');
         }
+        return;
+      }
+
+      // Show loading spinner on submit button
+      const submitBtn = document.getElementById('btn-manual-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          <span>Saving Account...</span>
+        `;
       }
     });
   }
