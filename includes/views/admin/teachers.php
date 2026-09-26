@@ -270,7 +270,7 @@ try {
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                       </button>
                       <?php if ($isActive): ?>
-                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="deactivateTeacher(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>')" title="Deactivate">
+                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="openDeactivateTeacherModal(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['full_name'])) ?>', '<?= htmlspecialchars(addslashes($t['employee_id'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($t['email'] ?? '')) ?>')" title="Deactivate">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                         </button>
                       <?php endif; ?>
@@ -682,6 +682,71 @@ try {
     </div>
   </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 5: DISABLE / DEACTIVATE FACULTY MEMBER -->
+<!-- ========================================================================= -->
+<div id="deactivateTeacherModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-rose-600 to-rose-700 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold tracking-tight">Disable Faculty Account</h3>
+          <p class="text-xs text-rose-100">Suspend instructor access &amp; permissions</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeDeactivateTeacherModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <input type="hidden" id="deactivate-teacher-id">
+
+      <!-- Target Teacher Card -->
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Faculty Member:</span>
+          <span id="deactivate-teacher-name" class="font-bold text-slate-800 text-sm"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Employee ID:</span>
+          <span id="deactivate-teacher-emp-id" class="font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Email Address:</span>
+          <span id="deactivate-teacher-email" class="font-mono text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- Warning Callout -->
+      <div class="p-3 rounded-xl bg-rose-50/80 border border-rose-200 text-rose-900 text-xs flex items-start gap-2.5">
+        <svg class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="space-y-1">
+          <div class="font-bold">Are you sure you want to disable this account?</div>
+          <p class="text-[11px] text-rose-800 leading-relaxed">
+            Deactivating will immediately prevent this faculty member from logging into the portal and launching attendance sessions. Their historical records and assigned classes will be preserved.
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeDeactivateTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-deactivate-teacher" onclick="confirmDeactivateTeacher()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <span>Disable Account</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
@@ -822,7 +887,7 @@ function renderTeachersTable(teachers) {
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
             </button>
             ${isActive ? `
-              <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="deactivateTeacher(${t.id}, '${escapeHtml(t.full_name)}')" title="Deactivate">
+              <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="openDeactivateTeacherModal(${t.id}, '${escapeHtml(t.full_name)}', '${escapeHtml(t.employee_id || '')}', '${escapeHtml(t.email || '')}')" title="Deactivate">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
               </button>
             ` : ''}
@@ -1046,26 +1111,98 @@ function resetPassword(id, name, employeeId = '', email = '') {
   openResetPasswordModal(id, name, employeeId, email);
 }
 
-// Soft Delete (Deactivate)
-async function deactivateTeacher(id, name) {
-  if (!confirm(`Are you sure you want to deactivate faculty member ${name}? This performs a soft-delete.`)) return;
+// Soft Delete (Deactivate) Modal Workflow
+let currentDeactivateTeacher = null;
+
+function openDeactivateTeacherModal(id, name, employeeId = '', email = '') {
+  currentDeactivateTeacher = { id, name, employeeId, email };
+
+  const idInput = document.getElementById('deactivate-teacher-id');
+  const nameEl = document.getElementById('deactivate-teacher-name');
+  const empEl = document.getElementById('deactivate-teacher-emp-id');
+  const emailEl = document.getElementById('deactivate-teacher-email');
+
+  if (idInput) idInput.value = id;
+  if (nameEl) nameEl.textContent = name || 'Faculty Member';
+  if (empEl) empEl.textContent = employeeId || 'N/A';
+  if (emailEl) emailEl.textContent = email || 'N/A';
+
+  const btn = document.getElementById('btn-confirm-deactivate-teacher');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+      <span>Disable Account</span>
+    `;
+  }
+
+  const modal = document.getElementById('deactivateTeacherModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeactivateTeacherModal() {
+  const modal = document.getElementById('deactivateTeacherModal');
+  if (modal) modal.classList.add('hidden');
+  currentDeactivateTeacher = null;
+}
+
+async function confirmDeactivateTeacher() {
+  if (!currentDeactivateTeacher || !currentDeactivateTeacher.id) return;
+
+  const btn = document.getElementById('btn-confirm-deactivate-teacher');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Disabling...</span>
+    `;
+  }
 
   try {
     const res = await fetch(window.url('api/teachers/delete'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+      body: JSON.stringify({ id: currentDeactivateTeacher.id })
     });
     const result = await res.json();
+
     if (result.status === 'success') {
-      APP.toast(result.message, 'success');
+      closeDeactivateTeacherModal();
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Faculty account disabled successfully.', 'success');
+      }
       fetchTeachers();
     } else {
-      APP.toast(result.message, 'error');
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Failed to disable account.', 'error');
+      } else {
+        alert(result.message || 'Failed to disable account.');
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <span>Disable Account</span>
+        `;
+      }
     }
   } catch (err) {
-    APP.toast('Error deactivating faculty account.', 'error');
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Failed to disable account: ' + err.message, 'error');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        <span>Disable Account</span>
+      `;
+    }
   }
+}
+
+// Backward-compatible deactivateTeacher alias
+function deactivateTeacher(id, name, employeeId = '', email = '') {
+  openDeactivateTeacherModal(id, name, employeeId, email);
 }
 
 // Excel / CSV File Handlers
