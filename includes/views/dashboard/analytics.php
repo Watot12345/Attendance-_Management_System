@@ -464,10 +464,16 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               <h3 class="text-lg font-bold text-slate-900">Machine Learning Detected Patterns</h3>
               <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Statistical anomaly detection &amp; cohort correlations evaluated across student schedules</p>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5 cursor-pointer font-bold" onclick="loadAnalyticsPatterns()">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              <span>Refresh Patterns</span>
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs" onclick="seedDemoAttendanceData(this)">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                <span>Seed Test Attendance Data</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5 cursor-pointer font-bold text-xs" onclick="loadAnalyticsPatterns()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Refresh Patterns</span>
+              </button>
+            </div>
           </div>
 
           <!-- Patterns Container -->
@@ -828,6 +834,195 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- PATTERN INSPECTION & ACTION TESTING MODAL                                  -->
+  <!-- ========================================================================= -->
+  <div id="pattern-inspect-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-white tracking-tight" id="pim-title">Pattern Breakdown &amp; Action Testing</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30" id="pim-severity-badge">HIGH IMPACT</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-0.5" id="pim-type">Scikit-Learn ML Anomaly Detector</p>
+          </div>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer" onclick="closePatternInspectModal()">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 px-6 pt-3 border-b border-slate-200 bg-slate-50 text-xs font-bold">
+        <button type="button" id="pim-tab-btn-matches" class="px-3.5 py-2 border-b-2 border-indigo-600 text-indigo-600 font-extrabold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('matches')">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span>Live Database Matches (<span id="pim-tab-count">0</span>)</span>
+        </button>
+        <button type="button" id="pim-tab-btn-preview" class="px-3.5 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('preview')">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span>Email &amp; Alert Preview</span>
+        </button>
+        <button type="button" id="pim-tab-btn-sandbox" class="px-3.5 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('sandbox')">
+          <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          <span>Interactive Test Sandbox</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+        
+        <!-- Formula & Metric Card -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+            <span>Machine Learning Detection Logic</span>
+            <span class="text-teal-700 font-extrabold" id="pim-confidence">Confidence: 94.2%</span>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed font-medium" id="pim-formula">Loading formula...</p>
+        </div>
+
+        <!-- TAB 1: Live Matched Students Table -->
+        <div id="pim-panel-matches" class="space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600">Students Matching this Pattern (Live from MySQL)</h4>
+              <p class="text-[11px] text-slate-400">Queried dynamically from class roster &amp; attendance tables</p>
+            </div>
+            <div id="pim-zero-matches-badge" class="hidden px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
+              0 Live Records (Showing sample preview)
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+            <div class="max-h-[260px] overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 sticky top-0 bg-slate-50 z-10">
+                  <tr>
+                    <th class="py-2.5 px-3">Student Name &amp; ID</th>
+                    <th class="py-2.5 px-3">Section &amp; Year</th>
+                    <th class="py-2.5 px-3">Parent Email</th>
+                    <th class="py-2.5 px-3 text-center">Attendance</th>
+                    <th class="py-2.5 px-3 text-right">Trigger Absences</th>
+                  </tr>
+                </thead>
+                <tbody id="pim-students-tbody" class="divide-y divide-slate-100 bg-white">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty Helper Callout -->
+          <div id="pim-empty-helper-callout" class="hidden p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div>
+              <span class="font-bold text-indigo-900">Want to test this pattern with realistic sample records?</span>
+              <p class="text-[11px] text-indigo-700 mt-0.5">Click below to generate a multi-week attendance test dataset across registered students.</p>
+            </div>
+            <button type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition cursor-pointer shadow-xs" onclick="seedDemoAttendanceData(this)">
+              🌱 Generate Test Attendance Batch
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: Email & Alert Template Preview -->
+        <div id="pim-panel-preview" class="hidden space-y-3">
+          <div class="space-y-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600">Dispatched Notification &amp; Email Content Preview</h4>
+            <p class="text-[11px] text-slate-400">This exact notice is sent to registered parent emails and faculty advisors when action is executed.</p>
+          </div>
+
+          <!-- Email Envelope Mockup -->
+          <div class="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+            <div class="p-3.5 bg-slate-50 border-b border-slate-200 space-y-1.5 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-semibold w-16">Subject:</span>
+                <span class="font-bold text-slate-900" id="pim-email-subject">[Academic Notice] Pattern Alert</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-semibold w-16">Recipient:</span>
+                <span class="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]" id="pim-email-recipient">parent@university.edu</span>
+              </div>
+            </div>
+            <div class="p-5 bg-white space-y-3 text-xs leading-relaxed text-slate-700 font-sans">
+              <div class="border-l-4 border-indigo-500 pl-3 py-1 bg-indigo-50/40 rounded-r text-indigo-900 font-medium">
+                <strong>Recommended Intervention Plan:</strong>
+                <span id="pim-email-action-desc" class="block mt-0.5">Automated parent summary email notice.</span>
+              </div>
+              <pre class="whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed bg-slate-50/50 p-3 rounded-lg border border-slate-100" id="pim-email-body">Loading email body...</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Interactive Testing Sandbox -->
+        <div id="pim-panel-sandbox" class="hidden space-y-4">
+          <div class="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs space-y-2">
+            <div class="flex items-center gap-2 font-bold text-amber-900">
+              <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Test Mode: Verify Notifications Without Disquieting Real Parents</span>
+            </div>
+            <p class="text-amber-800 leading-relaxed">
+              In test mode, the system simulates the complete intervention flow and routes the formatted alert notification directly to your administrator/test email. An audit log entry is recorded with a <code>[TEST]</code> tag for verification.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+            <label class="block text-xs font-bold text-slate-700">Test Recipient Email Address:</label>
+            <div class="flex items-center gap-2">
+              <input type="email" id="pim-test-email-input" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono shadow-xs" placeholder="admin@college.edu" value="<?php echo htmlspecialchars($_SESSION['user']['email'] ?? 'admin@college.edu'); ?>">
+              <button type="button" id="btn-pim-send-test" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5" onclick="executePimTestDispatch()">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Send Test Alert</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500">Sends a live test email through the SMTP/Mail pipeline to verify typography and formatting.</p>
+          </div>
+
+          <!-- Direct Links to Verify Output -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <a href="<?php echo url('alerts'); ?>" target="_blank" class="p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center justify-between text-xs font-semibold text-slate-700 shadow-xs">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <span>View Parent Alerts Ledger</span>
+              </span>
+              <span class="text-slate-400">↗</span>
+            </a>
+            <a href="<?php echo url('alerts/history'); ?>" target="_blank" class="p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center justify-between text-xs font-semibold text-slate-700 shadow-xs">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>View Audit Trail Logs</span>
+              </span>
+              <span class="text-slate-400">↗</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer Toolbar -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2 shrink-0">
+        <button type="button" class="btn btn-secondary btn-sm font-bold text-xs px-3.5 cursor-pointer" onclick="closePatternInspectModal()">
+          Close
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn btn-secondary btn-sm font-bold text-xs px-3.5 inline-flex items-center gap-1.5 cursor-pointer text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" onclick="switchPimTab('sandbox')">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Test Sandbox</span>
+          </button>
+          <button type="button" id="btn-pim-execute-real" class="btn btn-primary btn-sm font-bold text-xs px-4 inline-flex items-center gap-1.5 cursor-pointer" onclick="executePimRealDispatch()">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Apply Action Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Pattern Action Execution Confirmation Modal -->
   <div id="pattern-action-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 hidden">
     <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
@@ -905,6 +1100,118 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
         <button type="button" class="btn btn-primary btn-sm font-bold px-4 cursor-pointer" onclick="closePatternActionModal()">
           Done
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- AT-RISK STUDENTS PARENT ALERT QUEUE DISPATCHER MODAL                       -->
+  <!-- ========================================================================= -->
+  <div id="at-risk-queue-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Queue Modal Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-400/30 flex items-center justify-center font-bold shrink-0">
+            <svg id="queue-header-spinner" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <svg id="queue-header-check" class="w-5 h-5 text-emerald-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-white tracking-tight" id="queue-modal-title">Early-Warning Parent Alert Queue</h3>
+              <span id="queue-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                PROCESSING QUEUE
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 mt-0.5" id="queue-batch-ref">Batch Reference: Initializing...</p>
+          </div>
+        </div>
+        <button type="button" id="queue-modal-close-btn" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer" onclick="closeAtRiskQueueModal()">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Queue Progress & Pipeline Body -->
+      <div class="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+        
+        <!-- Live Progress Bar -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold">
+            <span class="text-slate-700" id="queue-progress-label">Queueing 0 of 0 alerts...</span>
+            <span class="text-indigo-600 font-extrabold" id="queue-progress-pct">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div id="queue-progress-bar" class="bg-gradient-to-r from-blue-600 to-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+            <span>Dispatched via SMTP &amp; Database Worker</span>
+            <span id="queue-elapsed-time">Elapsed: 0s</span>
+          </div>
+        </div>
+
+        <!-- 4-Step Pipeline Status -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+          <div id="qstep-1" class="p-2.5 rounded-xl border border-slate-200 bg-white space-y-1">
+            <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mx-auto text-[11px] font-bold">1</div>
+            <div class="text-[11px] font-bold text-slate-800">Resolve Contacts</div>
+            <div class="text-[9px] text-slate-400" id="qstep-1-sub">In Progress</div>
+          </div>
+          <div id="qstep-2" class="p-2.5 rounded-xl border border-slate-200 bg-white space-y-1">
+            <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-[11px] font-bold">2</div>
+            <div class="text-[11px] font-bold text-slate-800">Enqueue in DB</div>
+            <div class="text-[9px] text-slate-400" id="qstep-2-sub">Waiting</div>
+          </div>
+          <div id="qstep-3" class="p-2.5 rounded-xl border border-slate-200 bg-white space-y-1">
+            <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-[11px] font-bold">3</div>
+            <div class="text-[11px] font-bold text-slate-800">Mail Dispatch</div>
+            <div class="text-[9px] text-slate-400" id="qstep-3-sub">Waiting</div>
+          </div>
+          <div id="qstep-4" class="p-2.5 rounded-xl border border-slate-200 bg-white space-y-1">
+            <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-[11px] font-bold">4</div>
+            <div class="text-[11px] font-bold text-slate-800">Audit Trail</div>
+            <div class="text-[9px] text-slate-400" id="qstep-4-sub">Waiting</div>
+          </div>
+        </div>
+
+        <!-- Live Queue Items Table -->
+        <div class="rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div class="px-3.5 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Queue Execution Stream</span>
+            <span class="text-[11px] font-semibold text-slate-500" id="queue-stream-count">0 items in queue</span>
+          </div>
+          <div class="max-h-[220px] overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50/90 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200 sticky top-0 bg-slate-50 z-10">
+                <tr>
+                  <th class="py-2 px-3">#</th>
+                  <th class="py-2 px-3">Student Name</th>
+                  <th class="py-2 px-3">Recipient Email</th>
+                  <th class="py-2 px-3 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody id="queue-items-tbody" class="divide-y divide-slate-100 bg-white">
+                <!-- Inserted via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Queue Modal Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <a href="<?php echo url('alerts'); ?>" target="_blank" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+            <span>View Parent Alerts Ledger</span>
+            <span>↗</span>
+          </a>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-queue-modal-done" class="btn btn-primary btn-sm font-bold px-4 cursor-pointer" onclick="closeAtRiskQueueModal()">
+            Done
+          </button>
+        </div>
       </div>
     </div>
   </div>

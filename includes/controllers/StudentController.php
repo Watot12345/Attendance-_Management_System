@@ -25,16 +25,21 @@ class StudentController {
                 u.email,
                 u.phone,
                 u.status,
-                COALESCE(r.course, 'BSIT') AS course,
-                COALESCE(r.year_level, 3) AS year_level,
-                CASE COALESCE(r.year_level, 3)
-                    WHEN 1 THEN '1st Year'
-                    WHEN 2 THEN '2nd Year'
-                    WHEN 3 THEN '3rd Year'
-                    WHEN 4 THEN '4th Year'
-                    ELSE CONCAT(COALESCE(r.year_level, 3), 'th Year')
+                CASE WHEN r.student_id IS NOT NULL THEN COALESCE(r.course, 'BSIT') ELSE 'Not Enrolled' END AS course,
+                CASE 
+                    WHEN r.year_level IN (1,2,3,4) THEN r.year_level
+                    WHEN r.section REGEXP '^[1-4]' THEN CAST(SUBSTRING(r.section, 1, 1) AS UNSIGNED)
+                    ELSE NULL
+                END AS year_level,
+                CASE 
+                    WHEN r.student_id IS NULL THEN 'Not Enrolled Yet'
+                    WHEN (CASE WHEN r.year_level IN (1,2,3,4) THEN r.year_level WHEN r.section REGEXP '^[1-4]' THEN CAST(SUBSTRING(r.section, 1, 1) AS UNSIGNED) ELSE 1 END) = 1 THEN '1st Year'
+                    WHEN (CASE WHEN r.year_level IN (1,2,3,4) THEN r.year_level WHEN r.section REGEXP '^[1-4]' THEN CAST(SUBSTRING(r.section, 1, 1) AS UNSIGNED) ELSE 1 END) = 2 THEN '2nd Year'
+                    WHEN (CASE WHEN r.year_level IN (1,2,3,4) THEN r.year_level WHEN r.section REGEXP '^[1-4]' THEN CAST(SUBSTRING(r.section, 1, 1) AS UNSIGNED) ELSE 1 END) = 3 THEN '3rd Year'
+                    WHEN (CASE WHEN r.year_level IN (1,2,3,4) THEN r.year_level WHEN r.section REGEXP '^[1-4]' THEN CAST(SUBSTRING(r.section, 1, 1) AS UNSIGNED) ELSE 1 END) = 4 THEN '4th Year'
+                    ELSE 'Not Enrolled Yet'
                 END AS grade_level,
-                COALESCE(r.section, 'Unassigned') AS section,
+                COALESCE(r.section, 'Not Enrolled Yet') AS section,
                 u.student_id AS qr_code
             FROM users u
             LEFT JOIN class_roster r ON u.user_id = r.student_id
@@ -1182,13 +1187,26 @@ class StudentController {
                 $uStmt->execute([$studentId]);
                 $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
                 if ($uRow) {
+                    $sec = $uRow['section'] ?? null;
+                    $isEnrolled = !empty($sec);
+                    $yrNum = null;
+                    if ($isEnrolled) {
+                        if (!empty($uRow['year_level']) && in_array((int)$uRow['year_level'], [1,2,3,4])) {
+                            $yrNum = (int)$uRow['year_level'];
+                        } elseif (preg_match('/^[1-4]/', $sec)) {
+                            $yrNum = (int)$sec[0];
+                        } else {
+                            $yrNum = 1;
+                        }
+                    }
+                    $yrLabels = [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year'];
                     $studentInfo = [
                         'student_id'   => (int)$uRow['user_id'],
                         'student_code' => !empty($uRow['student_id']) ? $uRow['student_id'] : '230110001',
                         'name'         => trim($uRow['first_name'] . ' ' . $uRow['last_name']),
-                        'course'       => $uRow['course'] ?? 'BSIT',
-                        'section'      => $uRow['section'] ?? 'BSIT 3-A',
-                        'grade_level'  => ($uRow['year_level'] ?? 3) . 'rd Year'
+                        'course'       => $isEnrolled ? ($uRow['course'] ?? 'BSIT') : 'Not Enrolled',
+                        'section'      => $isEnrolled ? $sec : 'Not Enrolled Yet',
+                        'grade_level'  => $isEnrolled ? ($yrLabels[$yrNum] ?? '1st Year') : 'Not Enrolled Yet'
                     ];
                 }
             } catch (Exception $e) {}

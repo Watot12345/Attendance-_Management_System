@@ -194,12 +194,24 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     </td>
 
                     <td class="py-3.5 px-4 text-slate-600 font-medium"><?= htmlspecialchars($st['email']) ?></td>
-                    <td class="py-3.5 px-4 font-semibold text-slate-800"><?= htmlspecialchars($st['course']) ?> • <?= htmlspecialchars($st['grade_level']) ?></td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800">
+                      <?php if ($st['course'] === 'Not Enrolled' || $st['section'] === 'Not Enrolled Yet'): ?>
+                        <span class="text-slate-400 italic text-xs font-normal">Not Enrolled Yet</span>
+                      <?php else: ?>
+                        <?= htmlspecialchars($st['course']) ?> • <?= htmlspecialchars($st['grade_level']) ?>
+                      <?php endif; ?>
+                    </td>
                     
                     <td class="py-3.5 px-4">
-                      <span class="px-2 py-0.5 rounded-md bg-[#1e3b8a]/10 text-[#1e3b8a] font-mono font-bold text-[10.5px]">
-                        <?= htmlspecialchars($st['section']) ?>
-                      </span>
+                      <?php if ($st['section'] === 'Not Enrolled Yet' || empty($st['section']) || $st['section'] === 'Unassigned'): ?>
+                        <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-400 font-normal italic text-[10.5px]">
+                          Not Enrolled Yet
+                        </span>
+                      <?php else: ?>
+                        <span class="px-2 py-0.5 rounded-md bg-[#1e3b8a]/10 text-[#1e3b8a] font-mono font-bold text-[10.5px]">
+                          <?= htmlspecialchars($st['section']) ?>
+                        </span>
+                      <?php endif; ?>
                     </td>
 
                     <td class="py-3.5 px-4">

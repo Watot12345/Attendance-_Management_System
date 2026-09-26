@@ -195,10 +195,12 @@ class Router {
         '/api/analytics/all'            => 'AnalyticsController@apiAll',
         '/api/analytics/overview'       => 'AnalyticsController@apiOverview',
         '/api/analytics/patterns'       => 'AnalyticsController@apiPatterns',
+        '/api/analytics/preview-pattern'=> 'AnalyticsController@apiPreviewPattern',
         '/api/analytics/at-risk'        => 'AnalyticsController@apiAtRisk',
         '/api/analytics/retrain'        => 'AnalyticsController@apiRetrain',
         '/api/analytics/intervene'      => 'AnalyticsController@apiIntervene',
         '/api/analytics/apply-pattern-action' => 'AnalyticsController@apiApplyPatternAction',
+        '/api/analytics/seed-demo-attendance' => 'AnalyticsController@apiSeedDemoAttendance',
 
         // Alerts
         '/alerts'                => 'alerts/index.php',

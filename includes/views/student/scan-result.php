@@ -70,28 +70,6 @@ $dispStatus = ucfirst($rawStatus);
     <?php require_once dirname(__DIR__) . '/partials/navbar.php'; ?>
 
     <main class="page-body max-w-2xl mx-auto">
-      <!-- Quick State Switcher for Review/Demo -->
-      <div class="mb-6 p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between px-2 pt-0.5 pb-2">
-          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Feedback Status Preview (Testing)</span>
-          <span class="text-[11px] text-slate-500 font-medium">Student: <strong><?= htmlspecialchars($dispName, ENT_QUOTES, 'UTF-8') ?></strong></span>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-          <a href="<?php echo url('student/scan-result?status=success'); ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition <?php echo $status === 'success' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'; ?>">
-            1. Success
-          </a>
-          <a href="<?php echo url('student/scan-result?status=wrong_section'); ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition <?php echo $status === 'wrong_section' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'; ?>">
-            2. Wrong Section
-          </a>
-          <a href="<?php echo url('student/scan-result?status=expired'); ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition <?php echo $status === 'expired' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'; ?>">
-            3. Expired QR
-          </a>
-          <a href="<?php echo url('student/scan-result?status=duplicate'); ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-center transition <?php echo $status === 'duplicate' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'; ?>">
-            4. Already Logged
-          </a>
-        </div>
-      </div>
-
       <!-- Result Card Container -->
       <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-lg text-center relative overflow-hidden">
 

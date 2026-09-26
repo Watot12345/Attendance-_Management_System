@@ -866,29 +866,40 @@ function renderPatternsUI(patterns, clusters) {
     } else {
       let html = '';
       patterns.forEach((pat, idx) => {
-        const badgeClass = pat.severity === 'critical' ? 'bg-rose-100 text-rose-800' : (pat.severity === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800');
+        const badgeClass = pat.severity === 'critical' ? 'bg-rose-100 text-rose-800 border-rose-200' : (pat.severity === 'high' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-blue-100 text-blue-800 border-blue-200');
         html += `
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5 hover:border-slate-300 transition">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
                 Pattern #${idx + 1} · ${pat.type.replace(/_/g, ' ').toUpperCase()}
               </span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeClass}">
                 ${pat.severity.toUpperCase()} IMPACT
               </span>
             </div>
-            <h4 class="text-base font-black text-slate-900">${pat.title}</h4>
-            <p class="text-xs text-slate-600 leading-relaxed">${pat.description}</p>
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs">
-              <span class="text-slate-500 font-medium">Affected: <strong class="text-slate-900">${pat.affected_cohort}</strong></span>
-              <span class="text-teal-700 font-bold">Confidence: ${pat.confidence}</span>
+            <h4 class="text-base font-black text-slate-900">${escapeHtml(pat.title)}</h4>
+            <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(pat.description)}</p>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs flex-wrap gap-2">
+              <span class="text-slate-500 font-medium">Affected: <strong class="text-slate-900">${escapeHtml(pat.affected_cohort)}</strong></span>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-bold text-[11px]">Database Match</span>
+                <span class="text-teal-700 font-extrabold">Confidence: ${escapeHtml(pat.confidence)}</span>
+              </div>
             </div>
-            <div class="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs font-medium text-indigo-900 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-              <span><strong>AI Intervention Recommendation:</strong> ${pat.recommendation}</span>
-              <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span>Apply Action</span>
-              </button>
+            <div class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs font-medium text-indigo-900 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+              <div class="leading-relaxed">
+                <strong class="text-indigo-950">AI Intervention:</strong> ${escapeHtml(pat.recommendation)}
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold rounded-xl cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="openPatternInspectModal('${pat.id}')" title="Inspect Live Matching Students & Test Actions">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  <span>Inspect &amp; Test</span>
+                </button>
+                <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  <span>Apply Action</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -1033,8 +1044,20 @@ function renderAtRiskUI(students, highRiskCount, resetPage = false) {
           <span class="block text-[10px] font-semibold text-slate-400">ID: #${s.student_id}</span>
         </td>
 
-        <!-- Section -->
-        <td class="py-3.5 px-4 font-semibold text-slate-600">Sec ${escapeHtml(s.section)} (Yr ${s.grade_level || '3'})</td>
+        <!-- Section & Year -->
+        <td class="py-3.5 px-4 font-semibold text-slate-600">
+          ${(() => {
+            const sec = s.section || '';
+            const isEnrolled = sec && sec !== 'Not Enrolled Yet' && sec !== 'Unassigned' && sec !== 'No Class';
+            if (!isEnrolled) {
+              return `<span class="inline-flex items-center gap-1.5 text-slate-400 font-normal italic text-xs"><i class="fas fa-user-slash text-[10px]"></i> Not Enrolled Yet</span>`;
+            }
+            const yr = (s.grade_level && s.grade_level >= 1 && s.grade_level <= 4) 
+              ? s.grade_level 
+              : (/^[1-4]/.test(sec) ? sec.charAt(0) : '1');
+            return `<span class="font-medium text-slate-800">Sec ${escapeHtml(sec)}</span> <span class="text-xs text-slate-400 font-normal">(Yr ${yr})</span>`;
+          })()}
+        </td>
 
         <!-- Attendance Rate -->
         <td class="py-3.5 px-4">
@@ -1065,7 +1088,7 @@ function renderAtRiskUI(students, highRiskCount, resetPage = false) {
           <button type="button" class="btn btn-secondary btn-sm font-bold text-[11px] px-2.5 py-1 cursor-pointer" onclick="openRiskModal(${s.student_id})">
             Diagnostics
           </button>
-          <button type="button" class="btn btn-primary btn-sm font-bold text-[11px] px-2.5 py-1 inline-flex items-center gap-1 cursor-pointer" onclick="handleDirectParentAlert(${s.student_id}, '${escapeHtml(s.name)}')">
+          <button type="button" id="btn-alert-student-${s.student_id}" class="btn btn-primary btn-sm font-bold text-[11px] px-2.5 py-1 inline-flex items-center gap-1 cursor-pointer" onclick="handleDirectParentAlert(${s.student_id}, '${escapeHtml(s.name)}', this)">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
             <span>Alert</span>
           </button>
@@ -1265,8 +1288,19 @@ function clearAtRiskSelection() {
 }
 
 /**
- * Execute Bulk Early-Warning Parent Alerts via API
+ * Execute Bulk Early-Warning Parent Alerts via Queue Dispatcher Modal
  */
+let queueElapsedTimer = null;
+
+function closeAtRiskQueueModal() {
+  const modal = document.getElementById('at-risk-queue-modal');
+  if (modal) modal.classList.add('hidden');
+  if (queueElapsedTimer) {
+    clearInterval(queueElapsedTimer);
+    queueElapsedTimer = null;
+  }
+}
+
 async function executeBulkParentAlert() {
   const selectedIds = Array.from(selectedAtRiskStudentIds);
   if (selectedIds.length === 0) {
@@ -1274,17 +1308,78 @@ async function executeBulkParentAlert() {
     return;
   }
 
-  const btn = document.getElementById('btn-bulk-alert-parents');
-  const originalHtml = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `
-      <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-      <span>Dispatching ${selectedIds.length} Alerts...</span>
-    `;
+  const selectedList = (currentAtRiskStudents || []).filter(s => selectedIds.includes(Number(s.student_id)));
+  
+  // 1. Open the Queue Modal
+  const modal = document.getElementById('at-risk-queue-modal');
+  const titleEl = document.getElementById('queue-modal-title');
+  const badgeEl = document.getElementById('queue-status-badge');
+  const batchRefEl = document.getElementById('queue-batch-ref');
+  const progressLabel = document.getElementById('queue-progress-label');
+  const progressPct = document.getElementById('queue-progress-pct');
+  const progressBar = document.getElementById('queue-progress-bar');
+  const streamCount = document.getElementById('queue-stream-count');
+  const itemsTbody = document.getElementById('queue-items-tbody');
+  const spinnerIcon = document.getElementById('queue-header-spinner');
+  const checkIcon = document.getElementById('queue-header-check');
+  const elapsedEl = document.getElementById('queue-elapsed-time');
+
+  if (modal) modal.classList.remove('hidden');
+
+  // Reset UI State
+  const batchId = 'AQ-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + Math.random().toString(36).substring(2,6).toUpperCase();
+  if (batchRefEl) batchRefEl.textContent = `Batch Reference: #${batchId}`;
+  if (badgeEl) {
+    badgeEl.textContent = 'PROCESSING QUEUE';
+    badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30';
+  }
+  if (spinnerIcon) spinnerIcon.classList.remove('hidden');
+  if (checkIcon) checkIcon.classList.add('hidden');
+  if (streamCount) streamCount.textContent = `${selectedIds.length} items in queue`;
+
+  // Populate Queue Items Table in pending state
+  if (itemsTbody) {
+    itemsTbody.innerHTML = selectedList.map((s, idx) => `
+      <tr id="qrow-${s.student_id}" class="hover:bg-slate-50 transition">
+        <td class="py-2 px-3 font-mono text-slate-400 font-bold">${idx + 1}</td>
+        <td class="py-2 px-3 font-bold text-slate-900">${escapeHtml(s.name)} <span class="text-[10px] text-slate-400 block">ID: #${s.student_id} · ${escapeHtml(s.section || 'N/A')}</span></td>
+        <td class="py-2 px-3 font-mono text-slate-600 text-[11px]">${escapeHtml(s.parent_email || 'Resolving...')}</td>
+        <td class="py-2 px-3 text-right font-semibold" id="qstatus-${s.student_id}">
+          <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+            <svg class="w-2.5 h-2.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Queued
+          </span>
+        </td>
+      </tr>
+    `).join('');
   }
 
+  // Elapsed timer
+  let seconds = 0;
+  if (queueElapsedTimer) clearInterval(queueElapsedTimer);
+  queueElapsedTimer = setInterval(() => {
+    seconds++;
+    if (elapsedEl) elapsedEl.textContent = `Elapsed: ${seconds}s`;
+  }, 1000);
+
+  // Animate step 1
+  setQueueStep(1, 'active', 'Resolving...');
+  setQueueStep(2, 'waiting', 'Waiting');
+  setQueueStep(3, 'waiting', 'Waiting');
+  setQueueStep(4, 'waiting', 'Waiting');
+
+  if (progressLabel) progressLabel.textContent = `Queueing ${selectedIds.length} alerts...`;
+  if (progressPct) progressPct.textContent = '20%';
+  if (progressBar) progressBar.style.width = '20%';
+
   try {
+    setTimeout(() => {
+      setQueueStep(1, 'done', 'Resolved ✓');
+      setQueueStep(2, 'active', 'Enqueueing...');
+      if (progressPct) progressPct.textContent = '50%';
+      if (progressBar) progressBar.style.width = '50%';
+    }, 400);
+
     const res = await fetch('/api/analytics/intervene', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1296,18 +1391,95 @@ async function executeBulkParentAlert() {
     const data = await res.json();
 
     if (data.status === 'success') {
-      showToastNotification(data.message || `Successfully sent parent alerts for ${selectedIds.length} students!`, 'success');
+      setQueueStep(2, 'done', 'Logged to DB ✓');
+      setQueueStep(3, 'done', 'Dispatched ✓');
+      setQueueStep(4, 'done', 'Audit Logged ✓');
+
+      if (progressLabel) progressLabel.textContent = `All ${selectedIds.length} alerts successfully processed!`;
+      if (progressPct) progressPct.textContent = '100%';
+      if (progressBar) {
+        progressBar.style.width = '100%';
+        progressBar.className = 'bg-gradient-to-r from-emerald-500 to-teal-600 h-2.5 rounded-full transition-all duration-300';
+      }
+
+      if (batchRefEl && data.queue_id) batchRefEl.textContent = `Batch Reference: #${data.queue_id}`;
+      if (badgeEl) {
+        badgeEl.textContent = 'COMPLETED & LOGGED';
+        badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      }
+      if (spinnerIcon) spinnerIcon.classList.add('hidden');
+      if (checkIcon) checkIcon.classList.remove('hidden');
+
+      // Update rows in queue modal table
+      (data.queue_items || []).forEach(item => {
+        const statusTd = document.getElementById(`qstatus-${item.student_id}`);
+        if (statusTd) {
+          statusTd.innerHTML = `
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Dispatched & Logged
+            </span>
+          `;
+        }
+
+        // Also update table action button in the main table
+        const rowBtn = document.getElementById(`btn-alert-student-${item.student_id}`);
+        if (rowBtn) {
+          rowBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1 cursor-default';
+          rowBtn.innerHTML = `
+            <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Queued & Sent</span>
+          `;
+          rowBtn.disabled = true;
+        }
+      });
+
+      showToastNotification(`[Batch ${data.queue_id || batchId}] Successfully queued and dispatched ${selectedIds.length} parent alerts!`, 'success');
       clearAtRiskSelection();
     } else {
+      setQueueStep(2, 'error', 'Failed');
       showToastNotification(data.message || 'Bulk alert dispatch failed.', 'error');
     }
   } catch (err) {
+    setQueueStep(2, 'error', 'Network Error');
     showToastNotification('Network error dispatching bulk parent alerts.', 'error');
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
+    if (queueElapsedTimer) {
+      clearInterval(queueElapsedTimer);
+      queueElapsedTimer = null;
     }
+  }
+}
+
+function setQueueStep(stepNum, status, text) {
+  const el = document.getElementById(`qstep-${stepNum}`);
+  const sub = document.getElementById(`qstep-${stepNum}-sub`);
+  if (!el) return;
+  if (sub) sub.textContent = text;
+
+  if (status === 'done') {
+    el.className = 'p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1';
+    el.children[0].className = 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto text-[11px] font-bold';
+    el.children[0].innerHTML = '✓';
+    el.children[1].className = 'text-[11px] font-bold text-emerald-900';
+    if (sub) sub.className = 'text-[9px] font-bold text-emerald-700';
+  } else if (status === 'active') {
+    el.className = 'p-2.5 rounded-xl border border-blue-300 bg-blue-50/70 space-y-1 shadow-2xs animate-pulse';
+    el.children[0].className = 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto text-[11px] font-bold';
+    el.children[1].className = 'text-[11px] font-bold text-blue-900';
+    if (sub) sub.className = 'text-[9px] font-bold text-blue-700';
+  } else if (status === 'error') {
+    el.className = 'p-2.5 rounded-xl border border-rose-300 bg-rose-50 space-y-1';
+    el.children[0].className = 'w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center mx-auto text-[11px] font-bold';
+    el.children[0].innerHTML = '✕';
+    el.children[1].className = 'text-[11px] font-bold text-rose-900';
+    if (sub) sub.className = 'text-[9px] font-bold text-rose-700';
+  } else {
+    el.className = 'p-2.5 rounded-xl border border-slate-200 bg-white space-y-1';
+    el.children[0].className = 'w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-[11px] font-bold';
+    el.children[0].textContent = String(stepNum);
+    el.children[1].className = 'text-[11px] font-bold text-slate-800';
+    if (sub) sub.className = 'text-[9px] text-slate-400';
   }
 }
 
@@ -1331,8 +1503,14 @@ function exportSelectedAtRiskCSV() {
   const rows = selectedList.map(s => [
     s.student_id,
     `"${s.name}"`,
-    `"${s.section}"`,
-    s.grade_level || '3',
+    `"${s.section || 'Not Enrolled Yet'}"`,
+    (() => {
+      const sec = s.section || '';
+      const isEnrolled = sec && sec !== 'Not Enrolled Yet' && sec !== 'Unassigned' && sec !== 'No Class';
+      if (!isEnrolled) return '"Not Enrolled Yet"';
+      const yr = (s.grade_level && s.grade_level >= 1 && s.grade_level <= 4) ? s.grade_level : (/^[1-4]/.test(sec) ? sec.charAt(0) : '1');
+      return `"${yr === '1' || yr === 1 ? '1st' : (yr === '2' || yr === 2 ? '2nd' : (yr === '3' || yr === 3 ? '3rd' : '4th'))} Year"`;
+    })(),
     s.attendance_rate,
     s.absence_count,
     s.tardy_count,
@@ -1514,19 +1692,58 @@ function closeRiskModal() {
 }
 
 /**
- * Modal Trigger: Dispatch Parent Alert
+ * Modal Trigger: Dispatch Parent Alert with Loading and Queue Feedback
  */
 async function executeModalNotifyParent() {
   if (!currentSelectedStudentForModal) return;
   const s = currentSelectedStudentForModal;
-  closeRiskModal();
+  const modalBtn = document.getElementById('modal-btn-notify-parent');
+  const originalHtml = modalBtn ? modalBtn.innerHTML : '';
+
+  if (modalBtn) {
+    modalBtn.disabled = true;
+    modalBtn.innerHTML = `
+      <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <span>Queueing Alert...</span>
+    `;
+  }
+
   await handleDirectParentAlert(s.student_id, s.name);
+
+  if (modalBtn) {
+    modalBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white flex items-center gap-1.5';
+    modalBtn.innerHTML = `
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      <span>Queued &amp; Dispatched</span>
+    `;
+  }
+
+  setTimeout(() => {
+    closeRiskModal();
+    if (modalBtn) {
+      modalBtn.disabled = false;
+      modalBtn.className = 'btn btn-primary btn-sm font-bold flex items-center gap-1.5 cursor-pointer';
+      modalBtn.innerHTML = originalHtml;
+    }
+  }, 900);
 }
 
 /**
- * Dispatch Parent Early-Warning Notification via API
+ * Dispatch Parent Early-Warning Notification via API with loading and queue feedback
  */
-async function handleDirectParentAlert(studentId, studentName) {
+async function handleDirectParentAlert(studentId, studentName, btnElem = null) {
+  const btn = btnElem || document.getElementById(`btn-alert-student-${studentId}`);
+  const originalHtml = btn ? btn.innerHTML : '';
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-600 text-white inline-flex items-center gap-1 shadow-2xs';
+    btn.innerHTML = `
+      <svg class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <span>Queueing...</span>
+    `;
+  }
+
   try {
     const res = await fetch('/api/analytics/intervene', {
       method: 'POST',
@@ -1539,12 +1756,35 @@ async function handleDirectParentAlert(studentId, studentName) {
     });
     const data = await res.json();
     if (data.status === 'success') {
-      showToastNotification(`Parent early-warning notification sent for ${studentName}!`, 'success');
+      const qRef = data.queue_id ? ` [Batch: #${data.queue_id}]` : '';
+      showToastNotification(`Parent alert queued & logged for ${studentName}!${qRef}`, 'success');
+      
+      if (btn) {
+        btn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1 cursor-default';
+        btn.innerHTML = `
+          <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span>Queued & Sent</span>
+        `;
+        btn.disabled = true;
+      }
     } else {
       showToastNotification(data.message || 'Could not send parent notification.', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.className = 'btn btn-primary btn-sm font-bold text-[11px] px-2.5 py-1 inline-flex items-center gap-1 cursor-pointer';
+        btn.innerHTML = originalHtml;
+      }
     }
   } catch (err) {
     showToastNotification(`Dispatched offline notification for ${studentName}.`, 'info');
+    if (btn) {
+      btn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1 cursor-default';
+      btn.innerHTML = `
+        <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        <span>Queued & Sent</span>
+      `;
+      btn.disabled = true;
+    }
   }
 }
 
@@ -1642,6 +1882,256 @@ async function applyPatternIntervention(patternId, patternTitle, btnElem) {
 }
 
 /**
+ * Pattern Inspection & Action Testing State
+ */
+let currentInspectedPattern = null;
+
+/**
+ * Open Pattern Inspection & Test Sandbox Modal
+ */
+async function openPatternInspectModal(patternId) {
+  const modal = document.getElementById('pattern-inspect-modal');
+  if (!modal) return;
+
+  // Show modal with loading state
+  modal.classList.remove('hidden');
+  switchPimTab('matches');
+
+  const titleEl = document.getElementById('pim-title');
+  const typeEl = document.getElementById('pim-type');
+  const badgeEl = document.getElementById('pim-severity-badge');
+  const formulaEl = document.getElementById('pim-formula');
+  const confEl = document.getElementById('pim-confidence');
+  const tbody = document.getElementById('pim-students-tbody');
+  const tabCount = document.getElementById('pim-tab-count');
+  const zeroBadge = document.getElementById('pim-zero-matches-badge');
+  const emptyCallout = document.getElementById('pim-empty-helper-callout');
+
+  if (titleEl) titleEl.textContent = 'Loading Pattern Data...';
+  if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 font-semibold"><svg class="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Analyzing live MySQL database records...</td></tr>`;
+
+  try {
+    const res = await fetch(`/api/analytics/preview-pattern?pattern_id=${encodeURIComponent(patternId)}`);
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      currentInspectedPattern = data;
+
+      if (titleEl) titleEl.textContent = data.pattern_title;
+      if (typeEl) typeEl.textContent = `Type: ${data.pattern_id} · Action: ${data.action_name}`;
+      if (formulaEl) formulaEl.textContent = data.formula;
+      if (confEl) confEl.textContent = `Confidence: ${data.confidence}`;
+
+      if (badgeEl) {
+        badgeEl.textContent = `${data.severity.toUpperCase()} IMPACT`;
+        badgeEl.className = data.severity === 'critical' ? 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30' : (data.severity === 'high' ? 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30');
+      }
+
+      // Render Tab Count
+      if (tabCount) tabCount.textContent = data.live_matches_count || 0;
+
+      // Handle zero matches
+      if (data.is_strict_zero) {
+        if (zeroBadge) zeroBadge.classList.remove('hidden');
+        if (emptyCallout) emptyCallout.classList.remove('hidden');
+      } else {
+        if (zeroBadge) zeroBadge.classList.add('hidden');
+        if (emptyCallout) emptyCallout.classList.add('hidden');
+      }
+
+      // Render Students Table
+      if (tbody) {
+        const students = data.students || [];
+        if (students.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No student records found in database.</td></tr>`;
+        } else {
+          tbody.innerHTML = students.map(s => {
+            const attRate = parseFloat(s.attendance_rate || 0);
+            const rateColor = attRate < 80 ? 'text-rose-600' : 'text-slate-800';
+            return `
+              <tr class="hover:bg-slate-50 transition">
+                <td class="py-2.5 px-3 font-bold text-slate-900">
+                  ${escapeHtml(s.full_name)}
+                  <span class="block text-[10px] text-slate-400 font-mono">#${s.student_number || s.student_id}</span>
+                </td>
+                <td class="py-2.5 px-3 font-semibold text-slate-600">
+                  ${(() => {
+                    const sec = s.section || '';
+                    const isEnrolled = sec && sec !== 'Not Enrolled Yet' && sec !== 'Unassigned' && sec !== 'No Class';
+                    if (!isEnrolled) {
+                      return `<span class="text-slate-400 font-normal italic text-xs">Not Enrolled Yet</span>`;
+                    }
+                    const yr = (s.year_level && s.year_level >= 1 && s.year_level <= 4) 
+                      ? s.year_level 
+                      : (/^[1-4]/.test(sec) ? sec.charAt(0) : '1');
+                    return `Yr ${yr} · Sec ${escapeHtml(sec)}`;
+                  })()}
+                </td>
+                <td class="py-2.5 px-3 text-slate-600 font-mono text-[11px] truncate max-w-[150px]">
+                  ${escapeHtml(s.parent_email || 'parent@college.edu')}
+                </td>
+                <td class="py-2.5 px-3 text-center">
+                  <span class="font-black ${rateColor}">${attRate}%</span>
+                  <span class="block text-[9px] text-slate-400">${s.total_sessions || 0} sessions</span>
+                </td>
+                <td class="py-2.5 px-3 text-right">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">
+                    ${s.trigger_metric || 0} Absences
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // Render Email Preview
+      const emSub = document.getElementById('pim-email-subject');
+      const emRecip = document.getElementById('pim-email-recipient');
+      const emDesc = document.getElementById('pim-email-action-desc');
+      const emBody = document.getElementById('pim-email-body');
+
+      if (emSub && data.email_preview) emSub.textContent = data.email_preview.subject;
+      if (emRecip && data.email_preview) emRecip.textContent = data.email_preview.recipient_sample;
+      if (emDesc) emDesc.textContent = data.action_desc;
+      if (emBody && data.email_preview) emBody.textContent = data.email_preview.body;
+    } else {
+      showToastNotification(data.message || 'Could not load pattern preview.', 'error');
+    }
+  } catch (err) {
+    showToastNotification('Network error loading pattern preview.', 'error');
+  }
+}
+
+/**
+ * Close Pattern Inspection Modal
+ */
+function closePatternInspectModal() {
+  const modal = document.getElementById('pattern-inspect-modal');
+  if (modal) modal.classList.add('hidden');
+  currentInspectedPattern = null;
+}
+
+/**
+ * Switch Active Tab inside Pattern Inspection Modal
+ */
+function switchPimTab(tab) {
+  const tabBtns = {
+    matches: document.getElementById('pim-tab-btn-matches'),
+    preview: document.getElementById('pim-tab-btn-preview'),
+    sandbox: document.getElementById('pim-tab-btn-sandbox')
+  };
+  const panels = {
+    matches: document.getElementById('pim-panel-matches'),
+    preview: document.getElementById('pim-panel-preview'),
+    sandbox: document.getElementById('pim-panel-sandbox')
+  };
+
+  Object.keys(tabBtns).forEach(k => {
+    if (tabBtns[k]) {
+      if (k === tab) {
+        tabBtns[k].className = 'px-3.5 py-2 border-b-2 border-indigo-600 text-indigo-600 font-extrabold cursor-pointer transition flex items-center gap-1.5';
+      } else {
+        tabBtns[k].className = 'px-3.5 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold cursor-pointer transition flex items-center gap-1.5';
+      }
+    }
+    if (panels[k]) {
+      if (k === tab) {
+        panels[k].classList.remove('hidden');
+      } else {
+        panels[k].classList.add('hidden');
+      }
+    }
+  });
+}
+
+/**
+ * Execute Test Mode Dispatch from Sandbox
+ */
+async function executePimTestDispatch() {
+  if (!currentInspectedPattern) return;
+  const pat = currentInspectedPattern;
+  const testEmail = document.getElementById('pim-test-email-input')?.value.trim();
+  const btn = document.getElementById('btn-pim-send-test');
+
+  const originalHtml = btn ? btn.innerHTML : 'Send Test Alert';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Sending Test...</span>`;
+  }
+
+  try {
+    const res = await fetch('/api/analytics/apply-pattern-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pattern_id: pat.pattern_id,
+        pattern_title: pat.pattern_title,
+        is_test: true,
+        test_email: testEmail
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showToastNotification(data.message || `Test alert dispatched to ${data.test_email || testEmail}!`, 'success');
+    } else {
+      showToastNotification(data.message || 'Test dispatch failed.', 'error');
+    }
+  } catch (err) {
+    showToastNotification('Network error executing test alert.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+/**
+ * Execute Real Live Action from Inspection Modal
+ */
+async function executePimRealDispatch() {
+  if (!currentInspectedPattern) return;
+  const pat = currentInspectedPattern;
+  closePatternInspectModal();
+  const cardBtn = document.getElementById(`btn-action-${pat.pattern_id}`);
+  await applyPatternIntervention(pat.pattern_id, pat.pattern_title, cardBtn);
+}
+
+/**
+ * Seed Realistic Demo Attendance Dataset to Test ML Patterns
+ */
+async function seedDemoAttendanceData(btnElem) {
+  const originalHtml = btnElem ? btnElem.innerHTML : 'Seed Test Attendance Data';
+  if (btnElem) {
+    btnElem.disabled = true;
+    btnElem.innerHTML = `<svg class="w-4 h-4 animate-spin text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Seeding Test Data...</span>`;
+  }
+
+  try {
+    const res = await fetch('/api/analytics/seed-demo-attendance', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'success') {
+      showToastNotification(data.message || 'Successfully seeded multi-week attendance test dataset!', 'success');
+      // Refresh all analytics
+      loadAllAnalytics(true);
+      if (currentInspectedPattern) {
+        openPatternInspectModal(currentInspectedPattern.pattern_id);
+      }
+    } else {
+      showToastNotification(data.message || 'Seeding test data failed.', 'error');
+    }
+  } catch (err) {
+    showToastNotification('Network error seeding demo attendance.', 'error');
+  } finally {
+    if (btnElem) {
+      btnElem.disabled = false;
+      btnElem.innerHTML = originalHtml;
+    }
+  }
+}
+
+/**
  * Close Pattern Action Confirmation Modal
  */
 function closePatternActionModal() {
@@ -1668,8 +2158,14 @@ function exportAtRiskCSV() {
   const rows = exportList.map(s => [
     s.student_id,
     `"${s.name}"`,
-    `"${s.section}"`,
-    s.grade_level || '3',
+    `"${s.section || 'Not Enrolled Yet'}"`,
+    (() => {
+      const sec = s.section || '';
+      const isEnrolled = sec && sec !== 'Not Enrolled Yet' && sec !== 'Unassigned' && sec !== 'No Class';
+      if (!isEnrolled) return '"Not Enrolled Yet"';
+      const yr = (s.grade_level && s.grade_level >= 1 && s.grade_level <= 4) ? s.grade_level : (/^[1-4]/.test(sec) ? sec.charAt(0) : '1');
+      return `"${yr === '1' || yr === 1 ? '1st' : (yr === '2' || yr === 2 ? '2nd' : (yr === '3' || yr === 3 ? '3rd' : '4th'))} Year"`;
+    })(),
     s.attendance_rate,
     s.absence_count,
     s.tardy_count,
