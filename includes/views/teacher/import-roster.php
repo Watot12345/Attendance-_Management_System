@@ -154,12 +154,14 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   <label for="target-major" class="text-[11px] font-bold uppercase text-slate-800 mb-1.5 block tracking-wider">
                     Major / Track <span class="text-rose-500">*</span>
                   </label>
-                  <select id="target-major" name="major" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition cursor-pointer shadow-2xs" required onchange="updatePreviewSummary()">
+                  <select id="target-major" name="major" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition cursor-pointer shadow-2xs" required onchange="handleMajorChange()">
                     <option value="NA" selected>NA (Network Administration)</option>
                     <option value="IM">IM (Information Management)</option>
                     <option value="IS">IS (Information Security / Systems)</option>
                     <option value="Core">None / Core General</option>
+                    <option value="Other">Other (Custom Major / Track)</option>
                   </select>
+                  <input type="text" id="target-major-other" name="major_other" class="hidden mt-2 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" placeholder="Specify Major / Track (e.g. Cybersecurity, Multimedia)" oninput="updatePreviewSummary()">
                 </div>
               </div>
 
@@ -179,13 +181,13 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 </div>
               </div>
 
-              <!-- Row 4: Meeting Day, Session Time, Room Number (1 Row with 3 Columns) -->
-              <div class="form-row-3">
+              <!-- Row 4: Meeting Day, Session Start, Session End, Room Number (1 Row with 4 Columns) -->
+              <div class="form-row-4">
                 <div>
                   <label for="target-schedule-day" class="text-[11px] font-bold uppercase text-slate-800 mb-1.5 block tracking-wider">
                     Meeting Day <span class="text-rose-500">*</span>
                   </label>
-                  <select id="target-schedule-day" name="schedule_day" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition cursor-pointer shadow-2xs" required>
+                  <select id="target-schedule-day" name="schedule_day" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition cursor-pointer shadow-2xs" required onchange="updatePreviewSummary()">
                     <option value="Monday" selected>Monday</option>
                     <option value="Tuesday">Tuesday</option>
                     <option value="Wednesday">Wednesday</option>
@@ -196,15 +198,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
                 </div>
                 <div>
                   <label for="target-scheduled-time" class="text-[11px] font-bold uppercase text-slate-800 mb-1.5 block tracking-wider">
-                    Session Time <span class="text-rose-500">*</span>
+                    Session Start <span class="text-rose-500">*</span>
                   </label>
-                  <input type="time" id="target-scheduled-time" name="scheduled_time" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" value="08:00" required>
+                  <input type="time" id="target-scheduled-time" name="scheduled_time" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" value="08:00" required onchange="updatePreviewSummary()" oninput="updatePreviewSummary()">
+                </div>
+                <div>
+                  <label for="target-scheduled-time-end" class="text-[11px] font-bold uppercase text-slate-800 mb-1.5 block tracking-wider">
+                    Session End <span class="text-rose-500">*</span>
+                  </label>
+                  <input type="time" id="target-scheduled-time-end" name="scheduled_time_end" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" value="10:00" required onchange="updatePreviewSummary()" oninput="updatePreviewSummary()">
                 </div>
                 <div>
                   <label for="target-room-num" class="text-[11px] font-bold uppercase text-slate-800 mb-1.5 block tracking-wider">
                     Room No. <span class="text-rose-500">*</span>
                   </label>
-                  <input type="number" id="target-room-num" name="room_num" min="100" max="999" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" placeholder="e.g. 402" value="402" required>
+                  <input type="number" id="target-room-num" name="room_num" min="100" max="999" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3b8a] focus:border-transparent transition shadow-2xs" placeholder="e.g. 402" value="402" required onchange="updatePreviewSummary()" oninput="updatePreviewSummary()">
                 </div>
               </div>
 
@@ -527,15 +535,34 @@ require_once dirname(__DIR__) . '/partials/header.php';
         <option value="IM">IM (Information Management)</option>
         <option value="IS">IS (Information Security / Systems)</option>
         <option value="Core">None / Core General</option>
+        <option value="Other">Other (Custom Major / Track)</option>
       `;
     } else if (course === 'BSIS') {
       majorSelect.innerHTML = `
         <option value="BA" selected>BA (Business Analytics)</option>
         <option value="ES">ES (Enterprise Systems)</option>
         <option value="Core">None / Core General</option>
+        <option value="Other">Other (Custom Major / Track)</option>
       `;
     }
+    handleMajorChange();
     handleClassAttributeChange();
+  }
+
+  function handleMajorChange() {
+    const majorSelect = document.getElementById('target-major');
+    const otherInput = document.getElementById('target-major-other');
+    if (majorSelect && otherInput) {
+      if (majorSelect.value === 'Other') {
+        otherInput.classList.remove('hidden');
+        otherInput.required = true;
+        otherInput.focus();
+      } else {
+        otherInput.classList.add('hidden');
+        otherInput.required = false;
+      }
+    }
+    updatePreviewSummary();
   }
 
   async function handleClassAttributeChange() {
@@ -633,21 +660,30 @@ require_once dirname(__DIR__) . '/partials/header.php';
   function updatePreviewSummary() {
     const details = getTargetClassDetails();
     const majorStr = (details.major && details.major !== 'Core') ? ` (${details.major})` : '';
-    const schedStr = ` · ${details.schedule_day} ${formatTimeToAmPm(details.scheduled_time)}`;
+    const schedStr = ` · ${details.schedule_day} ${formatTimeToAmPm(details.scheduled_time, details.scheduled_time_end)}`;
     const summaryText = `${details.course} ${details.section}${majorStr} · ${details.course_code}: ${details.course_title} (Room ${details.room_num}${schedStr})`;
 
     const el = document.getElementById('class-preview-summary');
     if (el) el.textContent = summaryText;
   }
 
-  function formatTimeToAmPm(timeStr) {
+  function formatTimeToAmPm(timeStr, endTimeStr) {
     if (!timeStr) return '08:00 AM';
-    const parts = timeStr.split(':');
-    const h = parseInt(parts[0], 10);
-    const m = parts[1] || '00';
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${String(h12).padStart(2, '0')}:${m} ${ampm}`;
+    function formatSingle(t) {
+      if (!t) return '';
+      const parts = t.split(':');
+      const h = parseInt(parts[0], 10);
+      const m = parts[1] || '00';
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${String(h12).padStart(2, '0')}:${m} ${ampm}`;
+    }
+    const startFormatted = formatSingle(timeStr);
+    if (endTimeStr) {
+      const endFormatted = formatSingle(endTimeStr);
+      return `${startFormatted} – ${endFormatted}`;
+    }
+    return startFormatted;
   }
 
   function getTargetClassDetails() {
@@ -659,11 +695,20 @@ require_once dirname(__DIR__) . '/partials/header.php';
     const displayVal = document.getElementById('target-section-display')?.value?.trim();
     const section = displayVal || document.getElementById('target-section')?.value || `${yearLevel}${semester}001`;
     const sectionNum = document.getElementById('target-section-num')?.value || (section.length >= 3 ? section.slice(2) : '001');
-    const major = document.getElementById('target-major')?.value || '';
+    
+    const majorSelectVal = document.getElementById('target-major')?.value || '';
+    let major = majorSelectVal;
+    if (majorSelectVal === 'Other') {
+      major = (document.getElementById('target-major-other')?.value || '').trim() || 'Other';
+    } else if (majorSelectVal === 'Core') {
+      major = '';
+    }
+
     const courseCode = (document.getElementById('target-course-code')?.value || 'IT301').trim().toUpperCase();
     const courseTitle = (document.getElementById('target-course-title')?.value || 'Web Systems and Technologies').trim();
     const scheduleDay = document.getElementById('target-schedule-day')?.value || 'Monday';
     const scheduledTime = document.getElementById('target-scheduled-time')?.value || '08:00';
+    const scheduledTimeEnd = document.getElementById('target-scheduled-time-end')?.value || '10:00';
     const roomNum = document.getElementById('target-room-num')?.value || '402';
 
     return {
@@ -672,18 +717,19 @@ require_once dirname(__DIR__) . '/partials/header.php';
       semester: semester,
       section_num: sectionNum,
       section: section,
-      major: (major && major !== 'Core') ? major : '',
+      major: major,
       course_code: courseCode,
       course_title: courseTitle,
       schedule_day: scheduleDay,
       scheduled_time: scheduledTime,
+      scheduled_time_end: scheduledTimeEnd,
       room_num: roomNum,
       room_number: roomNum
     };
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    ['target-course-program', 'target-year-level', 'target-section-display', 'target-major', 'target-course-code', 'target-course-title', 'target-schedule-day', 'target-scheduled-time', 'target-room-num'].forEach(id => {
+    ['target-course-program', 'target-year-level', 'target-section-display', 'target-major', 'target-major-other', 'target-course-code', 'target-course-title', 'target-schedule-day', 'target-scheduled-time', 'target-scheduled-time-end', 'target-room-num'].forEach(id => {
       const input = document.getElementById(id);
       if (input) {
         input.addEventListener('input', updatePreviewSummary);
@@ -1345,7 +1391,8 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
       const step3Schedule = document.getElementById('step-3-schedule');
       if (step3Schedule) {
-        step3Schedule.textContent = `${data.details.schedule_day} ${formatTimeToAmPm(data.details.scheduled_time)} (Room ${data.details.room_number})`;
+        const timeFormatted = formatTimeToAmPm(data.details.scheduled_time, data.details.scheduled_time_end || classDetails.scheduled_time_end);
+        step3Schedule.textContent = `${data.details.schedule_day} ${timeFormatted} (Room ${data.details.room_number})`;
       }
 
       const step3Enrolled = document.getElementById('step-3-enrolled-count');

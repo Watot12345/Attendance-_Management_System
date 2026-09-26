@@ -1304,4 +1304,386 @@ class TeacherController {
         }
         exit;
     }
+
+    /**
+     * API: POST /api/teacher/classes/add-student
+     * Adds a single student manually into a specific section's roster.
+     */
+    public function apiAddStudentToSection(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+            if (empty($input) || !is_array($input)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Invalid request payload']);
+                exit;
+            }
+
+            $teacherId = self::resolveCurrentTeacherId();
+            $section = trim($input['section'] ?? '');
+            $studentNo = trim($input['student_id'] ?? $input['student_number'] ?? '');
+            $firstName = trim($input['first_name'] ?? '');
+            $lastName  = trim($input['last_name'] ?? '');
+            $email     = trim($input['email'] ?? '');
+
+            if (empty($section)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Section is required.']);
+                exit;
+            }
+            if (empty($studentNo) || empty($firstName) || empty($lastName)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Student ID, First Name, and Last Name are required.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+
+            // 1. Resolve class details for this section & teacher
+            $classMetaStmt = $db->prepare("
+                SELECT course_code, course_title, course, year_level, schedule_day, scheduled_time, room_number, major
+                FROM class_roster
+                WHERE section = ? AND (teacher_id = ? OR teacher_id IS NOT NULL)
+                ORDER BY (teacher_id = ?) DESC, roster_id DESC
+                LIMIT 1
+            ");
+            $classMetaStmt->execute([$section, $teacherId, $teacherId]);
+            $classMeta = $classMetaStmt->fetch(PDO::FETCH_ASSOC);
+
+            $courseCode   = $classMeta['course_code'] ?? ($input['course_code'] ?? 'IT301');
+            $courseTitle  = $classMeta['course_title'] ?? ($input['course_title'] ?? 'Web Systems and Technologies');
+            $course       = $classMeta['course'] ?? ($input['course'] ?? 'BSIT');
+            $yearLevel    = (int)($classMeta['year_level'] ?? ($input['year_level'] ?? 3));
+            $scheduleDay  = $classMeta['schedule_day'] ?? 'Monday';
+            $scheduledTime= $classMeta['scheduled_time'] ?? '08:00:00';
+            $roomNumber   = $classMeta['room_number'] ?? '402';
+            $major        = $classMeta['major'] ?? null;
+
+            // 2. Check if user exists in users table by student_id or email
+            $cleanId = (string)preg_replace('/\D/', '', $studentNo);
+            $userLookupStmt = $db->prepare("
+                SELECT user_id, student_id, first_name, last_name, email 
+                FROM users 
+                WHERE (student_id = ? OR student_id = ? OR (email = ? AND email != '')) AND role = 'student'
+                LIMIT 1
+            ");
+            $userLookupStmt->execute([$studentNo, $cleanId, $email]);
+            $existingUser = $userLookupStmt->fetch(PDO::FETCH_ASSOC);
+
+            $userId = null;
+            if ($existingUser) {
+                $userId = (int)$existingUser['user_id'];
+                $db->prepare("
+                    UPDATE users 
+                    SET first_name = COALESCE(NULLIF(?, ''), first_name),
+                        last_name = COALESCE(NULLIF(?, ''), last_name),
+                        student_id = COALESCE(NULLIF(?, ''), student_id)
+                    WHERE user_id = ?
+                ")->execute([$firstName, $lastName, $studentNo, $userId]);
+            } else {
+                if (empty($email)) {
+                    $cleanFn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
+                    $cleanLn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+                    $email = "{$cleanFn}.{$cleanLn}" . substr($cleanId, -4) . "@student.bcp.edu.ph";
+                }
+
+                $passHash = password_hash('password123', PASSWORD_BCRYPT);
+                $insUserStmt = $db->prepare("
+                    INSERT INTO users (
+                        student_id, role, email, password_hash, first_name, last_name, status, created_at, updated_at
+                    ) VALUES (?, 'student', ?, ?, ?, ?, 'active', NOW(), NOW())
+                ");
+                $insUserStmt->execute([$studentNo, $email, $passHash, $firstName, $lastName]);
+                $userId = (int)$db->lastInsertId();
+            }
+
+            // 3. Check if already enrolled in this section
+            $checkRosterStmt = $db->prepare("
+                SELECT roster_id FROM class_roster 
+                WHERE student_id = ? AND section = ? AND teacher_id = ?
+                LIMIT 1
+            ");
+            $checkRosterStmt->execute([$userId, $section, $teacherId]);
+            if ($checkRosterStmt->fetch()) {
+                echo json_encode([
+                    'status'  => 'warning',
+                    'success' => false,
+                    'message' => "Student {$firstName} {$lastName} ({$studentNo}) is already enrolled in Section {$section}."
+                ]);
+                exit;
+            }
+
+            // 4. Insert into class_roster
+            $insertRosterStmt = $db->prepare("
+                INSERT INTO class_roster (
+                    student_id, teacher_id, first_name, last_name, section, room_number,
+                    scheduled_time, schedule_day, course_code, course_title, major, course, year_level, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ");
+            $insertRosterStmt->execute([
+                $userId,
+                $teacherId,
+                $firstName,
+                $lastName,
+                $section,
+                $roomNumber,
+                $scheduledTime,
+                $scheduleDay,
+                $courseCode,
+                $courseTitle,
+                $major,
+                $course,
+                $yearLevel
+            ]);
+
+            $rosterId = (int)$db->lastInsertId();
+
+            $countStmt = $db->prepare("SELECT COUNT(DISTINCT student_id) FROM class_roster WHERE section = ? AND teacher_id = ?");
+            $countStmt->execute([$section, $teacherId]);
+            $totalEnrolled = (int)$countStmt->fetchColumn();
+
+            $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+
+            echo json_encode([
+                'status'  => 'success',
+                'success' => true,
+                'message' => "Successfully added {$firstName} {$lastName} ({$studentNo}) to Section {$section}.",
+                'student' => [
+                    'roster_id'   => $rosterId,
+                    'user_id'     => $userId,
+                    'id'          => $studentNo,
+                    'student_id'  => $studentNo,
+                    'first_name'  => $firstName,
+                    'last_name'   => $lastName,
+                    'name'        => "{$firstName} {$lastName}",
+                    'initials'    => $initials,
+                    'email'       => $email,
+                    'section'     => $section,
+                    'course_code' => $courseCode,
+                    'sessions'    => 0,
+                    'present'     => 0,
+                    'late'        => 0,
+                    'tardy'       => 0,
+                    'absent'      => 0,
+                    'excused'     => 0,
+                    'rate'        => 100.0,
+                    'standing'    => 'Good Standing',
+                    'status'      => 'Active'
+                ],
+                'total_enrolled' => $totalEnrolled
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
+     * API: POST /api/teacher/classes/import-section
+     * Batch imports or appends a list of students via CSV to a specific section.
+     */
+    public function apiImportSectionStudents(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : $_POST;
+
+            if (empty($input) || !is_array($input)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Invalid request payload']);
+                exit;
+            }
+
+            $teacherId = self::resolveCurrentTeacherId();
+            $section   = trim($input['section'] ?? '');
+            $students  = $input['students'] ?? [];
+
+            if (empty($section)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Target section is required.']);
+                exit;
+            }
+            if (empty($students) || !is_array($students)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'success' => false, 'message' => 'No student rows provided in CSV data.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+
+            // 1. Resolve class details for this section & teacher
+            $classMetaStmt = $db->prepare("
+                SELECT course_code, course_title, course, year_level, schedule_day, scheduled_time, room_number, major
+                FROM class_roster
+                WHERE section = ? AND (teacher_id = ? OR teacher_id IS NOT NULL)
+                ORDER BY (teacher_id = ?) DESC, roster_id DESC
+                LIMIT 1
+            ");
+            $classMetaStmt->execute([$section, $teacherId, $teacherId]);
+            $classMeta = $classMetaStmt->fetch(PDO::FETCH_ASSOC);
+
+            $courseCode   = $classMeta['course_code'] ?? ($input['course_code'] ?? 'IT301');
+            $courseTitle  = $classMeta['course_title'] ?? ($input['course_title'] ?? 'Web Systems and Technologies');
+            $course       = $classMeta['course'] ?? ($input['course'] ?? 'BSIT');
+            $yearLevel    = (int)($classMeta['year_level'] ?? ($input['year_level'] ?? 3));
+            $scheduleDay  = $classMeta['schedule_day'] ?? 'Monday';
+            $scheduledTime= $classMeta['scheduled_time'] ?? '08:00:00';
+            $roomNumber   = $classMeta['room_number'] ?? '402';
+            $major        = $classMeta['major'] ?? null;
+
+            $db->beginTransaction();
+
+            $imported = 0;
+            $duplicates = 0;
+            $addedStudents = [];
+
+            // Prepared lookup statements
+            $userLookupStmt = $db->prepare("
+                SELECT user_id, student_id, first_name, last_name, email 
+                FROM users 
+                WHERE (student_id = ? OR student_id = ? OR (email = ? AND email != '')) AND role = 'student'
+                LIMIT 1
+            ");
+
+            $checkRosterStmt = $db->prepare("
+                SELECT roster_id FROM class_roster 
+                WHERE student_id = ? AND section = ? AND teacher_id = ?
+                LIMIT 1
+            ");
+
+            $insertRosterStmt = $db->prepare("
+                INSERT INTO class_roster (
+                    student_id, teacher_id, first_name, last_name, section, room_number,
+                    scheduled_time, schedule_day, course_code, course_title, major, course, year_level, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ");
+
+            $insUserStmt = $db->prepare("
+                INSERT INTO users (
+                    student_id, role, email, password_hash, first_name, last_name, status, created_at, updated_at
+                ) VALUES (?, 'student', ?, ?, ?, ?, 'active', NOW(), NOW())
+            ");
+
+            $passHash = password_hash('password123', PASSWORD_BCRYPT);
+
+            foreach ($students as $row) {
+                $studentNo = trim($row['student_id'] ?? $row['student_number'] ?? $row['id'] ?? '');
+                $firstName = trim($row['first_name'] ?? '');
+                $lastName  = trim($row['last_name'] ?? '');
+                $email     = trim($row['email'] ?? '');
+
+                if (empty($firstName) && empty($lastName) && !empty($row['full_name'] ?? $row['name'] ?? '')) {
+                    $fullName = trim($row['full_name'] ?? $row['name'] ?? '');
+                    $parts = preg_split('/\s+/', $fullName);
+                    $firstName = array_shift($parts) ?: 'Student';
+                    $lastName = implode(' ', $parts) ?: 'User';
+                }
+
+                if (empty($studentNo) || (empty($firstName) && empty($lastName))) {
+                    continue;
+                }
+
+                $cleanId = (string)preg_replace('/\D/', '', $studentNo);
+
+                $userLookupStmt->execute([$studentNo, $cleanId, $email]);
+                $existingUser = $userLookupStmt->fetch(PDO::FETCH_ASSOC);
+
+                $userId = null;
+                if ($existingUser) {
+                    $userId = (int)$existingUser['user_id'];
+                    $firstName = $firstName ?: $existingUser['first_name'];
+                    $lastName = $lastName ?: $existingUser['last_name'];
+                    $email = $email ?: $existingUser['email'];
+                } else {
+                    if (empty($email)) {
+                        $cleanFn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
+                        $cleanLn = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+                        $email = "{$cleanFn}.{$cleanLn}" . substr($cleanId, -4) . "@student.bcp.edu.ph";
+                    }
+                    $insUserStmt->execute([$studentNo, $email, $passHash, $firstName, $lastName]);
+                    $userId = (int)$db->lastInsertId();
+                }
+
+                $checkRosterStmt->execute([$userId, $section, $teacherId]);
+                if ($checkRosterStmt->fetch()) {
+                    $duplicates++;
+                    continue;
+                }
+
+                $insertRosterStmt->execute([
+                    $userId,
+                    $teacherId,
+                    $firstName,
+                    $lastName,
+                    $section,
+                    $roomNumber,
+                    $scheduledTime,
+                    $scheduleDay,
+                    $courseCode,
+                    $courseTitle,
+                    $major,
+                    $course,
+                    $yearLevel
+                ]);
+
+                $rosterId = (int)$db->lastInsertId();
+                $imported++;
+
+                $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                $addedStudents[] = [
+                    'roster_id'   => $rosterId,
+                    'user_id'     => $userId,
+                    'id'          => $studentNo,
+                    'student_id'  => $studentNo,
+                    'first_name'  => $firstName,
+                    'last_name'   => $lastName,
+                    'name'        => "{$firstName} {$lastName}",
+                    'initials'    => $initials,
+                    'email'       => $email,
+                    'section'     => $section,
+                    'course_code' => $courseCode,
+                    'sessions'    => 0,
+                    'present'     => 0,
+                    'late'        => 0,
+                    'tardy'       => 0,
+                    'absent'      => 0,
+                    'excused'     => 0,
+                    'rate'        => 100.0,
+                    'standing'    => 'Good Standing',
+                    'status'      => 'Active'
+                ];
+            }
+
+            $db->commit();
+
+            $countStmt = $db->prepare("SELECT COUNT(DISTINCT student_id) FROM class_roster WHERE section = ? AND teacher_id = ?");
+            $countStmt->execute([$section, $teacherId]);
+            $totalEnrolled = (int)$countStmt->fetchColumn();
+
+            $msg = "Successfully added {$imported} student" . ($imported === 1 ? '' : 's') . " to Section {$section}.";
+            if ($duplicates > 0) {
+                $msg .= " ({$duplicates} duplicate" . ($duplicates === 1 ? '' : 's') . " already enrolled).";
+            }
+
+            echo json_encode([
+                'status'         => 'success',
+                'success'        => true,
+                'message'        => $msg,
+                'imported'       => $imported,
+                'duplicates'     => $duplicates,
+                'total_enrolled' => $totalEnrolled,
+                'students'       => $addedStudents
+            ]);
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
 }

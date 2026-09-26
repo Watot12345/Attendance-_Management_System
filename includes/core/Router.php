@@ -154,6 +154,8 @@ class Router {
         '/api/teacher/roster/resolve-section' => 'StudentController@apiResolveSection',
         '/api/teacher/roster/validate' => 'StudentController@validateRoster',
         '/api/teacher/roster/import'   => 'StudentController@importClassRoster',
+        '/api/teacher/classes/add-student'    => 'TeacherController@apiAddStudentToSection',
+        '/api/teacher/classes/import-section' => 'TeacherController@apiImportSectionStudents',
         '/api/teacher/dashboard/overview' => 'TeacherController@apiDashboardOverview',
         '/api/teacher/qr-session/generate' => 'AttendanceController@generateQrSession',
         '/api/teacher/qr-session/active'   => 'AttendanceController@getActiveQrSession',

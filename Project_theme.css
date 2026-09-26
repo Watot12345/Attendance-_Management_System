@@ -898,13 +898,15 @@ main {
   min-width: 0 !important;
 }
 
-.form-row-3 {
+.form-row-3,
+.form-row-4 {
   display: flex !important;
   flex-direction: row !important;
   gap: 1rem !important;
   width: 100% !important;
 }
-.form-row-3 > * {
+.form-row-3 > *,
+.form-row-4 > * {
   flex: 1 1 0% !important;
   min-width: 0 !important;
 }
@@ -912,7 +914,8 @@ main {
 @media (max-width: 640px) {
   .form-row-2,
   .form-row-code-title,
-  .form-row-3 {
+  .form-row-3,
+  .form-row-4 {
     flex-direction: column !important;
     gap: 0.875rem !important;
   }
