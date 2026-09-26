@@ -69,6 +69,8 @@ def parse_env(env_path: Path) -> dict:
 def get_db_connection():
     """Establish SSL connection to MySQL database using .env credentials."""
     env_vars = parse_env(BASE_DIR / ".env")
+    if not env_vars:
+        env_vars = parse_env(BASE_DIR / "prod.env")
     db_host = os.getenv("DB_HOST", env_vars.get("DB_HOST", "127.0.0.1"))
     db_port = int(os.getenv("DB_PORT", env_vars.get("DB_PORT", "3306")))
     db_name = os.getenv("DB_NAME", env_vars.get("DB_NAME", "defaultdb"))

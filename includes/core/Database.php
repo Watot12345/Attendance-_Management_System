@@ -20,10 +20,9 @@ class Database {
                 list($key, $val) = explode('=', $line, 2);
                 $key = trim($key);
                 $val = trim($val, " \t\n\r\0\x0B\"'");
-                if (!array_key_exists($key, $_ENV)) {
-                    putenv("$key=$val");
-                    $_ENV[$key] = $val;
-                }
+                putenv("$key=$val");
+                $_ENV[$key] = $val;
+                $_SERVER[$key] = $val;
             }
         }
     }
@@ -34,39 +33,37 @@ class Database {
     public static function getConnection(): PDO {
         if (self::$instance === null) {
             self::loadEnv(dirname(__DIR__, 2) . '/.env');
+            self::loadEnv(dirname(__DIR__, 2) . '/prod.env');
 
             // 1. Resolve connection parameters from DB_* or Railway MYSQL* or defaults
             $host = getenv('DB_HOST') 
-                 ?: getenv('MYSQLHOST') 
-                 ?: ($_ENV['DB_HOST'] ?? ($_ENV['MYSQLHOST'] ?? 'yamabiko.proxy.rlwy.net'));
+                 ?: ($_ENV['DB_HOST'] ?? (getenv('MYSQLHOST') ?: ($_ENV['MYSQLHOST'] ?? 'yamabiko.proxy.rlwy.net')));
 
             $port = getenv('DB_PORT') 
-                 ?: getenv('MYSQLPORT') 
-                 ?: ($_ENV['DB_PORT'] ?? ($_ENV['MYSQLPORT'] ?? '57011'));
+                 ?: ($_ENV['DB_PORT'] ?? (getenv('MYSQLPORT') ?: ($_ENV['MYSQLPORT'] ?? '57011')));
 
             $dbName = getenv('DB_NAME') 
-                   ?: getenv('MYSQLDATABASE') 
-                   ?: ($_ENV['DB_NAME'] ?? ($_ENV['MYSQLDATABASE'] ?? 'railway'));
+                   ?: ($_ENV['DB_NAME'] ?? (getenv('MYSQLDATABASE') ?: ($_ENV['MYSQLDATABASE'] ?? 'railway')));
 
             $user = getenv('DB_USER') 
-                 ?: getenv('MYSQLUSER') 
-                 ?: ($_ENV['DB_USER'] ?? ($_ENV['MYSQLUSER'] ?? 'root'));
+                 ?: ($_ENV['DB_USER'] ?? (getenv('MYSQLUSER') ?: ($_ENV['MYSQLUSER'] ?? 'root')));
 
             $pass = getenv('DB_PASS') 
-                 ?: getenv('MYSQLPASSWORD') 
-                 ?: ($_ENV['DB_PASS'] ?? ($_ENV['MYSQLPASSWORD'] ?? 'UKpKFxDomvRzxgSvsWSAMAAKBSjuKZVY'));
+                 ?: ($_ENV['DB_PASS'] ?? (getenv('MYSQLPASSWORD') ?: ($_ENV['MYSQLPASSWORD'] ?? 'UKpKFxDomvRzxgSvsWSAMAAKBSjuKZVY')));
 
-            $charset = getenv('DB_CHARSET') ?: 'utf8mb4';
+            $charset = getenv('DB_CHARSET') ?: ($_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
-            // 2. Parse DATABASE_URL / MYSQL_URL if provided
+            // 2. Parse DATABASE_URL / MYSQL_URL if provided (only if it doesn't point to an unresolvable .internal domain while DB_HOST is set)
             $dbUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: ($_ENV['DATABASE_URL'] ?? ($_ENV['MYSQL_URL'] ?? ''));
             if (!empty($dbUrl)) {
                 $parsed = parse_url($dbUrl);
-                if (!empty($parsed['host'])) $host = $parsed['host'];
-                if (!empty($parsed['port'])) $port = (string)$parsed['port'];
-                if (!empty($parsed['user'])) $user = $parsed['user'];
-                if (!empty($parsed['pass'])) $pass = $parsed['pass'];
-                if (!empty($parsed['path'])) $dbName = ltrim($parsed['path'], '/');
+                if (!empty($parsed['host']) && (!str_contains($parsed['host'], '.internal') || empty(getenv('DB_HOST')))) {
+                    $host = $parsed['host'];
+                    if (!empty($parsed['port'])) $port = (string)$parsed['port'];
+                    if (!empty($parsed['user'])) $user = $parsed['user'];
+                    if (!empty($parsed['pass'])) $pass = $parsed['pass'];
+                    if (!empty($parsed['path'])) $dbName = ltrim($parsed['path'], '/');
+                }
             }
 
             $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset={$charset}";
