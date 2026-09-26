@@ -196,7 +196,10 @@ class StudentController {
         preg_match('/\d+/', $yearLevelRaw, $matches);
         $yearLevel = isset($matches[0]) ? (int) $matches[0] : 1;
 
-        // Default initial password: # + First Uppercase of Last Name + Second Lowercase of Last Name + 8080
+        // Student password: changeable from modal, falls back to formula (# + Last Name Initials + 8080)
+        $passwordInput = trim($_POST['password'] ?? '');
+
+        // Default initial formula: # + First Uppercase of Last Name + Second Lowercase of Last Name + 8080
         $cleanLast = preg_replace('/[^a-zA-Z]/', '', $lastName);
         if (strlen($cleanLast) >= 2) {
             $c1 = strtoupper(substr($cleanLast, 0, 1));
@@ -209,7 +212,8 @@ class StudentController {
             $c2 = 't';
         }
         $defaultPassword = '#' . $c1 . $c2 . '8080';
-        $hashedPassword = password_hash($defaultPassword, PASSWORD_BCRYPT);
+        $finalPassword   = !empty($passwordInput) ? $passwordInput : $defaultPassword;
+        $hashedPassword  = password_hash($finalPassword, PASSWORD_BCRYPT);
 
         $db = Database::getConnection();
 
@@ -333,7 +337,7 @@ class StudentController {
                     $email,
                     $fullName,
                     (string) $studentId,
-                    $defaultPassword,
+                    $finalPassword,
                     $course,
                     $yearLevelRaw,
                     $section

@@ -423,13 +423,26 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
 
-      <!-- Default Password Info -->
-      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
-        <div>
-          <div class="font-bold text-slate-800">Initial Student Password</div>
-          <div class="text-[11px] text-slate-500">Format: # + 1st &amp; 2nd letter of Last Name + 8080. Prompted to change on first login.</div>
+      <!-- Student Password (Changeable with auto-generated default) -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label for="m-password" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+            Student Password <span class="text-rose-500">*</span>
+          </label>
+          <button type="button" onclick="resetDefaultPassword()" title="Reset to auto-calculated formula" class="text-[11px] font-semibold text-[#1e3b8a] hover:underline cursor-pointer flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Reset to Formula</span>
+          </button>
         </div>
-        <span id="m-password-preview" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-mono font-bold text-[#1e3b8a] text-xs shadow-2xs">#La8080</span>
+        <div class="relative flex items-center">
+          <input type="text" id="m-password" name="password" required value="#La8080" placeholder="e.g. #La8080 or custom password" class="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition bg-white shadow-2xs">
+          <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer" title="Toggle visibility">
+            <svg id="m-password-eye" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+        <div class="text-[11px] text-slate-500 mt-1">
+          Auto-generated default: <code># + 1st &amp; 2nd letter of Last Name + 8080</code>. You can customize or change it anytime.
+        </div>
       </div>
 
       <!-- Action Footer -->
@@ -935,17 +948,13 @@ function validateStudentIdUniqueness() {
   }
 }
 
-// Real-time password preview generator (# + Last Name Initials + 8080)
-function updatePasswordPreview() {
-  const nameInput = document.getElementById('m-student-name');
-  const preview = document.getElementById('m-password-preview');
-  if (!nameInput || !preview) return;
+// Real-time password generator with formula (# + Last Name Initials + 8080) and manual override support
+var passwordManuallyEdited = false;
 
-  const val = nameInput.value.trim();
-  if (!val) {
-    preview.textContent = '#La8080';
-    return;
-  }
+function calculateFormulaPassword() {
+  const nameInput = document.getElementById('m-student-name');
+  const val = nameInput ? nameInput.value.trim() : '';
+  if (!val) return '#La8080';
 
   const parts = val.split(/\s+/).filter(Boolean);
   const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
@@ -960,7 +969,41 @@ function updatePasswordPreview() {
     c2 = 'x';
   }
 
-  preview.textContent = '#' + c1 + c2 + '8080';
+  return '#' + c1 + c2 + '8080';
+}
+
+function updatePasswordPreview() {
+  if (passwordManuallyEdited) return;
+  const passInput = document.getElementById('m-password');
+  if (!passInput) return;
+  passInput.value = calculateFormulaPassword();
+}
+
+function resetDefaultPassword() {
+  passwordManuallyEdited = false;
+  const passInput = document.getElementById('m-password');
+  if (passInput) {
+    passInput.value = calculateFormulaPassword();
+    passInput.focus();
+    passInput.select();
+  }
+}
+
+function togglePasswordVisibility() {
+  const passInput = document.getElementById('m-password');
+  const eyeIcon = document.getElementById('m-password-eye');
+  if (!passInput) return;
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    if (eyeIcon) {
+      eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    }
+  } else {
+    passInput.type = 'password';
+    if (eyeIcon) {
+      eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>`;
+    }
+  }
 }
 
 // Student Gmail validation handler (manual entry with @gmail.com requirement)
@@ -1054,6 +1097,7 @@ function openManualStudentModal() {
   const modal = document.getElementById('manualStudentModal');
   if (modal) modal.classList.remove('hidden');
   validateStudentIdUniqueness();
+  passwordManuallyEdited = false;
   updatePasswordPreview();
   updateAssignedSection();
   const feedback = document.getElementById('m-email-feedback');
@@ -1223,6 +1267,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Student password input listener (track manual modification)
+  const mPassword = document.getElementById('m-password');
+  if (mPassword) {
+    mPassword.addEventListener('input', function() {
+      passwordManuallyEdited = this.value.trim().length > 0;
+    });
+  }
+
   // Dynamic section calculation when Course or Year Level changes
   const mCourse = document.getElementById('m-course');
   if (mCourse) {
@@ -1241,6 +1293,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const errorBox = document.getElementById('m-modal-error-box');
       const errorText = document.getElementById('m-modal-error-text');
       if (errorBox) errorBox.classList.add('hidden');
+
+      // Ensure password has a value; fallback to formula if left empty
+      const passInput = document.getElementById('m-password');
+      if (passInput && !passInput.value.trim()) {
+        passInput.value = calculateFormulaPassword();
+      }
 
       if (!validateGmailRequirement()) {
         e.preventDefault();
