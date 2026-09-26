@@ -12,16 +12,18 @@ class Mailer {
      */
     public static function getEnv(string $key, string $default = ''): string {
         if (empty(self::$envCache)) {
-            $envPath = dirname(__DIR__, 2) . '/.env';
-            if (file_exists($envPath)) {
-                $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                if ($lines) {
-                    foreach ($lines as $line) {
-                        $line = trim($line);
-                        if (empty($line) || str_starts_with($line, '#')) continue;
-                        if (strpos($line, '=') !== false) {
-                            list($k, $v) = explode('=', $line, 2);
-                            self::$envCache[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+            foreach (['/.env', '/prod.env'] as $file) {
+                $envPath = dirname(__DIR__, 2) . $file;
+                if (file_exists($envPath)) {
+                    $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                    if ($lines) {
+                        foreach ($lines as $line) {
+                            $line = trim($line);
+                            if (empty($line) || str_starts_with($line, '#')) continue;
+                            if (strpos($line, '=') !== false) {
+                                list($k, $v) = explode('=', $line, 2);
+                                self::$envCache[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+                            }
                         }
                     }
                 }
