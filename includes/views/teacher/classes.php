@@ -985,12 +985,41 @@ function openAddStudentModal(targetSec) {
   const modal = document.getElementById('add-student-modal');
   if (!modal) return;
 
+  if (typeof targetSec !== 'string') {
+    targetSec = '';
+  }
+
   const secSelect = document.getElementById('add-student-section-select');
   if (secSelect) {
-    if (targetSec) {
-      secSelect.value = targetSec;
-    } else if (currentSection) {
-      secSelect.value = currentSection;
+    const rawTarget = targetSec || currentSection || (document.getElementById('filter-section')?.value !== 'all' ? document.getElementById('filter-section')?.value : '');
+    
+    if (rawTarget) {
+      const cleanTarget = String(rawTarget).trim().toLowerCase();
+      let foundIndex = -1;
+
+      // 1. Try exact value match
+      for (let i = 0; i < secSelect.options.length; i++) {
+        if (secSelect.options[i].value.trim().toLowerCase() === cleanTarget) {
+          foundIndex = i;
+          break;
+        }
+      }
+
+      // 2. Try substring or text match if exact not found
+      if (foundIndex === -1) {
+        for (let i = 0; i < secSelect.options.length; i++) {
+          const optVal = secSelect.options[i].value.trim().toLowerCase();
+          const optText = secSelect.options[i].textContent.trim().toLowerCase();
+          if (optVal === cleanTarget || optVal.includes(cleanTarget) || cleanTarget.includes(optVal) || optText.includes(cleanTarget)) {
+            foundIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (foundIndex !== -1) {
+        secSelect.selectedIndex = foundIndex;
+      }
     }
   }
 
@@ -1505,6 +1534,14 @@ window.addEventListener('DOMContentLoaded', () => {
   if (targetYear && document.getElementById('filter-year')) {
     document.getElementById('filter-year').value = targetYear;
   }
+
+  // Register card click listeners to update active roster context
+  document.querySelectorAll('.class-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      const sec = card.getAttribute('data-section');
+      if (sec) currentSection = sec;
+    });
+  });
 
   // Trigger filtering
   filterClasses();
