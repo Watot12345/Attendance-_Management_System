@@ -479,12 +479,12 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
 
           <!-- 2-COLUMN CARDS GRID -->
-          <div id="slips-container" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 min-h-[200px] w-full min-w-0">
+          <div id="slips-container" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 w-full min-w-0">
             <!-- JavaScript Populates 2-Column Cards Here -->
           </div>
 
           <!-- Empty State -->
-          <div id="empty-state" class="hidden p-12 text-center border-2 border-dashed border-slate-200 rounded-2xl my-4">
+          <div id="empty-state" class="hidden p-10 sm:p-12 text-center border-2 border-dashed border-slate-200/90 rounded-2xl bg-slate-50/40">
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto mb-2.5">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
@@ -907,11 +907,13 @@ function renderCurrentPage() {
   container.innerHTML = '';
 
   if (filteredSlips.length === 0) {
+    container.classList.add('hidden');
     emptyState.classList.remove('hidden');
     paginationWrapper.classList.add('hidden');
     return;
   }
 
+  container.classList.remove('hidden');
   emptyState.classList.add('hidden');
   paginationWrapper.classList.remove('hidden');
 
