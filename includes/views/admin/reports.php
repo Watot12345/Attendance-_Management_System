@@ -2081,6 +2081,7 @@ async function syncRealtimeData(isManual = false) {
       if (timeEl) {
         const d = new Date();
         timeEl.textContent = `• ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+      }
       lastCheckinCount = newTotalCheckins;
     }
   } catch (err) {
