@@ -35,38 +35,56 @@ class Database {
             self::loadEnv(dirname(__DIR__, 2) . '/.env');
             self::loadEnv(dirname(__DIR__, 2) . '/prod.env');
 
-            // 1. Resolve connection parameters from DB_* or Railway MYSQL* or defaults
-            $host = getenv('DB_HOST') 
-                 ?: ($_ENV['DB_HOST'] ?? (getenv('MYSQLHOST') ?: ($_ENV['MYSQLHOST'] ?? 'yamabiko.proxy.rlwy.net')));
+            // 1. Resolve driver (default to mysql)
+            $driver = getenv('DB_CONNECTION') ?: ($_ENV['DB_CONNECTION'] ?? 'mysql');
 
-            $port = getenv('DB_PORT') 
-                 ?: ($_ENV['DB_PORT'] ?? (getenv('MYSQLPORT') ?: ($_ENV['MYSQLPORT'] ?? '57011')));
+            $host = '';
+            $port = '';
+            $dbName = '';
+            $user = '';
+            $pass = '';
 
-            $dbName = getenv('DB_NAME') 
-                   ?: ($_ENV['DB_NAME'] ?? (getenv('MYSQLDATABASE') ?: ($_ENV['MYSQLDATABASE'] ?? 'railway')));
-
-            $user = getenv('DB_USER') 
-                 ?: ($_ENV['DB_USER'] ?? (getenv('MYSQLUSER') ?: ($_ENV['MYSQLUSER'] ?? 'root')));
-
-            $pass = getenv('DB_PASS') 
-                 ?: ($_ENV['DB_PASS'] ?? (getenv('MYSQLPASSWORD') ?: ($_ENV['MYSQLPASSWORD'] ?? 'UKpKFxDomvRzxgSvsWSAMAAKBSjuKZVY')));
-
-            $charset = getenv('DB_CHARSET') ?: ($_ENV['DB_CHARSET'] ?? 'utf8mb4');
-
-            // 2. Parse DATABASE_URL / MYSQL_URL if provided (only if it doesn't point to an unresolvable .internal domain while DB_HOST is set)
+            // 2. Parse DATABASE_URL / MYSQL_URL if provided
             $dbUrl = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: ($_ENV['DATABASE_URL'] ?? ($_ENV['MYSQL_URL'] ?? ''));
             if (!empty($dbUrl)) {
                 $parsed = parse_url($dbUrl);
-                if (!empty($parsed['host']) && (!str_contains($parsed['host'], '.internal') || empty(getenv('DB_HOST')))) {
-                    $host = $parsed['host'];
-                    if (!empty($parsed['port'])) $port = (string)$parsed['port'];
-                    if (!empty($parsed['user'])) $user = $parsed['user'];
-                    if (!empty($parsed['pass'])) $pass = $parsed['pass'];
-                    if (!empty($parsed['path'])) $dbName = ltrim($parsed['path'], '/');
-                }
+                if (!empty($parsed['scheme'])) $driver = $parsed['scheme'];
+                if (!empty($parsed['host'])) $host = $parsed['host'];
+                if (!empty($parsed['port'])) $port = (string)$parsed['port'];
+                if (!empty($parsed['user'])) $user = $parsed['user'];
+                if (!empty($parsed['pass'])) $pass = $parsed['pass'];
+                if (!empty($parsed['path'])) $dbName = ltrim($parsed['path'], '/');
             }
 
-            $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset={$charset}";
+            // 3. Fallback to DB_* or MYSQL* or HostForge defaults
+            if (empty($host)) {
+                $host = getenv('DB_HOST') 
+                     ?: ($_ENV['DB_HOST'] ?? (getenv('MYSQLHOST') ?: ($_ENV['MYSQLHOST'] ?? 'mariadb-jyfbabnx.internal')));
+            }
+
+            if (empty($port)) {
+                $port = getenv('DB_PORT') 
+                     ?: ($_ENV['DB_PORT'] ?? (getenv('MYSQLPORT') ?: ($_ENV['MYSQLPORT'] ?? '3306')));
+            }
+
+            if (empty($dbName)) {
+                $dbName = getenv('DB_DATABASE') 
+                       ?: (getenv('DB_NAME') ?: ($_ENV['DB_DATABASE'] ?? ($_ENV['DB_NAME'] ?? (getenv('MYSQLDATABASE') ?: ($_ENV['MYSQLDATABASE'] ?? 'hf_db_jyfbabnx')))));
+            }
+
+            if (empty($user)) {
+                $user = getenv('DB_USERNAME') 
+                     ?: (getenv('DB_USER') ?: ($_ENV['DB_USERNAME'] ?? ($_ENV['DB_USER'] ?? (getenv('MYSQLUSER') ?: ($_ENV['MYSQLUSER'] ?? 'hf_8ou5shncnk')))));
+            }
+
+            if (empty($pass)) {
+                $pass = getenv('DB_PASSWORD') 
+                     ?: (getenv('DB_PASS') ?: ($_ENV['DB_PASSWORD'] ?? ($_ENV['DB_PASS'] ?? (getenv('MYSQLPASSWORD') ?: ($_ENV['MYSQLPASSWORD'] ?? 'rKloJWRCQvhLFYTAXwzPrGhCuPrrO0sS')))));
+            }
+
+            $charset = getenv('DB_CHARSET') ?: ($_ENV['DB_CHARSET'] ?? 'utf8mb4');
+
+            $dsn = "{$driver}:host={$host};port={$port};dbname={$dbName};charset={$charset}";
 
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
