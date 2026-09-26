@@ -24,6 +24,9 @@ class StudentController {
                 u.last_name,
                 u.email,
                 u.phone,
+                COALESCE(u.parent_number, u.parent_email, '') AS parent_contact,
+                u.parent_number,
+                u.parent_email,
                 u.status,
                 CASE WHEN r.student_id IS NOT NULL THEN COALESCE(r.course, 'BSIT') ELSE 'Not Enrolled' END AS course,
                 CASE 
@@ -1509,6 +1512,294 @@ class StudentController {
                 'status'  => 'error',
                 'message' => $e->getMessage()
             ]);
+        }
+        exit;
+    }
+
+    /**
+     * Helper: extract JSON or POST payload
+     */
+    private function getJsonOrPostInput(): array {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            return json_decode(file_get_contents('php://input'), true) ?? [];
+        }
+        return $_POST;
+    }
+
+    /**
+     * POST /api/students/update
+     * Update student account details in users and class_roster
+     */
+    public function apiUpdate(): void {
+        header('Content-Type: application/json');
+        try {
+            $input = $this->getJsonOrPostInput();
+            $userId = (int)($input['user_id'] ?? $input['id'] ?? 0);
+
+            if ($userId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Valid Student User ID is required.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT user_id, student_id, email, first_name, last_name, status FROM users WHERE user_id = ? AND role = 'student'");
+            $stmt->execute([$userId]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$existing) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Student record not found.']);
+                exit;
+            }
+
+            $firstName     = trim($input['first_name'] ?? $existing['first_name']);
+            $lastName      = trim($input['last_name'] ?? $existing['last_name']);
+            $email         = strtolower(trim($input['email'] ?? $existing['email']));
+            $studentIdRaw  = trim((string)($input['student_id'] ?? $existing['student_id']));
+            $course        = trim($input['course'] ?? 'BSIT');
+            $yearLevelRaw  = trim((string)($input['year_level'] ?? '1st Year'));
+            $section       = trim($input['section'] ?? '');
+            $parentContact = trim($input['parent_contact'] ?? '');
+            $status        = in_array($input['status'] ?? $existing['status'], ['active', 'inactive']) ? $input['status'] : $existing['status'];
+
+            // Validate email
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                http_response_code(422);
+                echo json_encode(['status' => 'error', 'message' => 'Please provide a valid email address.']);
+                exit;
+            }
+            if (!str_ends_with($email, '@gmail.com')) {
+                http_response_code(422);
+                echo json_encode(['status' => 'error', 'message' => 'Student email must be a valid @gmail.com address.']);
+                exit;
+            }
+
+            // Check email uniqueness excluding self
+            $chkEmail = $db->prepare("SELECT user_id FROM users WHERE email = ? AND user_id != ? LIMIT 1");
+            $chkEmail->execute([$email, $userId]);
+            if ($chkEmail->fetch()) {
+                http_response_code(422);
+                echo json_encode(['status' => 'error', 'message' => "Email address '{$email}' is already registered to another account."]);
+                exit;
+            }
+
+            // Clean student ID
+            $studentId = (int) preg_replace('/\D/', '', $studentIdRaw);
+            if ($studentId <= 0) {
+                $studentId = (int) $existing['student_id'];
+            }
+
+            // Check student_id uniqueness excluding self
+            if ($studentId > 0) {
+                $chkId = $db->prepare("SELECT user_id FROM users WHERE student_id = ? AND user_id != ? LIMIT 1");
+                $chkId->execute([$studentId, $userId]);
+                if ($chkId->fetch()) {
+                    http_response_code(422);
+                    echo json_encode(['status' => 'error', 'message' => "Student ID '{$studentId}' is already assigned to another account."]);
+                    exit;
+                }
+            }
+
+            // Extract numeric year level
+            preg_match('/\d+/', $yearLevelRaw, $matches);
+            $yearLevel = isset($matches[0]) ? (int) $matches[0] : 1;
+
+            $db->beginTransaction();
+
+            // Update users table
+            $isEmail = filter_var($parentContact, FILTER_VALIDATE_EMAIL);
+            $upUser = $db->prepare("
+                UPDATE users 
+                SET first_name = :first_name,
+                    last_name = :last_name,
+                    email = :email,
+                    student_id = :student_id,
+                    parent_number = :parent_number,
+                    parent_email = :parent_email,
+                    status = :status
+                WHERE user_id = :user_id
+            ");
+            $upUser->execute([
+                ':first_name'    => $firstName,
+                ':last_name'     => $lastName,
+                ':email'         => $email,
+                ':student_id'    => $studentId,
+                ':parent_number' => $isEmail ? null : ($parentContact ?: null),
+                ':parent_email'  => $isEmail ? $parentContact : null,
+                ':status'        => $status,
+                ':user_id'       => $userId,
+            ]);
+
+            // Update or insert class_roster
+            $chkRoster = $db->prepare("SELECT roster_id FROM class_roster WHERE student_id = ? LIMIT 1");
+            $chkRoster->execute([$userId]);
+            $existingRoster = $chkRoster->fetch();
+
+            if ($existingRoster) {
+                $upRoster = $db->prepare("
+                    UPDATE class_roster 
+                    SET first_name = :first_name,
+                        last_name = :last_name,
+                        course = :course,
+                        course_code = :course_code,
+                        course_title = :course_title,
+                        year_level = :year_level,
+                        section = :section
+                    WHERE student_id = :student_id
+                ");
+                $upRoster->execute([
+                    ':first_name'   => $firstName,
+                    ':last_name'    => $lastName,
+                    ':course'       => $course,
+                    ':course_code'  => $course,
+                    ':course_title' => $course . ' Program',
+                    ':year_level'   => $yearLevel,
+                    ':section'      => $section,
+                    ':student_id'   => $userId,
+                ]);
+            } else if (!empty($section)) {
+                $defaultTeacherId = 1;
+                $insRoster = $db->prepare("
+                    INSERT INTO class_roster (
+                        student_id, teacher_id, first_name, last_name,
+                        section, scheduled_time, schedule_day,
+                        course_code, course_title, course, year_level
+                    ) VALUES (
+                        :student_id, :teacher_id, :first_name, :last_name,
+                        :section, '08:00:00', 'Monday',
+                        :course_code, :course_title, :course, :year_level
+                    )
+                ");
+                $insRoster->execute([
+                    ':student_id'   => $userId,
+                    ':teacher_id'   => $defaultTeacherId,
+                    ':first_name'   => $firstName,
+                    ':last_name'    => $lastName,
+                    ':section'      => $section,
+                    ':course_code'  => $course,
+                    ':course_title' => $course . ' Program',
+                    ':course'       => $course,
+                    ':year_level'   => $yearLevel,
+                ]);
+            }
+
+            $db->commit();
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => "Student account for {$firstName} {$lastName} updated successfully."
+            ]);
+        } catch (Exception $e) {
+            if (isset($db) && $db instanceof PDO && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
+     * POST /api/students/reset-password
+     * Reset student password to formula (# + Initials + 8080) and return temporary credential
+     */
+    public function apiResetPassword(): void {
+        header('Content-Type: application/json');
+        try {
+            $input = $this->getJsonOrPostInput();
+            $userId = (int)($input['user_id'] ?? $input['id'] ?? 0);
+
+            if ($userId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Valid Student User ID is required.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT user_id, student_id, first_name, last_name, email FROM users WHERE user_id = ? AND role = 'student'");
+            $stmt->execute([$userId]);
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$student) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Student record not found.']);
+                exit;
+            }
+
+            // Generate formula password: # + 1st & 2nd letter of Last Name + 8080
+            $cleanLast = preg_replace('/[^a-zA-Z]/', '', $student['last_name'] ?? '');
+            if (strlen($cleanLast) >= 2) {
+                $c1 = strtoupper(substr($cleanLast, 0, 1));
+                $c2 = strtolower(substr($cleanLast, 1, 1));
+            } elseif (strlen($cleanLast) === 1) {
+                $c1 = strtoupper(substr($cleanLast, 0, 1));
+                $c2 = 'x';
+            } else {
+                $c1 = 'S';
+                $c2 = 't';
+            }
+            $tempPass = '#' . $c1 . $c2 . '8080';
+            $hashedPassword = password_hash($tempPass, PASSWORD_BCRYPT);
+
+            $up = $db->prepare("UPDATE users SET password_hash = ? WHERE user_id = ?");
+            $up->execute([$hashedPassword, $userId]);
+
+            // Optional notification log
+            try {
+                $notifStmt = $db->prepare("
+                    INSERT INTO `notifications` 
+                    (`user_id`, `type`, `title`, `message`, `is_read`, `created_at`) 
+                    VALUES (?, 'system', ?, ?, 0, NOW())
+                ");
+                $notifStmt->execute([
+                    1,
+                    "Student Password Reset: {$student['first_name']} {$student['last_name']}",
+                    "Temporary password generated for Student ID #{$student['student_id']} ({$student['email']}): {$tempPass}"
+                ]);
+            } catch (Exception $ign) {}
+
+            echo json_encode([
+                'status'        => 'success',
+                'message'       => "Password for {$student['first_name']} {$student['last_name']} has been reset.",
+                'temp_password' => $tempPass,
+                'email'         => $student['email']
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
+     * POST /api/students/delete
+     * Soft delete student by setting status = 'inactive'
+     */
+    public function apiDelete(): void {
+        header('Content-Type: application/json');
+        try {
+            $input = $this->getJsonOrPostInput();
+            $userId = (int)($input['user_id'] ?? $input['id'] ?? 0);
+
+            if ($userId <= 0) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Valid Student User ID is required.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+            $stmt = $db->prepare("UPDATE users SET status = 'inactive' WHERE user_id = ? AND role = 'student'");
+            $stmt->execute([$userId]);
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => "Student account #{$userId} has been deactivated (disabled)."
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
         exit;
     }

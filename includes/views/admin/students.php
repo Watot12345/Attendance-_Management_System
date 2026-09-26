@@ -267,10 +267,21 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     </td>
 
                     <td class="py-3.5 px-4 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 mr-1">
                           QR: <?= !empty($st['qr_code']) ? 'Linked' : 'None' ?>
                         </span>
+                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditStudentModal(<?= json_encode($st, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)' title="Edit Account">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition cursor-pointer" onclick="openResetStudentPasswordModal(<?= (int)$st['user_id'] ?>, '<?= htmlspecialchars(addslashes($fullName), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($st['student_code'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($st['email'] ?? ''), ENT_QUOTES) ?>')" title="Reset Password">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                        </button>
+                        <?php if ($st['status'] === 'active'): ?>
+                          <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" onclick="openDeactivateStudentModal(<?= (int)$st['user_id'] ?>, '<?= htmlspecialchars(addslashes($fullName), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($st['student_code'] ?? ''), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($st['email'] ?? ''), ENT_QUOTES) ?>')" title="Disable Student">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                          </button>
+                        <?php endif; ?>
                       </div>
                     </td>
                   </tr>
@@ -543,6 +554,308 @@ require_once dirname(__DIR__) . '/partials/header.php';
         </div>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: EDIT STUDENT ACCOUNT -->
+<!-- ========================================================================= -->
+<div id="editStudentModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <!-- Modal Header -->
+    <div class="px-6 py-4 bg-[#1e3b8a] text-white flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">Account Management</span>
+          <span class="text-xs text-sky-200 font-medium">Directory Editor</span>
+        </div>
+        <h3 class="text-lg font-bold tracking-tight mt-0.5">Edit Student Account</h3>
+      </div>
+      <button type="button" onclick="closeEditStudentModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Modal Form Body -->
+    <form id="edit-student-form" onsubmit="handleEditStudentSubmit(event)" class="p-6 space-y-4">
+      <input type="hidden" id="edit-student-user-id" name="user_id">
+
+      <!-- Inline Error Box -->
+      <div id="edit-student-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span id="edit-student-error-text"></span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Student Number / ID -->
+        <div>
+          <label for="edit-student-code" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Student Number / ID <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-student-code" name="student_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] font-mono font-bold text-slate-800 outline-none transition">
+        </div>
+
+        <!-- Account Status -->
+        <div>
+          <label for="edit-student-status" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Account Status <span class="text-rose-500">*</span>
+          </label>
+          <select id="edit-student-status" name="status" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
+            <option value="active">Active (Access Enabled)</option>
+            <option value="inactive">Inactive (Disabled / Suspended)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- First Name -->
+        <div>
+          <label for="edit-student-first-name" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            First Name <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-student-first-name" name="first_name" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] font-semibold text-slate-800 outline-none">
+        </div>
+
+        <!-- Last Name -->
+        <div>
+          <label for="edit-student-last-name" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Last Name <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-student-last-name" name="last_name" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] font-semibold text-slate-800 outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Course / Degree -->
+        <div>
+          <label for="edit-student-course" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Course Program <span class="text-rose-500">*</span>
+          </label>
+          <select id="edit-student-course" name="course" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-semibold text-slate-800 outline-none">
+            <option value="BSIT">BS Information Technology (BSIT)</option>
+            <option value="BSIS">BS Information Systems (BSIS)</option>
+            <option value="BSCS">BS Computer Science (BSCS)</option>
+            <option value="BSBA">BS Business Administration (BSBA)</option>
+          </select>
+        </div>
+
+        <!-- Year Level -->
+        <div>
+          <label for="edit-student-year" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Year Level <span class="text-rose-500">*</span>
+          </label>
+          <select id="edit-student-year" name="year_level" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-semibold text-slate-800 outline-none">
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+
+        <!-- Assigned Section -->
+        <div>
+          <label for="edit-student-section" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Assigned Section <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-student-section" name="section" required placeholder="e.g. 31001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-mono font-bold text-slate-800 outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Student Email -->
+        <div>
+          <label for="edit-student-email" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Student Gmail <span class="text-rose-500">*</span>
+          </label>
+          <input type="email" id="edit-student-email" name="email" required placeholder="username@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] transition bg-white shadow-2xs">
+        </div>
+
+        <!-- Parent Contact -->
+        <div>
+          <label for="edit-student-parent" class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+            Parent/Guardian Contact
+          </label>
+          <input type="text" id="edit-student-parent" name="parent_contact" placeholder="0917-000-0000 / parent@email.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-[#1e3b8a]/20 font-medium text-slate-800 outline-none">
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+        <button type="button" onclick="closeEditStudentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" id="btn-edit-student-submit" class="px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span>Save Changes</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 4: RESET STUDENT PASSWORD -->
+<!-- ========================================================================= -->
+<div id="resetStudentPasswordModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold tracking-tight">Reset Student Password</h3>
+          <p class="text-xs text-amber-100">Provision a new temporary credential</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeResetStudentPasswordModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 1: Confirmation State -->
+    <div id="student-reset-modal-confirm-step" class="p-6 space-y-4">
+      <input type="hidden" id="student-reset-user-id">
+
+      <!-- Target Student Card -->
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Student Name:</span>
+          <span id="student-reset-name" class="font-bold text-slate-800 text-sm"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Student ID:</span>
+          <span id="student-reset-code" class="font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Gmail Address:</span>
+          <span id="student-reset-email" class="font-mono text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- Warning Notice -->
+      <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+          <strong>Are you sure?</strong> Generating a temporary password will overwrite the current password for this student (#Initials8080) and log it to system notifications.
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeResetStudentPasswordModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-student-reset-pass" onclick="executeStudentPasswordReset()" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          <span>Generate Temp Password</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Result State (Generated Temp Password) -->
+    <div id="student-reset-modal-result-step" class="p-6 space-y-4 hidden">
+      <!-- Success Banner -->
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h4 class="text-base font-bold text-slate-900">Password Reset Successful!</h4>
+        <p class="text-xs text-slate-500">A new temporary credential has been generated for <strong id="student-reset-result-name" class="text-slate-800"></strong>.</p>
+      </div>
+
+      <!-- Password Card with Copy Action -->
+      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+        <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Temporary Password</div>
+        <div class="flex items-center justify-center gap-2">
+          <span id="student-reset-result-password" class="text-xl font-mono font-black text-amber-700 bg-amber-50 border border-amber-200 px-4 py-1.5 rounded-xl select-all tracking-wider"></span>
+          <button type="button" onclick="copyStudentTempPassword()" id="btn-copy-student-temp-pass" class="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer" title="Copy to clipboard">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span id="copy-student-btn-text">Copy</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500 pt-1">Please copy or forward this temporary password to the student.</p>
+      </div>
+
+      <!-- Security / Login Note -->
+      <div class="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-950 text-xs flex items-center gap-2">
+        <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>The student will be prompted to change their password on next sign in.</span>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end">
+        <button type="button" onclick="closeResetStudentPasswordModal()" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition cursor-pointer">
+          Done &amp; Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 5: DISABLE / DEACTIVATE STUDENT -->
+<!-- ========================================================================= -->
+<div id="deactivateStudentModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <!-- Header -->
+    <div class="px-6 py-4 bg-gradient-to-r from-rose-600 to-rose-700 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold tracking-tight">Disable Student Account</h3>
+          <p class="text-xs text-rose-100">Suspend student portal access &amp; attendance</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeDeactivateStudentModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <input type="hidden" id="deactivate-student-user-id">
+
+      <!-- Target Student Card -->
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Student Name:</span>
+          <span id="deactivate-student-name" class="font-bold text-slate-800 text-sm"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Student ID:</span>
+          <span id="deactivate-student-code" class="font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 font-medium">Gmail Address:</span>
+          <span id="deactivate-student-email" class="font-mono text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- Warning Callout -->
+      <div class="p-3 rounded-xl bg-rose-50/80 border border-rose-200 text-rose-900 text-xs flex items-start gap-2.5">
+        <svg class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="space-y-1">
+          <div class="font-bold">Are you sure you want to disable this account?</div>
+          <p class="text-[11px] text-rose-800 leading-relaxed">
+            Deactivating will immediately prevent this student from logging into the portal and submitting attendance. Their historical attendance records and class enrollments will be preserved.
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        <button type="button" onclick="closeDeactivateStudentModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-deactivate-student" onclick="confirmDeactivateStudent()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <span>Disable Account</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1190,6 +1503,388 @@ function processExcelImport() {
       `;
     }
     form.submit();
+  }
+}
+
+// =========================================================================
+// ACTION MODAL WORKFLOWS: EDIT, RESET PASSWORD, DEACTIVATE STUDENT
+// =========================================================================
+
+// 1. Edit Student Modal
+function openEditStudentModal(st) {
+  if (!st) return;
+
+  const idInput = document.getElementById('edit-student-user-id');
+  const codeInput = document.getElementById('edit-student-code');
+  const fnInput = document.getElementById('edit-student-first-name');
+  const lnInput = document.getElementById('edit-student-last-name');
+  const courseInput = document.getElementById('edit-student-course');
+  const yearInput = document.getElementById('edit-student-year');
+  const secInput = document.getElementById('edit-student-section');
+  const emailInput = document.getElementById('edit-student-email');
+  const parentInput = document.getElementById('edit-student-parent');
+  const statusInput = document.getElementById('edit-student-status');
+
+  if (idInput) idInput.value = st.user_id || st.id || '';
+  if (codeInput) codeInput.value = st.student_code || st.student_id || '';
+  if (fnInput) fnInput.value = st.first_name || '';
+  if (lnInput) lnInput.value = st.last_name || '';
+  
+  if (courseInput) {
+    const crs = (st.course && st.course !== 'Not Enrolled') ? st.course : 'BSIT';
+    courseInput.value = crs;
+  }
+  
+  if (yearInput) {
+    let yr = st.grade_level;
+    if (!yr || yr === 'Not Enrolled Yet') {
+      const yNum = parseInt(st.year_level, 10);
+      yr = yNum === 1 ? '1st Year' : (yNum === 2 ? '2nd Year' : (yNum === 4 ? '4th Year' : '3rd Year'));
+    }
+    yearInput.value = yr;
+  }
+
+  if (secInput) {
+    const sec = (st.section && st.section !== 'Not Enrolled Yet' && st.section !== 'Unassigned') ? st.section : '';
+    secInput.value = sec;
+  }
+
+  if (emailInput) emailInput.value = st.email || '';
+  if (parentInput) parentInput.value = st.parent_contact || st.parent_number || st.parent_email || st.phone || '';
+  if (statusInput) statusInput.value = (st.status === 'inactive') ? 'inactive' : 'active';
+
+  const errorBox = document.getElementById('edit-student-error-box');
+  if (errorBox) errorBox.classList.add('hidden');
+
+  const submitBtn = document.getElementById('btn-edit-student-submit');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      <span>Save Changes</span>
+    `;
+  }
+
+  const modal = document.getElementById('editStudentModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeEditStudentModal() {
+  const modal = document.getElementById('editStudentModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function handleEditStudentSubmit(e) {
+  e.preventDefault();
+  const errorBox = document.getElementById('edit-student-error-box');
+  const errorText = document.getElementById('edit-student-error-text');
+  if (errorBox) errorBox.classList.add('hidden');
+
+  const emailInput = document.getElementById('edit-student-email');
+  let emailVal = emailInput ? emailInput.value.trim() : '';
+
+  if (!emailVal.includes('@')) {
+    emailVal = emailVal + '@gmail.com';
+    if (emailInput) emailInput.value = emailVal;
+  }
+
+  const isValidGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(emailVal);
+  if (!isValidGmail) {
+    if (errorBox && errorText) {
+      errorText.textContent = 'Student email must be a valid @gmail.com address (e.g. username@gmail.com).';
+      errorBox.classList.remove('hidden');
+    }
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Student email must be a valid @gmail.com address.', 'error');
+    }
+    if (emailInput) emailInput.focus();
+    return;
+  }
+
+  const submitBtn = document.getElementById('btn-edit-student-submit');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Saving...</span>
+    `;
+  }
+
+  const payload = {
+    id: parseInt(document.getElementById('edit-student-user-id')?.value, 10),
+    student_id: document.getElementById('edit-student-code')?.value.trim(),
+    first_name: document.getElementById('edit-student-first-name')?.value.trim(),
+    last_name: document.getElementById('edit-student-last-name')?.value.trim(),
+    course: document.getElementById('edit-student-course')?.value.trim(),
+    year_level: document.getElementById('edit-student-year')?.value.trim(),
+    section: document.getElementById('edit-student-section')?.value.trim(),
+    email: emailVal,
+    parent_contact: document.getElementById('edit-student-parent')?.value.trim(),
+    status: document.getElementById('edit-student-status')?.value.trim()
+  };
+
+  try {
+    const endpoint = (typeof window.url === 'function') ? window.url('api/students/update') : '<?= url('api/students/update') ?>';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      closeEditStudentModal();
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Student updated successfully!', 'success');
+      }
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      if (errorBox && errorText) {
+        errorText.textContent = result.message || 'Failed to update student account.';
+        errorBox.classList.remove('hidden');
+      }
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Failed to update student.', 'error');
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <span>Save Changes</span>
+        `;
+      }
+    }
+  } catch (err) {
+    if (errorBox && errorText) {
+      errorText.textContent = 'Server connection error: ' + err.message;
+      errorBox.classList.remove('hidden');
+    }
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Server connection error.', 'error');
+    }
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span>Save Changes</span>
+      `;
+    }
+  }
+}
+
+// 2. Reset Student Password Modal
+let currentResetStudent = null;
+
+function openResetStudentPasswordModal(id, name, code = '', email = '') {
+  currentResetStudent = { id, name, code, email };
+
+  const idInput = document.getElementById('student-reset-user-id');
+  const nameEl = document.getElementById('student-reset-name');
+  const codeEl = document.getElementById('student-reset-code');
+  const emailEl = document.getElementById('student-reset-email');
+
+  if (idInput) idInput.value = id;
+  if (nameEl) nameEl.textContent = name || 'Student Member';
+  if (codeEl) codeEl.textContent = code || 'N/A';
+  if (emailEl) emailEl.textContent = email || 'N/A';
+
+  // Step 1 confirm step visible, Step 2 hidden
+  const confirmStep = document.getElementById('student-reset-modal-confirm-step');
+  const resultStep = document.getElementById('student-reset-modal-result-step');
+  if (confirmStep) confirmStep.classList.remove('hidden');
+  if (resultStep) resultStep.classList.add('hidden');
+
+  const btn = document.getElementById('btn-confirm-student-reset-pass');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+      <span>Generate Temp Password</span>
+    `;
+  }
+
+  const modal = document.getElementById('resetStudentPasswordModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeResetStudentPasswordModal() {
+  const modal = document.getElementById('resetStudentPasswordModal');
+  if (modal) modal.classList.add('hidden');
+  currentResetStudent = null;
+}
+
+async function executeStudentPasswordReset() {
+  if (!currentResetStudent || !currentResetStudent.id) return;
+
+  const btn = document.getElementById('btn-confirm-student-reset-pass');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Generating...</span>
+    `;
+  }
+
+  try {
+    const endpoint = (typeof window.url === 'function') ? window.url('api/students/reset-password') : '<?= url('api/students/reset-password') ?>';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentResetStudent.id })
+    });
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      const confirmStep = document.getElementById('student-reset-modal-confirm-step');
+      const resultStep = document.getElementById('student-reset-modal-result-step');
+      if (confirmStep) confirmStep.classList.add('hidden');
+      if (resultStep) resultStep.classList.remove('hidden');
+
+      const resNameEl = document.getElementById('student-reset-result-name');
+      const resPassEl = document.getElementById('student-reset-result-password');
+      if (resNameEl) resNameEl.textContent = currentResetStudent.name;
+      if (resPassEl) resPassEl.textContent = result.temp_password;
+
+      const copyBtnText = document.getElementById('copy-student-btn-text');
+      if (copyBtnText) copyBtnText.textContent = 'Copy';
+
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(`Temporary password generated for ${currentResetStudent.name}`, 'success');
+      }
+    } else {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Failed to reset password.', 'error');
+      } else {
+        alert(result.message || 'Failed to reset password.');
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          <span>Generate Temp Password</span>
+        `;
+      }
+    }
+  } catch (err) {
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Failed to reset password: ' + err.message, 'error');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        <span>Generate Temp Password</span>
+      `;
+    }
+  }
+}
+
+function copyStudentTempPassword() {
+  const passEl = document.getElementById('student-reset-result-password');
+  const copyBtnText = document.getElementById('copy-student-btn-text');
+  if (!passEl) return;
+
+  const textToCopy = passEl.textContent.trim();
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    if (copyBtnText) copyBtnText.textContent = 'Copied!';
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Temporary password copied to clipboard!', 'success');
+    }
+    setTimeout(() => {
+      if (copyBtnText) copyBtnText.textContent = 'Copy';
+    }, 2500);
+  }).catch(() => {
+    if (copyBtnText) copyBtnText.textContent = 'Copied!';
+  });
+}
+
+// 3. Deactivate Student Modal
+let currentDeactivateStudent = null;
+
+function openDeactivateStudentModal(id, name, code = '', email = '') {
+  currentDeactivateStudent = { id, name, code, email };
+
+  const idInput = document.getElementById('deactivate-student-user-id');
+  const nameEl = document.getElementById('deactivate-student-name');
+  const codeEl = document.getElementById('deactivate-student-code');
+  const emailEl = document.getElementById('deactivate-student-email');
+
+  if (idInput) idInput.value = id;
+  if (nameEl) nameEl.textContent = name || 'Student Member';
+  if (codeEl) codeEl.textContent = code || 'N/A';
+  if (emailEl) emailEl.textContent = email || 'N/A';
+
+  const btn = document.getElementById('btn-confirm-deactivate-student');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+      <span>Disable Account</span>
+    `;
+  }
+
+  const modal = document.getElementById('deactivateStudentModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeactivateStudentModal() {
+  const modal = document.getElementById('deactivateStudentModal');
+  if (modal) modal.classList.add('hidden');
+  currentDeactivateStudent = null;
+}
+
+async function confirmDeactivateStudent() {
+  if (!currentDeactivateStudent || !currentDeactivateStudent.id) return;
+
+  const btn = document.getElementById('btn-confirm-deactivate-student');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Disabling...</span>
+    `;
+  }
+
+  try {
+    const endpoint = (typeof window.url === 'function') ? window.url('api/students/delete') : '<?= url('api/students/delete') ?>';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentDeactivateStudent.id })
+    });
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      closeDeactivateStudentModal();
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Student account disabled successfully.', 'success');
+      }
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Failed to disable account.', 'error');
+      } else {
+        alert(result.message || 'Failed to disable account.');
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <span>Disable Account</span>
+        `;
+      }
+    }
+  } catch (err) {
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Failed to disable account: ' + err.message, 'error');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        <span>Disable Account</span>
+      `;
+    }
   }
 }
 

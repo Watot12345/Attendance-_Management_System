@@ -179,6 +179,11 @@ class Router {
         '/api/teachers/import'          => 'TeacherController@apiImport',
         '/api/teachers/export'          => 'TeacherController@apiExport',
 
+        // Students Master API
+        '/api/students/update'          => 'StudentController@apiUpdate',
+        '/api/students/delete'          => 'StudentController@apiDelete',
+        '/api/students/reset-password'  => 'StudentController@apiResetPassword',
+
         // System Settings API
         '/api/settings'                 => 'SettingsController@apiIndex',
         '/api/settings/save'            => 'SettingsController@apiSave',
