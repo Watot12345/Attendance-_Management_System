@@ -1105,9 +1105,9 @@ function updateMajorDropdown(selectedCourse) {
 // ==========================================
 // ROSTER PAGINATION & FILTER LOGIC
 // ==========================================
-let rosterCurrentPage = 1;
-let rosterPageSize = 10;
-let rosterMatchingRows = [];
+var rosterCurrentPage = 1;
+var rosterPageSize = 10;
+var rosterMatchingRows = [];
 
 function onCourseFilterChange() {
   const courseEl = document.getElementById('filter-course');
@@ -1910,10 +1910,10 @@ function triggerFileDownload(blob, filename) {
 // ==========================================
 // REALTIME LIVE SYNC ENGINE
 // ==========================================
-let realtimeTimer = null;
-const realtimeIntervalMs = 5000; // Poll every 5s
-let isRealtimeActive = true;
-let lastCheckinCount = <?php echo $totalSessionsAll; ?>;
+var realtimeTimer = null;
+var realtimeIntervalMs = 5000; // Poll every 5s
+var isRealtimeActive = true;
+var lastCheckinCount = <?php echo $totalSessionsAll; ?>;
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';

@@ -1362,15 +1362,15 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       }, 5000);
     }
 
-    let resendCountdown = 60;
-    let resendInterval = null;
-    let modalResendCountdown = 60;
-    let modalResendInterval = null;
-    let resetActiveEmail = '';
-    let resetActiveOtp = '';
-    let approvalPollInterval = null;
-    let approvalCountdownInterval = null;
-    let activeApprovalRequestId = null;
+    var resendCountdown = 60;
+    var resendInterval = null;
+    var modalResendCountdown = 60;
+    var modalResendInterval = null;
+    var resetActiveEmail = '';
+    var resetActiveOtp = '';
+    var approvalPollInterval = null;
+    var approvalCountdownInterval = null;
+    var activeApprovalRequestId = null;
 
     // Password Visibility Toggle
     function togglePasswordVisibility(inputId, iconId) {
@@ -1457,7 +1457,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
       startResendCountdown();
     }
 
-    let isApprovalFinished = false;
+    var isApprovalFinished = false;
 
     function formatApprovalCountdown(sec) {
       const s = Math.max(0, parseInt(sec, 10) || 0);
@@ -1630,7 +1630,7 @@ if (empty($_SESSION['user_id']) && !empty($_COOKIE['ams_remember_token']) && emp
     }
 
     // 6-Digit OTP Box Auto-Advance
-    const otpBoxes = document.querySelectorAll('.otp-digit-box');
+    var otpBoxes = document.querySelectorAll('.otp-digit-box');
     otpBoxes.forEach((box, idx) => {
       box.addEventListener('input', (e) => {
         const val = e.target.value.replace(/\D/g, '');

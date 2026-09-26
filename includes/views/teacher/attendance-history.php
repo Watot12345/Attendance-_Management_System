@@ -763,10 +763,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
     /* ══════════════════════════════════════════════════════════════
        ATTENDANCE PAGINATION & DEBOUNCED LIVE FILTERING (15 PER PAGE)
        ══════════════════════════════════════════════════════════════ */
-    const PAGE_SIZE = 15;
-    const WINDOW_SIZE = 30;
-    let attendanceCurrentPage = 1;
-    let attendanceFilterDebounceTimer = null;
+    var PAGE_SIZE = 15;
+    var WINDOW_SIZE = 30;
+    var attendanceCurrentPage = 1;
+    var attendanceFilterDebounceTimer = null;
 
     // Debounced filter handler (0.3 seconds / 300ms delay) with prominent table loading overlay
     function debouncedFilterAttendance() {

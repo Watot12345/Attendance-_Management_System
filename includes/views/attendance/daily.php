@@ -441,9 +441,9 @@ include __DIR__ . '/../partials/header.php';
 <script>
 APP.highlightNav('daily');
 
-let currentActiveTab = 'daily';
-let searchDebounceTimer = null;
-let ledgerAbortController = null;
+var currentActiveTab = 'daily';
+var searchDebounceTimer = null;
+var ledgerAbortController = null;
 
 function switchLedgerTab(tabId) {
   currentActiveTab = tabId;

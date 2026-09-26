@@ -1,6 +1,17 @@
 <?php 
 $page_title = 'Attendance Analytics'; 
 require_once dirname(__DIR__, 2) . '/core/Router.php';
+require_once dirname(__DIR__, 2) . '/core/Database.php';
+
+$allSections = [];
+$allYears = [];
+try {
+    $db = Database::getConnection();
+    $secRows = $db->query("SELECT DISTINCT section FROM class_roster WHERE section IS NOT NULL AND section != '' ORDER BY section ASC")->fetchAll(PDO::FETCH_COLUMN);
+    $allSections = $secRows ?: [];
+    $yrRows = $db->query("SELECT DISTINCT year_level FROM class_roster WHERE year_level IS NOT NULL AND year_level != '' ORDER BY year_level ASC")->fetchAll(PDO::FETCH_COLUMN);
+    $allYears = $yrRows ?: [1, 2, 3, 4];
+} catch (Throwable $e) {}
 ?>
 <?php include __DIR__ . '/../partials/header.php'; ?>
 <body class="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
@@ -149,26 +160,31 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Year Level</label>
-                    <select id="filter-grade" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
+                    <select id="filter-grade" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition" onchange="applyAnalyticsFilters()">
                       <option value="all" selected>All Year Levels</option>
-                      <option value="1">1st Year (Freshman)</option>
-                      <option value="2">2nd Year (Sophomore)</option>
-                      <option value="3">3rd Year (Junior)</option>
-                      <option value="4">4th Year (Senior)</option>
+                      <?php foreach ($allYears as $y): ?>
+                        <?php $yOrd = match((int)$y) { 1 => '1st Year (Freshman)', 2 => '2nd Year (Sophomore)', 3 => '3rd Year (Junior)', 4 => '4th Year (Senior)', default => $y . 'th Year' }; ?>
+                        <option value="<?= (int)$y ?>"><?= $yOrd ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Section</label>
-                    <select id="filter-section" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
+                    <select id="filter-section" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition" onchange="applyAnalyticsFilters()">
                       <option value="all" selected>All Sections</option>
-                      <option value="A">Section A</option>
-                      <option value="B">Section B</option>
-                      <option value="C">Section C</option>
+                      <?php foreach ($allSections as $s): ?>
+                        <option value="<?= htmlspecialchars($s) ?>"><?= htmlspecialchars($s) ?></option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
-                  <button type="button" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#1e3b8a] hover:bg-[#162c69] text-white transition shadow-xs cursor-pointer mt-1" onclick="applyAnalyticsFilters()">
-                    Apply Filters
-                  </button>
+                  <div class="flex items-center gap-2 mt-1">
+                    <button type="button" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-[#1e3b8a] hover:bg-[#162c69] text-white transition shadow-xs cursor-pointer" onclick="applyAnalyticsFilters()">
+                      Apply Filters
+                    </button>
+                    <button type="button" class="py-2.5 px-3 rounded-xl text-xs font-semibold border border-slate-200 hover:bg-slate-100 text-slate-600 transition cursor-pointer" title="Reset Filters" onclick="resetAnalyticsFilters()">
+                      Reset
+                    </button>
+                  </div>
                 </div>
               </div>
 

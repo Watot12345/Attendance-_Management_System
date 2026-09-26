@@ -964,7 +964,7 @@ $startTimeFormatted = !empty($selectedSectionInfo['scheduled_time']) ? date('h:i
     }
 
     // ── CLIENT-SIDE CACHE LAYER (Instant Zero-Flicker Section Switching) ──
-    const SESSION_CACHE_KEY = 'ams_live_session_cache_v2';
+    var SESSION_CACHE_KEY = 'ams_live_session_cache_v2';
     window.AMS_SESSION_CACHE = {};
 
     function getPersistentPauseState(sec, sessId = null) {

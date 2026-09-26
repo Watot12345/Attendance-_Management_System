@@ -922,7 +922,7 @@ function updatePasswordPreview() {
 }
 
 // Institutional Email handlers
-let emailPrefixManuallyEdited = false;
+var emailPrefixManuallyEdited = false;
 
 function syncInstitutionalEmail() {
   const prefixInput = document.getElementById('m-email-prefix');
@@ -963,7 +963,7 @@ function autoSuggestEmailPrefix() {
 }
 
 // Section Enrollment Counts passed from database
-const sectionRosterCounts = <?= json_encode($sectionCounts ?? []) ?>;
+var sectionRosterCounts = <?= json_encode($sectionCounts ?? []) ?>;
 
 // Dynamic Section Assignment & 50-Student Capacity Auto-Rollover (strictly 5 digits: e.g. 31001)
 function updateAssignedSection() {

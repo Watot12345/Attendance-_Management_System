@@ -5,22 +5,32 @@
  * interactive risk filtering, feature diagnostics modals, and parent alert dispatch.
  */
 
-let chartInstances = {};
-let currentAtRiskStudents = [];
-let currentSelectedStudentForModal = null;
-let analyticsMemoryCache = null;
-let appliedPatternsMap = {};
+var chartInstances = window.chartInstances || {};
+var currentAtRiskStudents = window.currentAtRiskStudents || [];
+var currentSelectedStudentForModal = window.currentSelectedStudentForModal || null;
+var analyticsMemoryCache = window.analyticsMemoryCache || null;
+var appliedPatternsMap = window.appliedPatternsMap || {};
 
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    initAnalytics();
+
+    // Check URL params for specific tab selection (e.g. ?tab=patterns, ?tab=at-risk)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (['patterns', 'at-risk', 'clusters', 'overview'].includes(tab)) {
+      switchAnalyticsTab(tab);
+    }
+  });
+} else {
   initAnalytics();
 
-  // Check URL params for specific tab selection (e.g. ?tab=patterns, ?tab=at-risk)
   const urlParams = new URLSearchParams(window.location.search);
   const tab = urlParams.get('tab');
   if (['patterns', 'at-risk', 'clusters', 'overview'].includes(tab)) {
     switchAnalyticsTab(tab);
   }
-});
+}
 
 /**
  * Initialize Analytics Engine Dashboard with Instant Caching
@@ -65,12 +75,14 @@ async function loadAllAnalytics(showSkeletons = true) {
   }
 
   try {
-    const url = `/api/analytics/all?range=${range}&grade=${encodeURIComponent(grade)}&section=${encodeURIComponent(section)}`;
+    const baseApi = window.url ? window.url('api/analytics/all') : '/api/analytics/all';
+    const timestamp = showSkeletons ? `&_t=${Date.now()}` : '';
+    const url = `${baseApi}?range=${range}&grade=${encodeURIComponent(grade)}&section=${encodeURIComponent(section)}${timestamp}`;
     const res = await fetch(url, {
       headers: { 'Accept': 'application/json' }
     });
     
-    if (res.status === 304 && analyticsMemoryCache) {
+    if (res.status === 304 && analyticsMemoryCache && !showSkeletons) {
       // 304 Not Modified — Cache is fresh!
       return;
     }
@@ -86,7 +98,7 @@ async function loadAllAnalytics(showSkeletons = true) {
     }
   } catch (err) {
     console.warn('Analytics network fetch warning:', err);
-    if (!analyticsMemoryCache) {
+    if (!analyticsMemoryCache || showSkeletons) {
       // Fallback individual requests if unified endpoint is unavailable
       loadAnalyticsOverview();
       loadAnalyticsPatterns();
@@ -1002,10 +1014,10 @@ function renderPatternsUI(patterns, clusters) {
 // ==========================================
 // AT-RISK STUDENTS PAGINATION & BULK ACTIONS
 // ==========================================
-let atRiskCurrentPage = 1;
-let atRiskPageSize = 15;
-let atRiskCurrentFilterLevel = 'all';
-let selectedAtRiskStudentIds = new Set();
+var atRiskCurrentPage = 1;
+var atRiskPageSize = 15;
+var atRiskCurrentFilterLevel = 'all';
+var selectedAtRiskStudentIds = new Set();
 
 /**
  * Render At-Risk Students to DOM with Pagination & Bulk Selection
@@ -1336,7 +1348,7 @@ function clearAtRiskSelection() {
 /**
  * Execute Bulk Early-Warning Parent Alerts via Queue Dispatcher Modal
  */
-let queueElapsedTimer = null;
+var queueElapsedTimer = null;
 
 function closeAtRiskQueueModal() {
   const modal = document.getElementById('at-risk-queue-modal');
@@ -1945,7 +1957,7 @@ async function applyPatternIntervention(patternId, patternTitle, btnElem) {
 /**
  * Pattern Inspection & Action Testing State
  */
-let currentInspectedPattern = null;
+var currentInspectedPattern = null;
 
 /**
  * Open Pattern Inspection & Test Sandbox Modal
