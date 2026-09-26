@@ -2039,20 +2039,6 @@ function renderTableRowHtml(row, index) {
   `;
 }
 
-function showRealtimeToast(msg) {
-  let toast = document.getElementById('realtime-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'realtime-toast';
-    toast.className = 'fixed bottom-5 right-5 z-50 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 backdrop-blur-xs transition-all duration-300 transform translate-y-12 opacity-0';
-    document.body.appendChild(toast);
-  }
-  toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span><span>${escapeHtml(msg)}</span>`;
-  toast.classList.remove('translate-y-12', 'opacity-0');
-  setTimeout(() => {
-    toast.classList.add('translate-y-12', 'opacity-0');
-  }, 3500);
-}
 
 async function syncRealtimeData(isManual = false) {
   const spinner = document.getElementById('sync-spinner-icon');
@@ -2095,11 +2081,6 @@ async function syncRealtimeData(isManual = false) {
       if (timeEl) {
         const d = new Date();
         timeEl.textContent = `• ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-      }
-
-      if (hasChanges && !isManual) {
-        showRealtimeToast(`Realtime Sync: Attendance ledger updated (${newTotalCheckins} check-ins)`);
-      }
       lastCheckinCount = newTotalCheckins;
     }
   } catch (err) {
