@@ -152,7 +152,7 @@ try {
                 <div class="space-y-3">
                   <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Date Range</label>
-                    <select id="filter-date-range" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition">
+                    <select id="filter-date-range" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#1e3b8a] text-slate-800 transition" onchange="applyAnalyticsFilters()">
                       <option value="90" selected>Last 90 Days (Full Semester Horizon)</option>
                       <option value="60">Last 60 Days (Midterm Horizon)</option>
                       <option value="30">Last 30 Days (Recent Active Month)</option>

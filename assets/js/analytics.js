@@ -90,9 +90,11 @@ async function loadAllAnalytics(showSkeletons = true) {
     const data = await res.json();
     if (data.status === 'success') {
       analyticsMemoryCache = data;
-      try {
-        sessionStorage.setItem('attendance_analytics_cache_v2', JSON.stringify(data));
-      } catch (e) {}
+      if (range == 90 && grade === 'all' && section === 'all') {
+        try {
+          sessionStorage.setItem('attendance_analytics_cache_v2', JSON.stringify(data));
+        } catch (e) {}
+      }
 
       renderAllAnalyticsUI(data);
     }
@@ -128,7 +130,9 @@ function renderAllAnalyticsUI(data) {
   renderPatternsUI(data.patterns || [], data.cluster_profiles || []);
 
   // 4. At-Risk Students
-  renderAtRiskUI(data.at_risk_students || [], data.high_risk_count);
+  const atRiskList = data.at_risk_students || [];
+  const highRisk = data.high_risk_count !== undefined ? data.high_risk_count : atRiskList.filter(s => String(s.risk_level || '').toLowerCase().includes('high')).length;
+  renderAtRiskUI(atRiskList, highRisk, true);
 }
 
 /**
