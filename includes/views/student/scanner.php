@@ -10,13 +10,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
 $db = Database::getConnection();
 
-// Handle testing/switching student
-$selectedStudentId = isset($_GET['student_id']) ? (int)$_GET['student_id'] : 0;
-if ($selectedStudentId > 0) {
-    $_SESSION['active_student_test_id'] = $selectedStudentId;
-}
-
-$activeStudentId = $_SESSION['active_student_test_id'] ?? (int)($_SESSION['user']['user_id'] ?? $_SESSION['user_id'] ?? $_SESSION['student_id'] ?? 1);
+$activeStudentId = (int)($_SESSION['user']['user_id'] ?? $_SESSION['user_id'] ?? $_SESSION['student_id'] ?? 1);
 
 // Fetch student profile from database
 $stStmt = $db->prepare("
@@ -56,15 +50,6 @@ $enrolledStmt = $db->prepare("
 $enrolledStmt->execute([$studentUserId]);
 $enrolledClasses = $enrolledStmt->fetchAll(PDO::FETCH_ASSOC);
 $studentSections = !empty($enrolledClasses) ? array_column($enrolledClasses, 'section') : ['31001'];
-
-// Fetch all available student accounts for quick switching in demo/review mode
-$allStudents = $db->query("
-    SELECT u.user_id, u.student_id, u.first_name, u.last_name,
-           (SELECT GROUP_CONCAT(DISTINCT section SEPARATOR ', ') FROM class_roster WHERE student_id = u.user_id) as sections
-    FROM users u
-    WHERE u.role = 'student'
-    ORDER BY u.user_id ASC
-")->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch any currently active QR Session
 $activeSession = null;
@@ -130,16 +115,11 @@ $remainingSec = $activeSession ? max(0, (int)$activeSession['remaining_seconds']
           </div>
         </div>
 
-        <!-- Student Switcher for Testing -->
-        <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-full sm:w-auto">
-          <label for="test-student-select" class="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Testing As:</label>
-          <select id="test-student-select" onchange="window.location.href='?student_id=' + this.value" class="text-xs font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 focus:outline-none cursor-pointer">
-            <?php foreach ($allStudents as $st): ?>
-              <option value="<?= (int)$st['user_id'] ?>" <?= ((int)$st['user_id'] === $studentUserId) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($st['first_name'] . ' ' . $st['last_name'], ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($st['student_id'] ?: 'N/A', ENT_QUOTES, 'UTF-8') ?>)
-              </option>
-            <?php endforeach; ?>
-          </select>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Verified Student
+          </span>
         </div>
       </div>
 
