@@ -837,31 +837,34 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
   <!-- ========================================================================= -->
   <!-- PATTERN INSPECTION & ACTION TESTING MODAL                                  -->
   <!-- ========================================================================= -->
+  <!-- ========================================================================= -->
+  <!-- PATTERN INSPECTION & ACTION TESTING MODAL                                  -->
+  <!-- ========================================================================= -->
   <div id="pattern-inspect-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 hidden">
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
       
-      <!-- Modal Header -->
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+      <!-- Modal Header (Blue Theme) -->
+      <div class="px-6 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0 border-b border-blue-500/30">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-white/15 text-white border border-white/20 flex items-center justify-center font-bold shrink-0 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
           </div>
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-bold text-white tracking-tight" id="pim-title">Pattern Breakdown &amp; Action Testing</h3>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30" id="pim-severity-badge">HIGH IMPACT</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white border border-white/30 backdrop-blur-xs" id="pim-severity-badge">HIGH IMPACT</span>
             </div>
-            <p class="text-xs text-slate-300 mt-0.5" id="pim-type">Scikit-Learn ML Anomaly Detector</p>
+            <p class="text-xs text-blue-100 mt-0.5" id="pim-type">Scikit-Learn ML Anomaly Detector</p>
           </div>
         </div>
-        <button type="button" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer" onclick="closePatternInspectModal()">
+        <button type="button" class="text-blue-100 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer" onclick="closePatternInspectModal()">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
       <!-- Navigation Tabs -->
       <div class="flex items-center gap-2 px-6 pt-3 border-b border-slate-200 bg-slate-50 text-xs font-bold">
-        <button type="button" id="pim-tab-btn-matches" class="px-3.5 py-2 border-b-2 border-indigo-600 text-indigo-600 font-extrabold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('matches')">
+        <button type="button" id="pim-tab-btn-matches" class="px-3.5 py-2 border-b-2 border-blue-600 text-blue-600 font-extrabold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('matches')">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           <span>Live Database Matches (<span id="pim-tab-count">0</span>)</span>
         </button>
@@ -870,7 +873,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
           <span>Email &amp; Alert Preview</span>
         </button>
         <button type="button" id="pim-tab-btn-sandbox" class="px-3.5 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold cursor-pointer transition flex items-center gap-1.5" onclick="switchPimTab('sandbox')">
-          <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
           <span>Interactive Test Sandbox</span>
         </button>
       </div>
@@ -879,10 +882,10 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
       <div class="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
         
         <!-- Formula & Metric Card -->
-        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+        <div class="p-3.5 rounded-xl bg-blue-50/50 border border-blue-100 space-y-1">
           <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
             <span>Machine Learning Detection Logic</span>
-            <span class="text-teal-700 font-extrabold" id="pim-confidence">Confidence: 94.2%</span>
+            <span class="text-blue-700 font-extrabold" id="pim-confidence">Confidence: 94.2%</span>
           </div>
           <p class="text-xs text-slate-700 leading-relaxed font-medium" id="pim-formula">Loading formula...</p>
         </div>
@@ -919,12 +922,12 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
           </div>
 
           <!-- Empty Helper Callout -->
-          <div id="pim-empty-helper-callout" class="hidden p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between flex-wrap gap-2 text-xs">
+          <div id="pim-empty-helper-callout" class="hidden p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between flex-wrap gap-2 text-xs">
             <div>
-              <span class="font-bold text-indigo-900">Want to test this pattern with realistic sample records?</span>
-              <p class="text-[11px] text-indigo-700 mt-0.5">Click below to generate a multi-week attendance test dataset across registered students.</p>
+              <span class="font-bold text-blue-900">Want to test this pattern with realistic sample records?</span>
+              <p class="text-[11px] text-blue-700 mt-0.5">Click below to generate a multi-week attendance test dataset across registered students.</p>
             </div>
-            <button type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition cursor-pointer shadow-xs" onclick="seedDemoAttendanceData(this)">
+            <button type="button" class="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition cursor-pointer shadow-xs" onclick="seedDemoAttendanceData(this)">
               🌱 Generate Test Attendance Batch
             </button>
           </div>
@@ -950,7 +953,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
               </div>
             </div>
             <div class="p-5 bg-white space-y-3 text-xs leading-relaxed text-slate-700 font-sans">
-              <div class="border-l-4 border-indigo-500 pl-3 py-1 bg-indigo-50/40 rounded-r text-indigo-900 font-medium">
+              <div class="border-l-4 border-blue-500 pl-3 py-1 bg-blue-50/50 rounded-r text-blue-900 font-medium">
                 <strong>Recommended Intervention Plan:</strong>
                 <span id="pim-email-action-desc" class="block mt-0.5">Automated parent summary email notice.</span>
               </div>
@@ -974,8 +977,8 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
           <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
             <label class="block text-xs font-bold text-slate-700">Test Recipient Email Address:</label>
             <div class="flex items-center gap-2">
-              <input type="email" id="pim-test-email-input" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono shadow-xs" placeholder="admin@college.edu" value="<?php echo htmlspecialchars($_SESSION['user']['email'] ?? 'admin@college.edu'); ?>">
-              <button type="button" id="btn-pim-send-test" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5" onclick="executePimTestDispatch()">
+              <input type="email" id="pim-test-email-input" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono shadow-xs" placeholder="admin@college.edu" value="<?php echo htmlspecialchars($_SESSION['user']['email'] ?? 'admin@college.edu'); ?>">
+              <button type="button" id="btn-pim-send-test" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition flex items-center gap-1.5" onclick="executePimTestDispatch()">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 <span>Send Test Alert</span>
               </button>
@@ -987,7 +990,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
             <a href="<?php echo url('alerts'); ?>" target="_blank" class="p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center justify-between text-xs font-semibold text-slate-700 shadow-xs">
               <span class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                 <span>View Parent Alerts Ledger</span>
               </span>
               <span class="text-slate-400">↗</span>
@@ -1010,11 +1013,11 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
           Close
         </button>
         <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-secondary btn-sm font-bold text-xs px-3.5 inline-flex items-center gap-1.5 cursor-pointer text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" onclick="switchPimTab('sandbox')">
+          <button type="button" class="btn btn-secondary btn-sm font-bold text-xs px-3.5 inline-flex items-center gap-1.5 cursor-pointer text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100" onclick="switchPimTab('sandbox')">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             <span>Test Sandbox</span>
           </button>
-          <button type="button" id="btn-pim-execute-real" class="btn btn-primary btn-sm font-bold text-xs px-4 inline-flex items-center gap-1.5 cursor-pointer" onclick="executePimRealDispatch()">
+          <button type="button" id="btn-pim-execute-real" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition" onclick="executePimRealDispatch()">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             <span>Apply Action Now</span>
           </button>
@@ -1023,20 +1026,20 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
     </div>
   </div>
 
-  <!-- Pattern Action Execution Confirmation Modal -->
+  <!-- Pattern Action Execution Confirmation Modal (Blue Theme) -->
   <div id="pattern-action-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 hidden">
     <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+      <div class="px-6 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0 border-b border-blue-500/30">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-white/15 text-white border border-white/20 flex items-center justify-center font-bold shrink-0 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white tracking-tight" id="pam-title">AI Intervention Plan Executed</h3>
-            <p class="text-[11px] text-slate-300 mt-0.5" id="pam-subtitle">Real database alerts dispatched and recorded in parent_alerts table</p>
+            <p class="text-[11px] text-blue-100 mt-0.5" id="pam-subtitle">Real database alerts dispatched and recorded in parent_alerts table</p>
           </div>
         </div>
-        <button type="button" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer" onclick="closePatternActionModal()">
+        <button type="button" class="text-blue-100 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer" onclick="closePatternActionModal()">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
@@ -1044,11 +1047,11 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
       <div class="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
         <!-- Summary Stats Card -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div class="p-3 rounded-xl bg-teal-50 border border-teal-200 text-center">
-            <div class="text-[10px] font-bold text-teal-700 uppercase tracking-wider">Targeted Students</div>
-            <div class="text-xl font-black text-teal-900 mt-0.5" id="pam-student-count">0</div>
+          <div class="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-center">
+            <div class="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Targeted Students</div>
+            <div class="text-xl font-black text-blue-900 mt-0.5" id="pam-student-count">0</div>
           </div>
-          <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-center">
+          <div class="p-3 rounded-xl bg-indigo-50/80 border border-indigo-200 text-center">
             <div class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Alerts Dispatched</div>
             <div class="text-xl font-black text-indigo-900 mt-0.5" id="pam-alerts-count">0</div>
           </div>
@@ -1094,7 +1097,7 @@ require_once dirname(__DIR__, 2) . '/core/Router.php';
 
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
         <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1.5" id="pam-applied-time">
-          <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span>Executed just now</span>
         </span>
         <button type="button" class="btn btn-primary btn-sm font-bold px-4 cursor-pointer" onclick="closePatternActionModal()">

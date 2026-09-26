@@ -9,6 +9,7 @@ let chartInstances = {};
 let currentAtRiskStudents = [];
 let currentSelectedStudentForModal = null;
 let analyticsMemoryCache = null;
+let appliedPatternsMap = {};
 
 document.addEventListener('DOMContentLoaded', function() {
   initAnalytics();
@@ -842,6 +843,42 @@ function renderStatusDoughnutChart(statusData) {
 }
 
 /**
+ * Helper: Generate HTML for Applied Pattern Indicator with Interactive Tooltip
+ */
+function getPatternAppliedTooltipHtml(patternId, patternTitle, alertsQueued, appliedAt) {
+  const safeTitle = escapeHtml(patternTitle);
+  return `
+    <div id="action-wrapper-${patternId}" class="relative group/tooltip inline-flex items-center">
+      <button type="button" id="btn-action-${patternId}" 
+        class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shrink-0 shadow-xs flex items-center gap-1.5 text-xs transition cursor-pointer" 
+        onclick="applyPatternIntervention('${patternId}', '${safeTitle}', this)">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        <span>Applied (${alertsQueued} Notified)</span>
+      </button>
+      <!-- Interactive Tooltip -->
+      <div class="absolute bottom-full right-0 mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-30 min-w-[230px] animate-in fade-in zoom-in-95 duration-100">
+        <div class="bg-slate-900 text-white text-[11px] font-medium p-3 rounded-xl shadow-xl border border-slate-700/80 text-left space-y-1.5 w-full">
+          <div class="flex items-center gap-1.5 font-bold text-emerald-400">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Intervention Applied</span>
+          </div>
+          <p class="text-slate-300 text-[10px] leading-relaxed">
+            ${alertsQueued} parent alert notice(s) successfully queued &amp; recorded in MySQL audit ledger.
+          </p>
+          <div class="text-[9px] text-slate-400 pt-1.5 border-t border-slate-800 flex items-center justify-between font-mono">
+            <span class="text-emerald-300 font-semibold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Active
+            </span>
+            <span>${appliedAt || 'Just now'}</span>
+          </div>
+        </div>
+        <div class="w-2.5 h-2.5 -mt-1.5 rotate-45 bg-slate-900 border-r border-b border-slate-700/80"></div>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Render Detected Patterns & Behavioral Clusters to DOM
  */
 function renderPatternsUI(patterns, clusters) {
@@ -867,10 +904,22 @@ function renderPatternsUI(patterns, clusters) {
       let html = '';
       patterns.forEach((pat, idx) => {
         const badgeClass = pat.severity === 'critical' ? 'bg-rose-100 text-rose-800 border-rose-200' : (pat.severity === 'high' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-blue-100 text-blue-800 border-blue-200');
+        const appliedInfo = appliedPatternsMap[pat.id];
+        const actionBtnHtml = appliedInfo 
+          ? getPatternAppliedTooltipHtml(pat.id, pat.title, appliedInfo.alerts_queued || 0, appliedInfo.applied_at || 'Just now')
+          : `
+            <div id="action-wrapper-${pat.id}" class="relative inline-flex items-center">
+              <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Apply Action</span>
+              </button>
+            </div>
+          `;
+
         html += `
           <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5 hover:border-slate-300 transition">
             <div class="flex items-center justify-between flex-wrap gap-2">
-              <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
+              <span class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
                 Pattern #${idx + 1} · ${pat.type.replace(/_/g, ' ').toUpperCase()}
               </span>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeClass}">
@@ -883,22 +932,19 @@ function renderPatternsUI(patterns, clusters) {
               <span class="text-slate-500 font-medium">Affected: <strong class="text-slate-900">${escapeHtml(pat.affected_cohort)}</strong></span>
               <div class="flex items-center gap-2">
                 <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-bold text-[11px]">Database Match</span>
-                <span class="text-teal-700 font-extrabold">Confidence: ${escapeHtml(pat.confidence)}</span>
+                <span class="text-blue-700 font-extrabold">Confidence: ${escapeHtml(pat.confidence)}</span>
               </div>
             </div>
-            <div class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs font-medium text-indigo-900 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+            <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs font-medium text-blue-950 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
               <div class="leading-relaxed">
-                <strong class="text-indigo-950">AI Intervention:</strong> ${escapeHtml(pat.recommendation)}
+                <strong class="text-blue-950">AI Intervention:</strong> ${escapeHtml(pat.recommendation)}
               </div>
               <div class="flex items-center gap-2 shrink-0">
                 <button type="button" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold rounded-xl cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="openPatternInspectModal('${pat.id}')" title="Inspect Live Matching Students & Test Actions">
                   <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                   <span>Inspect &amp; Test</span>
                 </button>
-                <button type="button" id="btn-action-${pat.id}" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer shadow-xs transition flex items-center gap-1.5 text-xs" onclick="applyPatternIntervention('${pat.id}', '${escapeHtml(pat.title)}', this)">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  <span>Apply Action</span>
-                </button>
+                ${actionBtnHtml}
               </div>
             </div>
           </div>
@@ -1856,14 +1902,29 @@ async function applyPatternIntervention(patternId, patternTitle, btnElem) {
 
       if (modal) modal.classList.remove('hidden');
 
-      // 3. Update the Card's button to Active state
-      if (btnElem) {
-        btnElem.className = 'px-3.5 py-1.5 bg-emerald-600 text-white font-bold rounded-xl shrink-0 shadow-xs flex items-center gap-1.5 text-xs';
-        btnElem.innerHTML = `
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          <span>Active (${data.alerts_queued || 0} Notified)</span>
-        `;
-        btnElem.disabled = false;
+      // 3. Update the Card's button to Active state with Interactive Tooltip
+      appliedPatternsMap[patternId] = {
+        applied_at: data.applied_at || 'Just now',
+        alerts_queued: data.alerts_queued || 0,
+        action_name: data.action_name,
+        affected_count: data.affected_count || 0
+      };
+
+      const wrapper = document.getElementById(`action-wrapper-${patternId}`);
+      if (wrapper) {
+        wrapper.outerHTML = getPatternAppliedTooltipHtml(patternId, patternTitle, data.alerts_queued || 0, data.applied_at || 'Just now');
+      } else if (btnElem) {
+        const parent = btnElem.closest('.group\\/tooltip') || btnElem.parentElement;
+        if (parent) {
+          parent.outerHTML = getPatternAppliedTooltipHtml(patternId, patternTitle, data.alerts_queued || 0, data.applied_at || 'Just now');
+        } else {
+          btnElem.className = 'px-3.5 py-1.5 bg-emerald-600 text-white font-bold rounded-xl shrink-0 shadow-xs flex items-center gap-1.5 text-xs';
+          btnElem.innerHTML = `
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Applied (${data.alerts_queued || 0} Notified)</span>
+          `;
+          btnElem.disabled = false;
+        }
       }
     } else {
       showToastNotification(data.message || 'Action failed to execute.', 'error');
@@ -2030,7 +2091,7 @@ function switchPimTab(tab) {
   Object.keys(tabBtns).forEach(k => {
     if (tabBtns[k]) {
       if (k === tab) {
-        tabBtns[k].className = 'px-3.5 py-2 border-b-2 border-indigo-600 text-indigo-600 font-extrabold cursor-pointer transition flex items-center gap-1.5';
+        tabBtns[k].className = 'px-3.5 py-2 border-b-2 border-blue-600 text-blue-600 font-extrabold cursor-pointer transition flex items-center gap-1.5';
       } else {
         tabBtns[k].className = 'px-3.5 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold cursor-pointer transition flex items-center gap-1.5';
       }
