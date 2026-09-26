@@ -604,7 +604,7 @@ async function fetchDailyLedger() {
             <tr>
               <td class="font-medium">
                 <div class="flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
+                  <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                     ${initials}
                   </div>
                   <div>

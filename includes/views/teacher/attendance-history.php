@@ -363,7 +363,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                       </td>
                       <td>
                         <div class="flex items-center gap-2.5">
-                          <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 uppercase">
+                          <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                             <?php echo strtoupper(substr($row['first_name'] ?: 'S', 0, 1) . substr($row['last_name'] ?: 'U', 0, 1)); ?>
                           </div>
                           <span class="font-semibold <?php echo $isAbsent ? 'text-rose-900' : 'text-text-primary'; ?>">

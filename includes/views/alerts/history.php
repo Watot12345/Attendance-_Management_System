@@ -275,14 +275,10 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     <p class="font-bold text-sm text-slate-700">No Attendance Exceptions Found</p>
                     <p class="text-xs text-slate-400 mt-0.5">All students have 100% on-time attendance for your classes.</p>
                   </td>
-                </tr>
-              <?php else: ?>
+                          <?php else: ?>
                 <?php 
-                $colors = ['bg-blue-600', 'bg-indigo-600', 'bg-purple-600', 'bg-rose-600', 'bg-amber-600', 'bg-emerald-600'];
                 foreach ($allExceptions as $item): 
-                  $initials = strtoupper(substr($item['first_name'] ?? 'S', 0, 1) . substr($item['last_name'] ?? '', 0, 1));
-                  $colorIndex = (int)($item['student_id'] ?? 1) % count($colors);
-                  $avatarBg = $colors[$colorIndex];
+                  $initials = strtoupper(substr(trim($item['first_name'] ?? 'S'), 0, 1) . substr(trim($item['last_name'] ?? ''), 0, 1));
                   
                   $isTardy = ($item['status'] === 'tardy');
                   $isExcused = ($item['status'] === 'excused' || $item['excuse_status'] === 'approved');
@@ -327,7 +323,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                     <!-- Student & ID -->
                     <td class="py-3.5 px-4">
                       <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-lg <?= $avatarBg ?> text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+                        <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                           <?= htmlspecialchars($initials) ?>
                         </div>
                         <div>

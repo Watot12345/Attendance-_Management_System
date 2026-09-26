@@ -583,6 +583,7 @@ select {
                 </tr>
                 <?php foreach ($rosterData as $index => $row): 
                   $fullName = trim($row['first_name'] . ' ' . $row['last_name']);
+                  $initials = strtoupper(substr(trim($row['first_name'] ?: 'S'), 0, 1) . substr(trim($row['last_name'] ?: 'N'), 0, 1));
                   $isInUsers = !empty($row['is_in_users_table']);
                   $hasData = (int)$row['total_attendance'] > 0 && $row['attendance_rate'] !== null;
                   $rate = $hasData ? (float)$row['attendance_rate'] : null;
@@ -613,17 +614,17 @@ select {
                       data-rate="<?php echo $rate !== null ? $rate : '-1'; ?>">
                     
                     <!-- Student Info -->
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl <?php echo $isInUsers ? 'bg-blue-50 text-blue-700 border border-blue-200/60' : 'bg-slate-100 text-slate-600 border border-slate-200'; ?> font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
-                          <?php echo strtoupper(substr($row['first_name'] ?: 'S', 0, 1) . substr($row['last_name'] ?: 'N', 0, 1)); ?>
+                        <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                          <?php echo $initials; ?>
                         </div>
                         <div class="min-w-0 flex-1">
                           <div class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[170px] sm:max-w-[210px]" title="<?php echo htmlspecialchars($fullName); ?>">
                             <?php echo htmlspecialchars($fullName); ?>
                           </div>
-                          <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 truncate max-w-[170px] sm:max-w-[210px]" title="Student ID: <?php echo htmlspecialchars($studentNum); ?>">
-                            <span>ID: <?php echo htmlspecialchars($studentNum); ?></span>
+                          <div class="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 truncate max-w-[170px] sm:max-w-[210px]" title="Student ID: <?php echo htmlspecialchars($studentNum); ?>">
+                            <span>ID: #<?php echo htmlspecialchars($studentNum); ?></span>
                           </div>
                         </div>
                       </div>

@@ -414,7 +414,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
                   $avatarBg = $isLate ? 'bg-amber-100 text-amber-800' : ($isAbsent ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-800');
                 ?>
                   <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50/70 border border-slate-200/60">
-                    <div class="w-7 h-7 rounded-full <?php echo $avatarBg; ?> flex items-center justify-center text-[11px] font-bold shrink-0">
+                    <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                       <?php echo htmlspecialchars($item['initials']); ?>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -513,7 +513,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
 
           return `
             <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-              <div class="w-8 h-8 rounded-full ${avatarBg} flex items-center justify-center text-xs font-bold shrink-0">
+              <div class="w-7 h-7 rounded-lg bg-[#1e3b8a] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                 ${item.initials || 'ST'}
               </div>
               <div class="flex-1 min-w-0">
