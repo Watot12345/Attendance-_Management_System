@@ -86,20 +86,29 @@
                 </select>
               </div>
 
-              <button type="submit" class="btn btn-primary btn-lg w-full justify-center inline-flex items-center gap-2">
-                <svg class="w-5 h-5 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
-                Calculate Eligible Students
-              </button>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <button type="submit" class="btn btn-primary btn-lg flex-1 justify-center inline-flex items-center gap-2">
+                  <svg class="w-5 h-5 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4a5 5 0 005 5h4a5 5 0 005-5V3H5zm0 2H3a2 2 0 002 2v-2zm14 0h2a2 2 0 01-2 2V5zm-7 7v5m-4 4h8m-6-4h4"/></svg>
+                  <span>Calculate Eligible Students</span>
+                </button>
+                <button type="button" onclick="loadSampleToolsData()" class="px-5 py-2.5 rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
+                  <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                  <span>Load Class Candidates</span>
+                </button>
+              </div>
             </form>
           </div>
 
           <!-- Results Section -->
           <div id="award-results">
+            <!-- Hidden notice element for state compatibility -->
+            <div id="tools-sample-notice" class="hidden"></div>
+
             <!-- Results Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
               <div>
                 <h3 class="text-lg font-bold" style="color:var(--color-text-primary)">Award Recipients — September 2026</h3>
-                <p class="text-sm mt-0.5" style="color:var(--color-present)"> 14 students qualified with 100% attendance</p>
+                <p id="tools-award-subtitle" class="text-sm mt-0.5" style="color:var(--color-present)"> 14 students qualified with 100% attendance</p>
               </div>
               <div class="flex gap-2">
                 <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" onclick="APP.showToast('Batch notifications dispatched to all 14 parents.', 'success')">

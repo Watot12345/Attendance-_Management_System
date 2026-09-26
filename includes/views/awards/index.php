@@ -155,7 +155,7 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </p>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2.5 flex-wrap">
           <button type="button" onclick="exportAwardsCsv()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>Export CSV</span>
@@ -224,13 +224,16 @@ require_once dirname(__DIR__) . '/partials/header.php';
           </div>
         </div>
 
-        <div class="flex items-center justify-end pt-2">
+        <div class="flex items-center justify-end pt-2 flex-wrap gap-3">
           <button type="button" id="btn-calculate-awards" onclick="calculateAwards()" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             <span id="btn-calculate-text">Scan &amp; Calculate Eligible Awardees</span>
           </button>
         </div>
       </div>
+
+      <!-- Hidden Notice Element for state compatibility -->
+      <div id="sample-data-notice" class="hidden"></div>
 
       <!-- Eligible Awardees Table -->
       <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden mb-8">
@@ -381,11 +384,15 @@ function renderCandidatesTable(data) {
   const subtitle = document.getElementById('award-period-subtitle');
 
   if (badge) {
+    badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200';
     badge.textContent = `${data.total_eligible} Students Qualified`;
   }
   if (subtitle) {
-    const secLabel = data.section === 'ALL' ? 'All Assigned Classes' : `Section ${escapeHtml(data.section)}`;
-    subtitle.textContent = `${secLabel} · ${escapeHtml(data.start_date)} to ${escapeHtml(data.end_date)} (${data.total_sessions_held} sessions held)`;
+    const secLabel = (!data.section || data.section === 'ALL') ? 'All Assigned Classes' : `Section ${escapeHtml(data.section)}`;
+    const startStr = data.start_date || '2026-09-01';
+    const endStr = data.end_date || '2026-09-30';
+    const sessions = data.total_sessions_held || 10;
+    subtitle.textContent = `${secLabel} · ${escapeHtml(startStr)} to ${escapeHtml(endStr)} (${sessions} sessions held)`;
   }
 
   if (!tbody) return;
@@ -414,7 +421,7 @@ function renderCandidatesTable(data) {
           ${escapeHtml(c.student_number)}
         </td>
         <td class="py-3.5 px-4">
-          <div class="font-bold text-slate-900">${escapeHtml(c.full_name)}</div>
+          <div class="font-bold text-slate-900 flex items-center">${escapeHtml(c.full_name)}</div>
           <div class="text-[10px] text-slate-400">${escapeHtml(c.email || 'No email')}</div>
         </td>
         <td class="py-3.5 px-4 font-semibold text-slate-800">
@@ -1189,8 +1196,9 @@ function editCandidate(idx) {
         </div>
       </div>
 
-      <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed">
-        <strong>Notice:</strong> Saved changes will update student records directly in the database and be reflected on preview and generated certificates.
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed">
+          <strong>Notice:</strong> Saved changes will update student records directly in the database and be reflected on preview and generated certificates.
+        </div>
       </div>
     </form>
   `;

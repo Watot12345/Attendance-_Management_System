@@ -75,11 +75,33 @@ function switchToolsTab(tab) {
  */
 function showAwardResults() {
   const results = document.getElementById('award-results');
+  const notice = document.getElementById('tools-sample-notice');
+  if (notice) notice.classList.add('hidden');
+  const subtitle = document.getElementById('tools-award-subtitle');
+  if (subtitle) subtitle.textContent = '14 students qualified with 100% attendance';
   if (results) {
     results.classList.remove('hidden');
     results.scrollIntoView({ behavior: 'smooth' });
     if (typeof APP !== 'undefined' && APP.showToast) {
       APP.showToast('Awards calculated! 14 students qualify.', 'success');
+    }
+  }
+}
+
+/**
+ * Load sample data into Tools awards tab (preview only, not saved to DB)
+ */
+function loadSampleToolsData() {
+  const results = document.getElementById('award-results');
+  const notice = document.getElementById('tools-sample-notice');
+  const subtitle = document.getElementById('tools-award-subtitle');
+  if (notice) notice.classList.add('hidden');
+  if (subtitle) subtitle.textContent = 'Section 31001 — 3 Qualified Candidates (100% Attendance)';
+  if (results) {
+    results.classList.remove('hidden');
+    results.scrollIntoView({ behavior: 'smooth' });
+    if (typeof APP !== 'undefined' && APP.showToast) {
+      APP.showToast('Successfully loaded attendance candidates for Section 31001.', 'success');
     }
   }
 }
