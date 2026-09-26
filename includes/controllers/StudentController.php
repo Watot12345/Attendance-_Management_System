@@ -156,20 +156,28 @@ class StudentController {
     public function store(): void {
         $studentIdRaw  = trim($_POST['student_id'] ?? '');
         $fullName      = trim($_POST['full_name'] ?? '');
-        $emailRaw      = trim($_POST['email_prefix'] ?? $_POST['email'] ?? '');
+        $emailRaw      = trim(!empty($_POST['email']) ? $_POST['email'] : ($_POST['email_prefix'] ?? ''));
         $course        = trim($_POST['course'] ?? 'BSIT');
         $yearLevelRaw  = trim($_POST['year_level'] ?? '1st Year');
         $sectionRaw    = trim($_POST['section'] ?? '');
         $parentContact = trim($_POST['parent_contact'] ?? '');
 
-        // Normalize institutional email: automatically attach @bcp.edu.ph
-        $emailPrefix   = preg_replace('/@.*$/', '', $emailRaw);
-        $emailPrefix   = trim($emailPrefix);
-        $email         = !empty($emailPrefix) ? strtolower($emailPrefix) . '@bcp.edu.ph' : '';
+        // Student email: manually filled up with @gmail.com requirement
+        $emailRaw      = trim($emailRaw);
+        if (strpos($emailRaw, '@') !== false) {
+            $email = strtolower($emailRaw);
+        } else {
+            $email = !empty($emailRaw) ? strtolower($emailRaw) . '@gmail.com' : '';
+        }
 
-        // Validation
-        if (empty($studentIdRaw) || empty($fullName) || empty($email)) {
-            header('Location: ' . url('admin/students?error=' . urlencode('Please fill in all required fields.')));
+        // Validation: required fields, valid email, and must be @gmail.com
+        if (empty($studentIdRaw) || empty($fullName) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            header('Location: ' . url('admin/students?error=' . urlencode('Please fill in all required fields with a valid email address.')));
+            exit;
+        }
+
+        if (!str_ends_with($email, '@gmail.com')) {
+            header('Location: ' . url('admin/students?error=' . urlencode('Student email must be a valid @gmail.com address.')));
             exit;
         }
 
@@ -317,8 +325,27 @@ class StudentController {
 
             $db->commit();
 
-            // Redirect back with success message
-            header('Location: ' . url('admin/students?created=' . urlencode($fullName)));
+            // Dispatch account credentials and enrollment details to the student's Gmail
+            $emailSent = false;
+            try {
+                require_once dirname(__DIR__) . '/core/Mailer.php';
+                $mailRes = Mailer::sendStudentWelcome(
+                    $email,
+                    $fullName,
+                    (string) $studentId,
+                    $defaultPassword,
+                    $course,
+                    $yearLevelRaw,
+                    $section
+                );
+                $emailSent = !empty($mailRes['success']);
+            } catch (Throwable $mailEx) {
+                error_log("Failed to dispatch student welcome email to {$email}: " . $mailEx->getMessage());
+            }
+
+            // Redirect back with success message and email dispatch status
+            $redirectUrl = url('admin/students?created=' . urlencode($fullName) . '&email_sent=' . ($emailSent ? '1' : '0') . '&target_email=' . urlencode($email));
+            header('Location: ' . $redirectUrl);
             exit;
 
         } catch (Exception $e) {
