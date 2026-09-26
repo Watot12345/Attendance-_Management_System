@@ -1,5 +1,7 @@
 # Environment variables
 .env
+prod.env
+*.env
 *.sql
 !database/sierra_schema.sql
 *.gitignore
