@@ -960,8 +960,16 @@ async function handleManualTeacherSubmit(e) {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     });
-    const result = await res.json();
-    if (res.ok && result.status === 'success') {
+
+    let result = null;
+    try {
+      const text = await res.text();
+      result = JSON.parse(text);
+    } catch (parseErr) {
+      console.warn('Could not parse response as JSON:', parseErr);
+    }
+
+    if (res.ok && result && result.status === 'success') {
       if (typeof APP !== 'undefined' && APP.toast) {
         APP.toast(result.message || 'Faculty account created successfully.', 'success');
       } else {
@@ -971,7 +979,7 @@ async function handleManualTeacherSubmit(e) {
       form.reset();
       fetchTeachers(1);
     } else {
-      const errMsg = result.message || 'Validation error while saving teacher account.';
+      const errMsg = (result && result.message) ? result.message : 'Failed to create faculty account. Please try again.';
       if (typeof APP !== 'undefined' && APP.toast) {
         APP.toast(errMsg, 'error');
       } else {

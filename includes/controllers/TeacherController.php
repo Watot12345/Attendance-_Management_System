@@ -322,6 +322,10 @@ class TeacherController {
      * Create single teacher account manually
      */
     public function apiCreate(): void {
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        ob_start();
         header('Content-Type: application/json');
         try {
             $input = $this->getJsonOrPostInput();
@@ -332,19 +336,26 @@ class TeacherController {
             $department = trim($input['department'] ?? '');
             $position   = trim($input['position'] ?? 'Instructor');
             $contact    = trim($input['contact_number'] ?? '');
-            $dateHired  = trim($input['date_hired'] ?? date('Y-m-d'));
-            $status     = in_array($input['status'] ?? 'active', ['active', 'inactive']) ? $input['status'] : 'active';
+            $dateHired  = !empty($input['date_hired']) ? trim($input['date_hired']) : date('Y-m-d');
+            // Account starts as pending_activation so teacher activates via Gmail before portal sign-in
+            $status = (!empty($input['status']) && in_array($input['status'], ['active', 'inactive', 'pending_activation'], true))
+                ? $input['status']
+                : 'pending_activation';
 
             // Validations
             if ($employeeId === '' || $fullName === '' || $email === '') {
                 http_response_code(422);
-                echo json_encode(['status' => 'error', 'message' => 'Employee ID, Full Name, and Email are required.']);
+                $out = json_encode(['status' => 'error', 'message' => 'Employee ID, Full Name, and Email are required.']);
+                if (ob_get_length()) ob_clean();
+                echo $out;
                 exit;
             }
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 http_response_code(422);
-                echo json_encode(['status' => 'error', 'message' => 'Invalid email address format.']);
+                $out = json_encode(['status' => 'error', 'message' => 'Invalid email address format.']);
+                if (ob_get_length()) ob_clean();
+                echo $out;
                 exit;
             }
 
@@ -363,11 +374,11 @@ class TeacherController {
             $existingMail = $chkEmail->fetch(PDO::FETCH_ASSOC);
 
             // Idempotency guard for rapid double-click submissions:
-            // If the exact same employee_id and email were inserted within the last 30 seconds, treat as idempotent success!
+            // If the exact same employee_id and email were inserted within the last 60 seconds, treat as idempotent success!
             if ($existingEmp && $existingMail && (int)$existingEmp['id'] === (int)$existingMail['id']) {
                 $createdAt = !empty($existingEmp['created_at']) ? strtotime($existingEmp['created_at']) : time();
-                if ((time() - $createdAt) <= 30) {
-                    echo json_encode([
+                if ((time() - $createdAt) <= 60) {
+                    $out = json_encode([
                         'status'  => 'success',
                         'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully. An activation link has been dispatched to {$email}.",
                         'data'    => [
@@ -377,28 +388,32 @@ class TeacherController {
                             'email'       => $email,
                             'department'  => $department,
                             'position'    => $position,
-                            'status'      => 'pending_activation',
+                            'status'      => $status,
                             'email_sent'  => true
                         ]
                     ]);
+                    if (ob_get_length()) ob_clean();
+                    echo $out;
                     exit;
                 }
             }
 
             if ($existingEmp) {
                 http_response_code(422);
-                echo json_encode(['status' => 'error', 'message' => "Employee ID '{$employeeId}' is already registered."]);
+                $out = json_encode(['status' => 'error', 'message' => "Employee ID '{$employeeId}' is already registered."]);
+                if (ob_get_length()) ob_clean();
+                echo $out;
                 exit;
             }
 
             if ($existingMail) {
                 http_response_code(422);
-                echo json_encode(['status' => 'error', 'message' => "Email '{$email}' is already in use."]);
+                $out = json_encode(['status' => 'error', 'message' => "Email '{$email}' is already in use."]);
+                if (ob_get_length()) ob_clean();
+                echo $out;
                 exit;
             }
 
-            // Account starts as pending_activation so teacher activates via Gmail before portal sign-in
-            $status = in_array($input['status'] ?? 'pending_activation', ['active', 'inactive', 'pending_activation']) ? $input['status'] : 'pending_activation';
             $activationToken = bin2hex(random_bytes(32));
             $activationExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
 
@@ -439,13 +454,14 @@ class TeacherController {
             // Dispatch activation credentials notification email to the teacher
             $emailSent = false;
             try {
+                require_once dirname(__DIR__) . '/core/Mailer.php';
                 $mailRes = Mailer::sendTeacherWelcomeEmail($email, $fullName, $employeeId, $nameParts['last_name'], $activationToken);
                 $emailSent = !empty($mailRes['success']);
             } catch (Throwable $mErr) {
                 error_log("[Teacher Welcome Email Error] " . $mErr->getMessage());
             }
 
-            echo json_encode([
+            $out = json_encode([
                 'status'  => 'success',
                 'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully." . ($emailSent ? " Activation link dispatched to {$email}. The teacher must activate their account before signing in." : ""),
                 'data'    => [
@@ -459,9 +475,13 @@ class TeacherController {
                     'email_sent'  => $emailSent
                 ]
             ]);
-        } catch (Exception $e) {
+            if (ob_get_length()) ob_clean();
+            echo $out;
+        } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            $out = json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            if (ob_get_length()) ob_clean();
+            echo $out;
         }
         exit;
     }
