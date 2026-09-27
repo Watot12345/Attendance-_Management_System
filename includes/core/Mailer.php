@@ -515,11 +515,13 @@ class Mailer {
 
     /**
      * Send Welcome & Account Credentials Notification to newly registered/imported Faculty
+     * If an activation token is provided, requires activation before signing in.
      */
-    public static function sendTeacherWelcomeEmail(string $toEmail, string $teacherName, string $employeeId, string $surname): array {
-        $subject = "Welcome to BCP Attendance System — Your Faculty Account Details";
-        $appUrl = self::getEnv('APP_URL', 'http://localhost/login');
-        
+    public static function sendTeacherWelcomeEmail(string $toEmail, string $teacherName, string $employeeId, string $surname, string $activationToken = ''): array {
+        if (!class_exists('Router')) {
+            require_once __DIR__ . '/Router.php';
+        }
+
         $cleanSur = preg_replace('/[^a-zA-Z]/', '', trim($surname));
         if (empty($cleanSur)) {
             $cleanSur = 'Faculty';
@@ -527,6 +529,39 @@ class Mailer {
         $firstChar = strtoupper(substr($cleanSur, 0, 1));
         $secondChar = strlen($cleanSur) > 1 ? strtolower(substr($cleanSur, 1, 1)) : strtolower($firstChar);
         $examplePass = '#' . $firstChar . $secondChar . '8080';
+
+        $hasActivation = !empty($activationToken);
+        if ($hasActivation) {
+            $subject = "Activate Your BCP Faculty Account — Action Required";
+            $actionUrl = Router::getAbsoluteUrl("activate?token=" . urlencode($activationToken));
+            $buttonLabel = "Activate Faculty Account &rarr;";
+            $badgeText = "Activation Required";
+            $badgeBg = "#FEF3C7";
+            $badgeBorder = "#FDE68A";
+            $badgeColor = "#92400E";
+            $heroNotice = "
+              <div style='background-color: #EFF6FF; border-left: 4px solid #1E3B8A; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px;'>
+                <p style='margin: 0; font-size: 13px; font-weight: 700; color: #1E3B8A;'>&#9888; Account Activation Required</p>
+                <p style='margin: 4px 0 0 0; font-size: 12px; color: #3B82F6; line-height: 1.5;'>
+                  Your faculty account has been created, but <strong>you must activate it first</strong> before you can sign in to the Faculty Portal. Please click the button below to complete activation.
+                </p>
+              </div>";
+            $footerLinkNotice = "
+              <p style='font-size: 11px; line-height: 1.5; color: #64748B; margin: 12px 0 0 0; text-align: center;'>
+                This activation link is valid for 48 hours. If the button above does not work, copy and paste this link into your browser:<br>
+                <a href='{$actionUrl}' style='color: #1E3B8A; word-break: break-all; font-weight: 600;'>{$actionUrl}</a>
+              </p>";
+        } else {
+            $subject = "Welcome to BCP Attendance System — Your Faculty Account Details";
+            $actionUrl = Router::getAbsoluteUrl("login");
+            $buttonLabel = "Sign In to Faculty Portal &rarr;";
+            $badgeText = "Faculty Account Created";
+            $badgeBg = "#EFF6FF";
+            $badgeBorder = "#BFDBFE";
+            $badgeColor = "#1E3B8A";
+            $heroNotice = "";
+            $footerLinkNotice = "";
+        }
 
         $html = "
         <!DOCTYPE html>
@@ -558,16 +593,18 @@ class Mailer {
                   </tr>
                   <tr>
                     <td style='padding: 32px;'>
-                      <div style='display: inline-block; padding: 4px 12px; border-radius: 9999px; background-color: #EFF6FF; border: 1px solid #BFDBFE; font-size: 12px; font-weight: 800; color: #1E3B8A; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;'>
-                        Faculty Account Created
+                      <div style='display: inline-block; padding: 4px 12px; border-radius: 9999px; background-color: {$badgeBg}; border: 1px solid {$badgeBorder}; font-size: 11px; font-weight: 800; color: {$badgeColor}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;'>
+                        {$badgeText}
                       </div>
                       <h2 style='font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 14px 0;'>
                         Welcome to the Attendance Management System
                       </h2>
                       <p style='font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 18px 0;'>
                         Dear <strong>" . htmlspecialchars($teacherName) . "</strong>,<br>
-                        Your faculty account has been successfully created and provisioned in the BCP Attendance Management System. You can now log in to manage your classes, launch live QR attendance sessions, track student attendance, and generate reports.
+                        Your faculty account has been provisioned in the BCP Attendance Management System. You will be able to manage your classes, launch live QR attendance sessions, track student attendance, and generate reports.
                       </p>
+
+                      {$heroNotice}
 
                       <div style='background-color: #F8FAFC; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; margin-bottom: 24px;'>
                         <h4 style='font-size: 13px; font-weight: 800; color: #1E3B8A; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 12px 0;'>
@@ -600,14 +637,16 @@ class Mailer {
                         </table>
                       </div>
 
-                      <div style='text-align: center; margin-bottom: 24px;'>
-                        <a href='{$appUrl}' style='display: inline-block; background-color: #1E3B8A; color: #FFFFFF; font-weight: 700; font-size: 13px; text-decoration: none; padding: 12px 28px; border-radius: 10px; box-shadow: 0 4px 10px rgba(30, 59, 138, 0.2);'>
-                          Sign In to Faculty Portal &rarr;
+                      <div style='text-align: center; margin-bottom: 20px;'>
+                        <a href='{$actionUrl}' style='display: inline-block; background-color: #1E3B8A; color: #FFFFFF; font-weight: 700; font-size: 14px; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(30, 59, 138, 0.25); text-align: center;'>
+                          {$buttonLabel}
                         </a>
                       </div>
 
-                      <p style='font-size: 12px; line-height: 1.5; color: #64748B; margin: 0 0 8px 0;'>
-                        <strong>Security Recommendation:</strong> For your security, we recommend changing your default password after your first successful login under Account Settings.
+                      {$footerLinkNotice}
+
+                      <p style='font-size: 12px; line-height: 1.5; color: #64748B; margin: 16px 0 0 0;'>
+                        <strong>Security Note:</strong> After your first successful login, you may change your password under Account Settings.
                       </p>
                     </td>
                   </tr>

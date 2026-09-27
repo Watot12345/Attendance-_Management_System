@@ -27,16 +27,33 @@ class AuthController {
                 'otp_code'             => 'VARCHAR(10) DEFAULT NULL',
                 'otp_expires_at'       => 'DATETIME DEFAULT NULL',
                 'student_id'           => 'VARCHAR(50) DEFAULT NULL',
-                'employee_id'          => 'VARCHAR(50) DEFAULT NULL',
                 'active_session_token' => 'VARCHAR(255) DEFAULT NULL',
                 'last_heartbeat_at'    => 'DATETIME DEFAULT NULL',
                 'active_device_info'   => 'VARCHAR(255) DEFAULT NULL',
                 'active_ip_address'    => 'VARCHAR(45) DEFAULT NULL',
+                'activation_token'     => 'VARCHAR(64) DEFAULT NULL',
+                'activation_expires_at'=> 'DATETIME DEFAULT NULL',
             ];
 
             foreach ($required as $col => $definition) {
                 if (!in_array($col, $cols, true)) {
                     @$db->exec("ALTER TABLE users ADD COLUMN `{$col}` {$definition}");
+                }
+            }
+
+            // Ensure status column supports 'pending_activation'
+            @$db->exec("ALTER TABLE users MODIFY COLUMN `status` VARCHAR(30) NOT NULL DEFAULT 'active'");
+            @$db->exec("ALTER TABLE teachers MODIFY COLUMN `status` VARCHAR(30) DEFAULT 'active'");
+
+            // Ensure activation columns exist on teachers table
+            $tCols = $db->query("SHOW COLUMNS FROM teachers")->fetchAll(PDO::FETCH_COLUMN);
+            $tRequired = [
+                'activation_token'      => 'VARCHAR(64) DEFAULT NULL',
+                'activation_expires_at' => 'DATETIME DEFAULT NULL',
+            ];
+            foreach ($tRequired as $tCol => $tDef) {
+                if (!in_array($tCol, $tCols, true)) {
+                    @$db->exec("ALTER TABLE teachers ADD COLUMN `{$tCol}` {$tDef}");
                 }
             }
 
@@ -121,6 +138,14 @@ class AuthController {
             }
 
             if (isset($user['status']) && $user['status'] !== 'active') {
+                if ($user['status'] === 'pending_activation') {
+                    $masked = $this->maskEmail($user['email'] ?? '');
+                    $this->respondError(
+                        'Your faculty account is pending email activation. Please check your Gmail (' . htmlspecialchars($masked) . ') and click the activation link before signing in.',
+                        403
+                    );
+                    return;
+                }
                 $this->respondError('Your account is ' . htmlspecialchars($user['status']) . '. Contact system administrator.', 403);
                 return;
             }
@@ -1350,5 +1375,280 @@ class AuthController {
         }
         header('Location: ' . url('login?error=' . urlencode($message)));
         exit;
+    }
+
+    /**
+     * GET or POST /activate or /auth/activate
+     * Activates a teacher / user account using the activation token sent via email
+     */
+    public function activateAccount(): void {
+        startSessionSafely();
+        $db = Database::getConnection();
+        self::ensureColumnsExist($db);
+
+        $token = trim((string)($_GET['token'] ?? $_POST['token'] ?? ''));
+        $formatJson = (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) || 
+                      (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) ||
+                      str_starts_with(Router::getCurrentPath(), '/api/');
+
+        if (empty($token)) {
+            if ($formatJson) {
+                $this->respondError('Activation token is required.', 400);
+                return;
+            }
+            $activationStatus = 'invalid';
+            $activationMessage = 'No activation token was provided. Please check the activation link sent to your Gmail.';
+            $teacher = null;
+            require dirname(__DIR__) . '/views/auth/activate.php';
+            exit;
+        }
+
+        // Search user by activation_token
+        $stmt = $db->prepare("
+            SELECT user_id, employee_id, role, email, first_name, last_name, status, activation_token, activation_expires_at 
+            FROM users 
+            WHERE activation_token = :token 
+            LIMIT 1
+        ");
+        $stmt->execute([':token' => $token]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Fallback: search in teachers table
+        if (!$user) {
+            $tStmt = $db->prepare("
+                SELECT id, employee_id, full_name, email, status, activation_token, activation_expires_at 
+                FROM teachers 
+                WHERE activation_token = :token 
+                LIMIT 1
+            ");
+            $tStmt->execute([':token' => $token]);
+            $tRow = $tStmt->fetch(PDO::FETCH_ASSOC);
+            if ($tRow) {
+                $uMatch = $db->prepare("SELECT * FROM users WHERE employee_id = ? OR LOWER(email) = LOWER(?) LIMIT 1");
+                $uMatch->execute([$tRow['employee_id'], $tRow['email']]);
+                $user = $uMatch->fetch(PDO::FETCH_ASSOC);
+                if (!$user) {
+                    $user = [
+                        'user_id' => 0,
+                        'employee_id' => $tRow['employee_id'],
+                        'email' => $tRow['email'],
+                        'first_name' => $tRow['full_name'],
+                        'last_name' => '',
+                        'status' => $tRow['status'],
+                        'activation_expires_at' => $tRow['activation_expires_at']
+                    ];
+                }
+            }
+        }
+
+        if (!$user) {
+            if ($formatJson) {
+                $this->respondError('Invalid or already used activation link.', 404);
+                return;
+            }
+            $activationStatus = 'invalid';
+            $activationMessage = 'This activation link is invalid, corrupted, or has already been used.';
+            $teacher = null;
+            require dirname(__DIR__) . '/views/auth/activate.php';
+            exit;
+        }
+
+        $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+        if (empty($fullName)) {
+            $fullName = $user['email'];
+        }
+
+        // Check if already active
+        if ($user['status'] === 'active') {
+            if ($formatJson) {
+                echo json_encode([
+                    'status' => 'already_active',
+                    'message' => 'Your account is already active. You can proceed directly to the sign-in portal.',
+                    'redirect_url' => url('login')
+                ]);
+                exit;
+            }
+            $activationStatus = 'already_active';
+            $activationMessage = 'Your faculty account is already active! You can proceed directly to the sign-in portal.';
+            $teacher = [
+                'full_name'   => $fullName,
+                'email'       => $user['email'],
+                'employee_id' => $user['employee_id'] ?? '',
+            ];
+            require dirname(__DIR__) . '/views/auth/activate.php';
+            exit;
+        }
+
+        // Check expiration
+        if (!empty($user['activation_expires_at']) && strtotime($user['activation_expires_at']) < time()) {
+            if ($formatJson) {
+                $this->respondError('Activation link has expired. Please request a new activation email.', 410);
+                return;
+            }
+            $activationStatus = 'expired';
+            $activationMessage = 'This activation link has expired. Activation links are valid for 48 hours.';
+            $teacher = [
+                'full_name'   => $fullName,
+                'email'       => $user['email'],
+                'employee_id' => $user['employee_id'] ?? '',
+            ];
+            require dirname(__DIR__) . '/views/auth/activate.php';
+            exit;
+        }
+
+        // Activate the account in both users and teachers tables
+        $updateUser = $db->prepare("
+            UPDATE users 
+            SET status = 'active', 
+                activation_token = NULL, 
+                activation_expires_at = NULL 
+            WHERE user_id = :uid OR LOWER(email) = LOWER(:email)
+        ");
+        $updateUser->execute([
+            ':uid'   => $user['user_id'] ?? 0,
+            ':email' => $user['email']
+        ]);
+
+        $updateTeacher = $db->prepare("
+            UPDATE teachers 
+            SET status = 'active', 
+                activation_token = NULL, 
+                activation_expires_at = NULL 
+            WHERE employee_id = :emp_id OR LOWER(email) = LOWER(:email)
+        ");
+        $updateTeacher->execute([
+            ':emp_id' => $user['employee_id'] ?? '',
+            ':email'  => $user['email']
+        ]);
+
+        // Default password instruction helper
+        require_once __DIR__ . '/TeacherController.php';
+        $nameParts = TeacherController::parseNameParts($fullName);
+        $cleanSur = preg_replace('/[^a-zA-Z]/', '', trim($nameParts['last_name']));
+        if (empty($cleanSur)) $cleanSur = 'Faculty';
+        $firstChar = strtoupper(substr($cleanSur, 0, 1));
+        $secondChar = strlen($cleanSur) > 1 ? strtolower(substr($cleanSur, 1, 1)) : strtolower($firstChar);
+        $examplePass = '#' . $firstChar . $secondChar . '8080';
+
+        if ($formatJson) {
+            echo json_encode([
+                'status'       => 'success',
+                'message'      => 'Account activated successfully! You may now proceed to sign in.',
+                'redirect_url' => url('login')
+            ]);
+            exit;
+        }
+
+        $activationStatus = 'success';
+        $activationMessage = 'Your faculty account has been activated successfully! You can now proceed to the Faculty Sign-In Portal.';
+        $teacher = [
+            'full_name'    => $fullName,
+            'email'        => $user['email'],
+            'employee_id'  => $user['employee_id'] ?? '',
+            'example_pass' => $examplePass
+        ];
+        require dirname(__DIR__) . '/views/auth/activate.php';
+        exit;
+    }
+
+    /**
+     * POST /api/auth/resend-activation
+     * Resends activation email to a pending teacher
+     */
+    public function resendActivation(): void {
+        header('Content-Type: application/json');
+        try {
+            $raw = file_get_contents('php://input');
+            $input = !empty($raw) ? json_decode($raw, true) : null;
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $identifier = trim((string)($input['email'] ?? $input['identifier'] ?? $input['employee_id'] ?? ''));
+            if (empty($identifier)) {
+                http_response_code(422);
+                echo json_encode(['status' => 'error', 'message' => 'Please provide your institutional email address or employee ID.']);
+                exit;
+            }
+
+            $db = Database::getConnection();
+            self::ensureColumnsExist($db);
+
+            $stmt = $db->prepare("
+                SELECT * FROM users 
+                WHERE LOWER(email) = LOWER(:id) OR employee_id = :id 
+                LIMIT 1
+            ");
+            $stmt->execute([':id' => $identifier]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                // Check teachers table
+                $tStmt = $db->prepare("SELECT * FROM teachers WHERE LOWER(email) = LOWER(:id) OR employee_id = :id LIMIT 1");
+                $tStmt->execute([':id' => $identifier]);
+                $tRow = $tStmt->fetch(PDO::FETCH_ASSOC);
+                if ($tRow) {
+                    $user = [
+                        'user_id'     => 0,
+                        'employee_id' => $tRow['employee_id'],
+                        'email'       => $tRow['email'],
+                        'first_name'  => $tRow['full_name'],
+                        'last_name'   => '',
+                        'status'      => $tRow['status']
+                    ];
+                }
+            }
+
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'No account found with this email or employee ID.']);
+                exit;
+            }
+
+            if ($user['status'] === 'active') {
+                echo json_encode([
+                    'status' => 'already_active',
+                    'message' => 'This account is already activated and active. You can log in directly.',
+                    'redirect_url' => url('login')
+                ]);
+                exit;
+            }
+
+            // Generate fresh activation token
+            $newToken = bin2hex(random_bytes(32));
+            $newExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+            $upU = $db->prepare("
+                UPDATE users 
+                SET activation_token = ?, activation_expires_at = ?, status = 'pending_activation' 
+                WHERE employee_id = ? OR LOWER(email) = LOWER(?)
+            ");
+            $upU->execute([$newToken, $newExpires, $user['employee_id'], $user['email']]);
+
+            $upT = $db->prepare("
+                UPDATE teachers 
+                SET activation_token = ?, activation_expires_at = ?, status = 'pending_activation' 
+                WHERE employee_id = ? OR LOWER(email) = LOWER(?)
+            ");
+            $upT->execute([$newToken, $newExpires, $user['employee_id'], $user['email']]);
+
+            require_once __DIR__ . '/TeacherController.php';
+            $fullName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+            $nameParts = TeacherController::parseNameParts($fullName ?: $user['email']);
+
+            require_once dirname(__DIR__) . '/core/Mailer.php';
+            $mailRes = Mailer::sendTeacherWelcomeEmail($user['email'], $fullName, $user['employee_id'] ?? '', $nameParts['last_name'], $newToken);
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => 'A new activation link has been dispatched to ' . htmlspecialchars($user['email']) . '. Please check your Gmail.',
+                'email'   => $user['email']
+            ]);
+            exit;
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
     }
 }

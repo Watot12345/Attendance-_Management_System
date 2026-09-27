@@ -137,6 +137,7 @@ try {
             <select id="filter-status" class="px-3 py-2 text-xs bg-slate-50/60 border border-slate-200 rounded-xl text-slate-700 font-semibold focus:outline-none focus:border-[#1e3b8a] min-w-[100px] cursor-pointer" onchange="fetchTeachers(1)">
               <option value="all">All Status</option>
               <option value="active">Active Only</option>
+              <option value="pending_activation">Pending Activation</option>
               <option value="inactive">Inactive Only</option>
             </select>
           </div>
@@ -255,14 +256,21 @@ try {
                     <?= htmlspecialchars($t['date_hired'] ?: '—') ?>
                   </td>
                   <td class="py-3.5 px-4">
-                    <?php if ($isActive): ?>
+                    <?php if ($t['status'] === 'active'): ?>
                       <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Active</span>
+                    <?php elseif ($t['status'] === 'pending_activation'): ?>
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">Pending Activation</span>
                     <?php else: ?>
                       <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">Inactive</span>
                     <?php endif; ?>
                   </td>
                   <td class="py-3.5 px-4 text-right">
                     <div class="flex items-center justify-end gap-1.5">
+                      <?php if ($t['status'] === 'pending_activation'): ?>
+                        <button type="button" class="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition cursor-pointer" onclick="resendTeacherActivation(<?= $t['id'] ?>, '<?= htmlspecialchars(addslashes($t['email'] ?? '')) ?>')" title="Resend Activation Email">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </button>
+                      <?php endif; ?>
                       <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(<?= json_encode($t) ?>)' title="Edit Account">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                       </button>
@@ -461,6 +469,7 @@ try {
           <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Status</label>
           <select id="edit-status" name="status" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#1e3b8a]/20 focus:border-[#1e3b8a] outline-none">
             <option value="active">Active</option>
+            <option value="pending_activation">Pending Activation</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
@@ -873,13 +882,21 @@ function renderTeachersTable(teachers) {
         <td class="py-3.5 px-4 font-medium text-slate-600">${escapeHtml(t.contact_number || '—')}</td>
         <td class="py-3.5 px-4 text-slate-500">${escapeHtml(t.date_hired || '—')}</td>
         <td class="py-3.5 px-4">
-          ${isActive 
+          ${t.status === 'active' 
             ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Active</span>'
-            : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">Inactive</span>'
+            : (t.status === 'pending_activation'
+              ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">Pending Activation</span>'
+              : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">Inactive</span>'
+            )
           }
         </td>
         <td class="py-3.5 px-4 text-right">
           <div class="flex items-center justify-end gap-1.5">
+            ${t.status === 'pending_activation' ? `
+              <button type="button" class="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition cursor-pointer" onclick="resendTeacherActivation(${t.id}, '${escapeHtml(t.email || '')}')" title="Resend Activation Email">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              </button>
+            ` : ''}
             <button type="button" class="p-1.5 rounded-lg text-slate-500 hover:text-[#1e3b8a] hover:bg-slate-100 transition cursor-pointer" onclick='openEditTeacherModal(${JSON.stringify(t)})' title="Edit Account">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
@@ -1203,6 +1220,35 @@ async function confirmDeactivateTeacher() {
 // Backward-compatible deactivateTeacher alias
 function deactivateTeacher(id, name, employeeId = '', email = '') {
   openDeactivateTeacherModal(id, name, employeeId, email);
+}
+
+// Resend faculty account activation email
+async function resendTeacherActivation(id, email) {
+  if (!confirm(`Resend faculty activation email to ${email}?`)) return;
+  try {
+    const res = await fetch(window.url('api/teachers/resend-activation'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ id, email })
+    });
+    const data = await res.json();
+    if (res.ok && data.status === 'success') {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(data.message || 'Activation email sent successfully!', 'success');
+      } else {
+        alert(data.message || 'Activation email sent successfully!');
+      }
+    } else {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(data.message || 'Failed to dispatch activation email.', 'error');
+      } else {
+        alert(data.message || 'Failed to dispatch activation email.');
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Network error while requesting activation email.');
+  }
 }
 
 // Excel / CSV File Handlers

@@ -349,6 +349,8 @@ class TeacherController {
             }
 
             $db = Database::getConnection();
+            require_once __DIR__ . '/AuthController.php';
+            AuthController::ensureColumnsExist($db);
 
             // Check duplicate employee_id
             $chk = $db->prepare("SELECT id FROM `teachers` WHERE `employee_id` = ?");
@@ -368,6 +370,11 @@ class TeacherController {
                 exit;
             }
 
+            // Account starts as pending_activation so teacher activates via Gmail before portal sign-in
+            $status = in_array($input['status'] ?? 'pending_activation', ['active', 'inactive', 'pending_activation']) ? $input['status'] : 'pending_activation';
+            $activationToken = bin2hex(random_bytes(32));
+            $activationExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
             $nameParts = self::parseNameParts($fullName);
             $defaultPassword = self::generateDefaultTeacherPassword($nameParts['last_name']);
             $password = !empty($input['password']) ? trim($input['password']) : $defaultPassword;
@@ -375,17 +382,17 @@ class TeacherController {
 
             $stmt = $db->prepare("
                 INSERT INTO `teachers` 
-                (`employee_id`, `full_name`, `email`, `password_hash`, `department`, `position`, `contact_number`, `date_hired`, `status`, `created_at`)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (`employee_id`, `full_name`, `email`, `password_hash`, `department`, `position`, `contact_number`, `date_hired`, `status`, `activation_token`, `activation_expires_at`, `created_at`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ");
-            $stmt->execute([$employeeId, $fullName, $email, $passHash, $department, $position, $contact, $dateHired, $status]);
+            $stmt->execute([$employeeId, $fullName, $email, $passHash, $department, $position, $contact, $dateHired, $status, $activationToken, $activationExpires]);
             $newId = (int)$db->lastInsertId();
 
             // Synchronize with users table for seamless portal login
             try {
                 $uStmt = $db->prepare("
-                    INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `created_at`)
-                    VALUES (?, 'teacher', ?, ?, ?, ?, ?, ?, NOW())
+                    INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `activation_token`, `activation_expires_at`, `created_at`)
+                    VALUES (?, 'teacher', ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                     ON DUPLICATE KEY UPDATE 
                         `employee_id` = VALUES(`employee_id`),
                         `role` = 'teacher',
@@ -393,17 +400,19 @@ class TeacherController {
                         `first_name` = VALUES(`first_name`),
                         `last_name` = VALUES(`last_name`),
                         `phone` = VALUES(`phone`),
-                        `status` = VALUES(`status`)
+                        `status` = VALUES(`status`),
+                        `activation_token` = VALUES(`activation_token`),
+                        `activation_expires_at` = VALUES(`activation_expires_at`)
                 ");
-                $uStmt->execute([$employeeId, $email, $passHash, $nameParts['first_name'], $nameParts['last_name'], $contact, $status]);
+                $uStmt->execute([$employeeId, $email, $passHash, $nameParts['first_name'], $nameParts['last_name'], $contact, $status, $activationToken, $activationExpires]);
             } catch (Throwable $uErr) {
                 error_log("[Teacher User Sync Error] " . $uErr->getMessage());
             }
 
-            // Dispatch welcome credentials notification email to the teacher
+            // Dispatch activation credentials notification email to the teacher
             $emailSent = false;
             try {
-                $mailRes = Mailer::sendTeacherWelcomeEmail($email, $fullName, $employeeId, $nameParts['last_name']);
+                $mailRes = Mailer::sendTeacherWelcomeEmail($email, $fullName, $employeeId, $nameParts['last_name'], $activationToken);
                 $emailSent = !empty($mailRes['success']);
             } catch (Throwable $mErr) {
                 error_log("[Teacher Welcome Email Error] " . $mErr->getMessage());
@@ -411,7 +420,7 @@ class TeacherController {
 
             echo json_encode([
                 'status'  => 'success',
-                'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully." . ($emailSent ? " Welcome email with credentials dispatched to {$email}." : ""),
+                'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully." . ($emailSent ? " Activation link dispatched to {$email}. The teacher must activate their account before signing in." : ""),
                 'data'    => [
                     'id'          => $newId,
                     'employee_id' => $employeeId,
@@ -464,7 +473,7 @@ class TeacherController {
             $position   = trim($input['position'] ?? $existing['position']);
             $contact    = trim($input['contact_number'] ?? $existing['contact_number']);
             $dateHired  = trim($input['date_hired'] ?? $existing['date_hired']);
-            $status     = in_array($input['status'] ?? $existing['status'], ['active', 'inactive']) ? $input['status'] : $existing['status'];
+            $status     = in_array($input['status'] ?? $existing['status'], ['active', 'inactive', 'pending_activation']) ? $input['status'] : $existing['status'];
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 http_response_code(422);
@@ -487,6 +496,19 @@ class TeacherController {
                 WHERE id = ?
             ");
             $stmt->execute([$fullName, $email, $department, $position, $contact, $dateHired, $status, $id]);
+
+            // Synchronize with users table
+            try {
+                $nameParts = self::parseNameParts($fullName);
+                $uSync = $db->prepare("
+                    UPDATE `users` 
+                    SET `email` = ?, `first_name` = ?, `last_name` = ?, `phone` = ?, `status` = ?
+                    WHERE `employee_id` = ? OR LOWER(`email`) = LOWER(?)
+                ");
+                $uSync->execute([$email, $nameParts['first_name'], $nameParts['last_name'], $contact, $status, $existing['employee_id'], $existing['email']]);
+            } catch (Throwable $uSyncErr) {
+                error_log("[Teacher User Sync On Update Error] " . $uSyncErr->getMessage());
+            }
 
             echo json_encode([
                 'status'  => 'success',
@@ -680,8 +702,8 @@ class TeacherController {
 
             $insertStmt = $db->prepare("
                 INSERT INTO `teachers` 
-                (`employee_id`, `full_name`, `email`, `password_hash`, `department`, `position`, `contact_number`, `date_hired`, `status`, `created_at`)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+                (`employee_id`, `full_name`, `email`, `password_hash`, `department`, `position`, `contact_number`, `date_hired`, `status`, `activation_token`, `activation_expires_at`, `created_at`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_activation', ?, ?, NOW())
             ");
 
             foreach ($parsedRows as $lineNum => $row) {
@@ -795,6 +817,9 @@ class TeacherController {
                 $rowHash = password_hash($rowPassword, PASSWORD_BCRYPT);
 
                 try {
+                    $rowToken = bin2hex(random_bytes(32));
+                    $rowExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
                     $insertStmt->execute([
                         $empId,
                         $name,
@@ -803,14 +828,16 @@ class TeacherController {
                         $dept ?: 'General Academics',
                         $pos ?: 'Faculty',
                         $contact,
-                        $parsedDate
+                        $parsedDate,
+                        $rowToken,
+                        $rowExpires
                     ]);
 
                     // Sync into users table for portal access
                     try {
                         $uStmt = $db->prepare("
-                            INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `created_at`)
-                            VALUES (?, 'teacher', ?, ?, ?, ?, ?, 'active', NOW())
+                            INSERT INTO `users` (`employee_id`, `role`, `email`, `password_hash`, `first_name`, `last_name`, `phone`, `status`, `activation_token`, `activation_expires_at`, `created_at`)
+                            VALUES (?, 'teacher', ?, ?, ?, ?, ?, 'pending_activation', ?, ?, NOW())
                             ON DUPLICATE KEY UPDATE 
                                 `employee_id` = VALUES(`employee_id`),
                                 `role` = 'teacher',
@@ -818,16 +845,18 @@ class TeacherController {
                                 `first_name` = VALUES(`first_name`),
                                 `last_name` = VALUES(`last_name`),
                                 `phone` = VALUES(`phone`),
-                                `status` = 'active'
+                                `status` = 'pending_activation',
+                                `activation_token` = VALUES(`activation_token`),
+                                `activation_expires_at` = VALUES(`activation_expires_at`)
                         ");
-                        $uStmt->execute([$empId, $email, $rowHash, $nameParts['first_name'], $nameParts['last_name'], $contact]);
+                        $uStmt->execute([$empId, $email, $rowHash, $nameParts['first_name'], $nameParts['last_name'], $contact, $rowToken, $rowExpires]);
                     } catch (Throwable $uErr) {
                         error_log("[Teacher Import User Sync Error] " . $uErr->getMessage());
                     }
 
-                    // Dispatch welcome credentials notification email
+                    // Dispatch welcome credentials notification email with activation link
                     try {
-                        Mailer::sendTeacherWelcomeEmail($email, $name, $empId, $nameParts['last_name']);
+                        Mailer::sendTeacherWelcomeEmail($email, $name, $empId, $nameParts['last_name'], $rowToken);
                     } catch (Throwable $mErr) {
                         error_log("[Teacher Import Welcome Email Error] " . $mErr->getMessage());
                     }
@@ -1817,4 +1846,67 @@ class TeacherController {
         }
         exit;
     }
+
+    /**
+     * POST /api/teachers/resend-activation
+     * Admin manually resends activation email to a faculty member
+     */
+    public function apiResendActivation(): void {
+        header('Content-Type: application/json');
+        try {
+            $input = $this->getJsonOrPostInput();
+            $id = (int)($input['id'] ?? 0);
+            $email = trim($input['email'] ?? '');
+            $empId = trim($input['employee_id'] ?? '');
+
+            $db = Database::getConnection();
+            require_once __DIR__ . '/AuthController.php';
+            AuthController::ensureColumnsExist($db);
+
+            $stmt = null;
+            if ($id > 0) {
+                $stmt = $db->prepare("SELECT * FROM `teachers` WHERE id = ? LIMIT 1");
+                $stmt->execute([$id]);
+            } elseif ($empId !== '') {
+                $stmt = $db->prepare("SELECT * FROM `teachers` WHERE `employee_id` = ? LIMIT 1");
+                $stmt->execute([$empId]);
+            } elseif ($email !== '') {
+                $stmt = $db->prepare("SELECT * FROM `teachers` WHERE LOWER(`email`) = LOWER(?) LIMIT 1");
+                $stmt->execute([$email]);
+            }
+
+            $teacher = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$teacher) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Teacher account not found.']);
+                exit;
+            }
+
+            $newToken = bin2hex(random_bytes(32));
+            $newExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+            // Update teachers
+            $upT = $db->prepare("UPDATE `teachers` SET `activation_token` = ?, `activation_expires_at` = ?, `status` = 'pending_activation' WHERE id = ?");
+            $upT->execute([$newToken, $newExpires, $teacher['id']]);
+
+            // Update users
+            $upU = $db->prepare("UPDATE `users` SET `activation_token` = ?, `activation_expires_at` = ?, `status` = 'pending_activation' WHERE `employee_id` = ? OR LOWER(`email`) = LOWER(?)");
+            $upU->execute([$newToken, $newExpires, $teacher['employee_id'], $teacher['email']]);
+
+            $nameParts = self::parseNameParts($teacher['full_name']);
+            require_once dirname(__DIR__) . '/core/Mailer.php';
+            $mailRes = Mailer::sendTeacherWelcomeEmail($teacher['email'], $teacher['full_name'], $teacher['employee_id'], $nameParts['last_name'], $newToken);
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => "Activation email successfully re-dispatched to " . htmlspecialchars($teacher['email']) . "."
+            ]);
+            exit;
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
 }
+

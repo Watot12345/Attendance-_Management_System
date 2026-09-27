@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS `teachers` (
   `position` VARCHAR(50) DEFAULT NULL,
   `contact_number` VARCHAR(20) DEFAULT NULL,
   `date_hired` DATE DEFAULT NULL,
-  `status` ENUM('active','inactive') DEFAULT 'active',
+  `status` VARCHAR(30) DEFAULT 'active',
+  `activation_token` VARCHAR(64) DEFAULT NULL,
+  `activation_expires_at` DATETIME DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   KEY `idx_teachers_department` (`department`),
   KEY `idx_teachers_status` (`status`)

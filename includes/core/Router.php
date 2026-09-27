@@ -47,6 +47,15 @@ if (!function_exists('asset')) {
     }
 }
 
+if (!function_exists('absolute_url')) {
+    /**
+     * Generate absolute URL with protocol, domain, and base path
+     */
+    function absolute_url(string $path = ''): string {
+        return Router::getAbsoluteUrl($path);
+    }
+}
+
 class Router {
     /**
      * Map of clean URL paths to view files relative to includes/views/
@@ -71,6 +80,10 @@ class Router {
         '/api/auth/reset-password'   => 'AuthController@resetPassword',
         '/api/auth/logout'           => 'AuthController@logout',
         '/api/auth/me'               => 'AuthController@me',
+        '/activate'                  => 'AuthController@activateAccount',
+        '/auth/activate'             => 'AuthController@activateAccount',
+        '/api/auth/activate'         => 'AuthController@activateAccount',
+        '/api/auth/resend-activation'=> 'AuthController@resendActivation',
 
         // Dashboard & Portals
         '/dashboard'             => 'dashboard/index.php',
@@ -178,6 +191,7 @@ class Router {
         '/api/teachers/reset-password'  => 'TeacherController@apiResetPassword',
         '/api/teachers/import'          => 'TeacherController@apiImport',
         '/api/teachers/export'          => 'TeacherController@apiExport',
+        '/api/teachers/resend-activation'=> 'TeacherController@apiResendActivation',
 
         // Students Master API
         '/api/students/update'          => 'StudentController@apiUpdate',
@@ -286,6 +300,37 @@ class Router {
     }
 
     /**
+     * Get absolute full URL including protocol, domain/host, base path, and target path
+     */
+    public static function getAbsoluteUrl(string $path = ''): string {
+        $cleanPath = ltrim($path, '/');
+
+        // Check configured APP_URL first
+        require_once __DIR__ . '/Mailer.php';
+        $envAppUrl = Mailer::getEnv('APP_URL');
+        if (!empty($envAppUrl) && stripos($envAppUrl, 'localhost') === false) {
+            $base = rtrim($envAppUrl, '/');
+            return $cleanPath !== '' ? $base . '/' . $cleanPath : $base;
+        }
+
+        // Dynamically resolve from current HTTP request
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+                || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
+            $scheme = $isHttps ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'];
+            $basePath = self::getBasePath();
+            $base = rtrim($scheme . '://' . $host . $basePath, '/');
+            return $cleanPath !== '' ? $base . '/' . $cleanPath : $base;
+        }
+
+        // Fallback to APP_URL or default local path
+        $fallback = !empty($envAppUrl) ? rtrim($envAppUrl, '/') : 'http://localhost/Attendance-_Management_System';
+        return $cleanPath !== '' ? $fallback . '/' . $cleanPath : $fallback;
+    }
+
+    /**
      * Get the clean request path relative to the application base directory (e.g. /teacher/dashboard)
      */
     public static function getCurrentPath(): string {
@@ -331,6 +376,10 @@ class Router {
             '/api/auth/reset-password',
             '/api/auth/logout',
             '/api/auth/me',
+            '/activate',
+            '/auth/activate',
+            '/api/auth/activate',
+            '/api/auth/resend-activation',
             '/healthcheck',
             '/mailcheck',
             '/403',
