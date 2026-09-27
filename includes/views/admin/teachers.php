@@ -407,9 +407,9 @@ try {
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
         <button type="button" onclick="closeManualTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">Cancel</button>
-        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+        <button type="submit" id="btn-save-teacher" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          Save Teacher Account
+          <span id="btn-save-teacher-text">Save Teacher Account</span>
         </button>
       </div>
     </form>
@@ -477,9 +477,9 @@ try {
 
       <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
         <button type="button" onclick="closeEditTeacherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">Cancel</button>
-        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
+        <button type="submit" id="btn-update-teacher" class="px-5 py-2.5 rounded-xl bg-[#1e3b8a] hover:bg-[#1e3b8a]/90 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          Update Account
+          <span id="btn-update-teacher-text">Update Account</span>
         </button>
       </div>
     </form>
@@ -929,29 +929,73 @@ function closeManualTeacherModal() {
   document.getElementById('manualTeacherModal').classList.add('hidden');
 }
 
+let isSubmittingManualTeacher = false;
+let isSubmittingEditTeacher = false;
+
 async function handleManualTeacherSubmit(e) {
   e.preventDefault();
+  if (isSubmittingManualTeacher) return;
+
   const form = e.target;
+  const submitBtn = document.getElementById('btn-save-teacher') || form.querySelector('button[type="submit"]');
+  const cancelBtn = form.querySelector('button[onclick*="closeManualTeacherModal"]');
+
+  isSubmittingManualTeacher = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    submitBtn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Saving & Sending Activation...</span>
+    `;
+  }
+  if (cancelBtn) cancelBtn.disabled = true;
+
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
   try {
     const res = await fetch(window.url('api/teachers'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
-    if (result.status === 'success') {
-      APP.toast(result.message, 'success');
+    if (res.ok && result.status === 'success') {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Faculty account created successfully.', 'success');
+      } else {
+        alert(result.message || 'Faculty account created successfully.');
+      }
       closeManualTeacherModal();
       form.reset();
       fetchTeachers(1);
     } else {
-      APP.toast(result.message || 'Validation error', 'error');
+      const errMsg = result.message || 'Validation error while saving teacher account.';
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(errMsg, 'error');
+      } else {
+        alert(errMsg);
+      }
     }
   } catch (err) {
-    APP.toast('Failed to create faculty account.', 'error');
+    console.error('Error creating teacher account:', err);
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Failed to create faculty account. Please check connection and try again.', 'error');
+    } else {
+      alert('Failed to create faculty account. Please check connection and try again.');
+    }
+  } finally {
+    isSubmittingManualTeacher = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      submitBtn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span id="btn-save-teacher-text">Save Teacher Account</span>
+      `;
+    }
+    if (cancelBtn) cancelBtn.disabled = false;
   }
 }
 
@@ -973,26 +1017,67 @@ function closeEditTeacherModal() {
 
 async function handleEditTeacherSubmit(e) {
   e.preventDefault();
+  if (isSubmittingEditTeacher) return;
+
   const form = e.target;
+  const submitBtn = document.getElementById('btn-update-teacher') || form.querySelector('button[type="submit"]');
+  const cancelBtn = form.querySelector('button[onclick*="closeEditTeacherModal"]');
+
+  isSubmittingEditTeacher = true;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    submitBtn.innerHTML = `
+      <svg class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+      <span>Updating Account...</span>
+    `;
+  }
+  if (cancelBtn) cancelBtn.disabled = true;
+
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
   try {
     const res = await fetch(window.url('api/teachers/update'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
-    if (result.status === 'success') {
-      APP.toast(result.message, 'success');
+    if (res.ok && result.status === 'success') {
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(result.message || 'Teacher account updated successfully.', 'success');
+      } else {
+        alert(result.message || 'Teacher account updated successfully.');
+      }
       closeEditTeacherModal();
-      fetchTeachers();
+      fetchTeachers(currentTeacherPage);
     } else {
-      APP.toast(result.message || 'Update failed', 'error');
+      const errMsg = result.message || 'Update failed.';
+      if (typeof APP !== 'undefined' && APP.toast) {
+        APP.toast(errMsg, 'error');
+      } else {
+        alert(errMsg);
+      }
     }
   } catch (err) {
-    APP.toast('Error updating teacher account.', 'error');
+    console.error('Error updating teacher account:', err);
+    if (typeof APP !== 'undefined' && APP.toast) {
+      APP.toast('Error updating teacher account. Please check connection.', 'error');
+    } else {
+      alert('Error updating teacher account. Please check connection.');
+    }
+  } finally {
+    isSubmittingEditTeacher = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      submitBtn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span id="btn-update-teacher-text">Update Account</span>
+      `;
+    }
+    if (cancelBtn) cancelBtn.disabled = false;
   }
 }
 

@@ -353,18 +353,45 @@ class TeacherController {
             AuthController::ensureColumnsExist($db);
 
             // Check duplicate employee_id
-            $chk = $db->prepare("SELECT id FROM `teachers` WHERE `employee_id` = ?");
+            $chk = $db->prepare("SELECT id, full_name, email, created_at FROM `teachers` WHERE `employee_id` = ?");
             $chk->execute([$employeeId]);
-            if ($chk->fetch()) {
+            $existingEmp = $chk->fetch(PDO::FETCH_ASSOC);
+
+            // Check duplicate email
+            $chkEmail = $db->prepare("SELECT id, employee_id, full_name, created_at FROM `teachers` WHERE `email` = ?");
+            $chkEmail->execute([$email]);
+            $existingMail = $chkEmail->fetch(PDO::FETCH_ASSOC);
+
+            // Idempotency guard for rapid double-click submissions:
+            // If the exact same employee_id and email were inserted within the last 30 seconds, treat as idempotent success!
+            if ($existingEmp && $existingMail && (int)$existingEmp['id'] === (int)$existingMail['id']) {
+                $createdAt = !empty($existingEmp['created_at']) ? strtotime($existingEmp['created_at']) : time();
+                if ((time() - $createdAt) <= 30) {
+                    echo json_encode([
+                        'status'  => 'success',
+                        'message' => "Faculty account for {$fullName} ({$employeeId}) created successfully. An activation link has been dispatched to {$email}.",
+                        'data'    => [
+                            'id'          => (int)$existingEmp['id'],
+                            'employee_id' => $employeeId,
+                            'full_name'   => $fullName,
+                            'email'       => $email,
+                            'department'  => $department,
+                            'position'    => $position,
+                            'status'      => 'pending_activation',
+                            'email_sent'  => true
+                        ]
+                    ]);
+                    exit;
+                }
+            }
+
+            if ($existingEmp) {
                 http_response_code(422);
                 echo json_encode(['status' => 'error', 'message' => "Employee ID '{$employeeId}' is already registered."]);
                 exit;
             }
 
-            // Check duplicate email
-            $chkEmail = $db->prepare("SELECT id FROM `teachers` WHERE `email` = ?");
-            $chkEmail->execute([$email]);
-            if ($chkEmail->fetch()) {
+            if ($existingMail) {
                 http_response_code(422);
                 echo json_encode(['status' => 'error', 'message' => "Email '{$email}' is already in use."]);
                 exit;
